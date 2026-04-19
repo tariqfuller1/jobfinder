@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkplaceType {
+  REMOTE
+  HYBRID
+  ONSITE
+  UNKNOWN
+}
+
+enum EmploymentType {
+  FULL_TIME
+  INTERNSHIP
+  CONTRACT
+  PART_TIME
+  TEMPORARY
+  UNKNOWN
+}
+
+enum ExperienceLevel {
+  INTERN
+  ENTRY
+  MID
+  SENIOR
+  LEAD
+  UNKNOWN
+}
+
+enum ApplicationStatus {
+  SAVED
+  APPLIED
+  REACHING_OUT
+  RECRUITER_REACHED_OUT
+  INTERVIEW
+  OFFER
+  REJECTED
+  GHOSTED
+}
+
+enum CompanyRemotePolicy {
+  REMOTE_FRIENDLY
+  HYBRID
+  ONSITE
+  FLEXIBLE
+  UNKNOWN
+}
+
+enum CompanyCategory {
+  SOFTWARE
+  GAMING
+  BOTH
+}
+
+model Job {
+  id               String           @id @default(cuid())
+  source           String
+  externalId       String
+  sourceUrl        String
+  applyUrl         String
+  title            String
+  company          String
+  location         String?
+  workplaceType    WorkplaceType    @default(UNKNOWN)
+  employmentType   EmploymentType   @default(UNKNOWN)
+  experienceLevel  ExperienceLevel  @default(UNKNOWN)
+  descriptionHtml  String?
+  descriptionText  String?
+  postedAt         DateTime?
+  tags             String           @default("[]")
+  isActive         Boolean          @default(true)
+  lastSeenAt       DateTime         @default(now())
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  applications     Application[]
+
+  @@unique([source, externalId])
+  @@index([isActive, postedAt])  // composite — covers the primary sort+filter in one pass
+  @@index([isActive, workplaceType])
+  @@index([isActive, employmentType])
+  @@index([isActive, experienceLevel])
+  @@index([company])
+  @@index([title])
+}
+
+model Application {
+  id                  String             @id @default(cuid())
+  userId              String?
+  jobId               String
+  company             String
+  roleTitle           String
+  sourceUrl           String
+  applyUrl            String
+  dateApplied         DateTime?
+  status              ApplicationStatus  @default(SAVED)
+  recruiterName       String?
+  recruiterEmail      String?
+  userReachedOut      Boolean            @default(false)
+  companyReachedOut   Boolean            @default(false)
+  followUpDate        DateTime?
+  notes               String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  job                 Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user                User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([dateApplied])
+}
+
+model Company {
+  id                    String               @id @default(cuid())
+  name                  String
+  slug                  String               @unique
+  websiteUrl            String?
+  careersUrl            String?
+  headquarters          String?
+  hiringRegions         String?              @default("[]")
+  locations             String?              @default("[]")
+  remotePolicy          CompanyRemotePolicy  @default(UNKNOWN)
+  companyCategory       CompanyCategory      @default(SOFTWARE)
+  companySize           String?
+  foundedYear           Int?
+  stackTags             String               @default("[]")
+  gameTags              String               @default("[]")
+  roleFocusTags         String               @default("[]")
+  industryTags          String               @default("[]")
+  hiringSignals         String?              @default("[]")
+  atsProviders          String?              @default("[]")
+  emailPatterns         String?              @default("[]")
+  coldCallPhone         String?
+  notes                 String?
+  outreachTips          String?
+  linkedinUrl           String?
+  sourceType            String?
+  sourceToken           String?
+  activeHiring          Boolean              @default(true)
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  contacts              CompanyContact[]
+
+  @@index([activeHiring])
+  @@index([name])
+  @@index([companyCategory])
+  @@index([remotePolicy])
+}
+
+model CompanyContact {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  title           String?
+  team            String?
+  email           String?
+  linkedinUrl     String?
+  sourceNote      String?
+  outreachStatus  String?  @default("Not contacted")
+  lastContactedAt DateTime?
+  phone           String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([name])
+}
+
+model CandidateProfile {
+  id                 String   @id @default(cuid())
+  userId             String?  @unique
+  isActive           Boolean  @default(true)
+  name               String?
+  email              String?
+  phone              String?
+  location           String?
+  headline           String?
+  summary            String?
+  resumeText         String?
+  rawUploadName      String?
+  preferredLocations String   @default("[]")
+  preferredStates    String   @default("[]")
+  remotePreference   String   @default("[]")
+  targetCategories   String   @default("[]")
+  targetTitles       String   @default("[]")
+  skills             String   @default("[]")
+  stacks             String   @default("[]")
+  industries         String   @default("[]")
+  contactRoleTargets String   @default("[]")
+  educationEntries   String   @default("[]")
+  companiesWorked    String   @default("[]")
+  schoolKeywords     String   @default("[]")
+  connectionKeywords String   @default("[]")
+  links              String   @default("[]")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([updatedAt])
+}
+
+
+
+model User {
+  id             String             @id @default(cuid())
+  email          String             @unique
+  passwordHash   String
+  displayName    String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  profile        CandidateProfile?
+  sessions       Session[]
+  applications   Application[]
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model SyncRun {
+  id           String   @id @default(cuid())
+  source       String
+  jobsFetched  Int
+  jobsUpserted Int
+  startedAt    DateTime @default(now())
+  finishedAt   DateTime?
+  error        String?
+}

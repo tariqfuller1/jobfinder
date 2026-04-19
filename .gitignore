@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Production build
+build/
+
+# Environment — never commit secrets
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Database files — keep out of git; use a persistent volume in production
+*.db
+*.db-shm
+*.db-wal
+prisma/*.db
+prisma/*.db-shm
+prisma/*.db-wal
+
+# Uploaded resumes / user files
+uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Prisma generated client (regenerated at build time)
+node_modules/.prisma/

@@ -1,0 +1,46 @@
+{
+  "name": "job-finder-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "postinstall": "prisma generate",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "fresh": "rm -rf node_modules package-lock.json && npm install",
+    "setup:env": "node -e \"const fs=require('fs'); if (!fs.existsSync('.env')) fs.copyFileSync('.env.example', '.env')\"",
+    "setup:db": "npm run setup:env && npx prisma generate && npx prisma db push",
+    "setup:data": "npm run prisma:seed && npm run import:starter-data",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "discover:sources": "tsx scripts/discoverSources.ts",
+    "sync:jobs": "tsx scripts/sync.ts",
+    "backfill:inference": "tsx scripts/backfillInference.ts",
+    "import:starter-data": "tsx scripts/importStarterData.ts",
+    "bootstrap": "tsx scripts/bootstrap.ts",
+    "app": "bash ./run-local.sh"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.6.0",
+    "cheerio": "^1.0.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "next": "15.2.4",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "zod": "^3.24.2",
+    "mammoth": "^1.8.0",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.14",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "prisma": "^6.6.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
