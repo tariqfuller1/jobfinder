@@ -296,6 +296,12 @@ textarea:focus {
 
 textarea { resize: vertical; }
 
+select option,
+select optgroup {
+  background: #1c1c28;
+  color: #e4e4e7;
+}
+
 .button {
   display: inline-flex;
   align-items: center;

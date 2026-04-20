@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
     employmentType: searchParams.get("employmentType") ?? undefined,
     experienceLevel: searchParams.get("experienceLevel") ?? undefined,
     location: searchParams.get("location") ?? undefined,
+    states: searchParams.get("states") ? searchParams.get("states")!.split(",").filter(Boolean) : undefined,
+    country: searchParams.get("country") ?? undefined,
     source: searchParams.get("source") ?? undefined,
     company: searchParams.get("company") ?? undefined,
     recommendedOnly: searchParams.get("recommendedOnly") === "true",

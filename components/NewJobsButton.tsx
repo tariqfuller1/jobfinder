@@ -32,6 +32,8 @@ type Props = {
     employmentType?: string;
     experienceLevel?: string;
     location?: string;
+    states?: string;
+    country?: string;
     source?: string;
     company?: string;
   };
@@ -164,6 +166,8 @@ export function NewJobsButton({ sinceLastSync, filters = {}, userId }: Props) {
         if (filters.employmentType)  params.set("employmentType", filters.employmentType);
         if (filters.experienceLevel) params.set("experienceLevel", filters.experienceLevel);
         if (filters.location)        params.set("location", filters.location);
+        if (filters.states)          params.set("states", filters.states);
+        if (filters.country)         params.set("country", filters.country);
         if (filters.source)          params.set("source", filters.source);
         if (filters.company)         params.set("company", filters.company);
 

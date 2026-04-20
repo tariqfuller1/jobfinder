@@ -18,6 +18,13 @@ import { defaultUserProfile, type UserProfile } from "@/lib/profile";
 import { scoreJobFit } from "@/lib/recommendations";
 import type { NormalizedJob } from "@/types/jobs";
 
+const US_STATE_ABBRS = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
+  "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
+  "VA","WA","WV","WI","WY",
+];
+
 export type JobFilters = {
   q?: string;
   department?: string;
@@ -33,6 +40,10 @@ export type JobFilters = {
   limit?: number;
   // ISO timestamp — only return jobs created after this point (for incremental updates)
   since?: string;
+  // US state abbreviations — e.g. ["NC", "TX", "CA"]
+  states?: string[];
+  // Country name — "United States" triggers US-state matching; others use contains
+  country?: string;
 };
 
 // Keywords matched against job title to define each department bucket.
@@ -177,6 +188,21 @@ export async function listJobs(filters: JobFilters, profile: UserProfile = defau
       filters.company ? { company: { contains: filters.company } } : {},
       // Incremental update — only jobs inserted into our DB after this timestamp
       filters.since ? { createdAt: { gt: new Date(filters.since) } } : {},
+      // Country / state filter
+      // US + specific states → match ", TX" patterns
+      // US + no states     → match any of the 50 state suffixes
+      // Other country      → match country name in location string
+      filters.country === "United States"
+        ? {
+            OR: (filters.states && filters.states.length > 0 ? filters.states : US_STATE_ABBRS).map(
+              (s) => ({ location: { contains: `, ${s}` } }),
+            ),
+          }
+        : filters.country
+          ? { location: { contains: filters.country } }
+          : filters.states && filters.states.length > 0
+            ? { OR: filters.states.map((s) => ({ location: { contains: `, ${s}` } })) }
+            : {},
     ],
   };
 
