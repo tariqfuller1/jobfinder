@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "postinstall": "prisma generate",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && prisma db push && next build",
     "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
     "lint": "next lint",
     "fresh": "rm -rf node_modules package-lock.json && npm install",
