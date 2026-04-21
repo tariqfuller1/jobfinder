@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "postinstall": "prisma generate",
     "build": "prisma generate && next build",
-    "start": "next start -H 0.0.0.0",
+    "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
     "lint": "next lint",
     "fresh": "rm -rf node_modules package-lock.json && npm install",
     "setup:env": "node -e \"const fs=require('fs'); if (!fs.existsSync('.env')) fs.copyFileSync('.env.example', '.env')\"",
