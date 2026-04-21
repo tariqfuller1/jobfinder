@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CompanyFilters } from "@/components/CompanyFilters";
 import { MatchReasons } from "@/components/MatchReasons";
 import { Pagination } from "@/components/Pagination";
+import { SidebarToggle } from "@/components/SidebarToggle";
 import { getCurrentUser } from "@/lib/auth";
 import { listCompanies } from "@/lib/companies";
 import { getProfileForUserOrDefault } from "@/lib/profile";
@@ -43,12 +44,16 @@ export default async function CompaniesPage({
 
   return (
     <div className="layout">
-      <aside className="sidebar stack compact-stack">
-        <div>
-          <div className="eyebrow">Refine list</div>
-          <h2 className="section-title">Company filters</h2>
-        </div>
-        <CompanyFilters />
+      <aside className="sidebar">
+        <SidebarToggle>
+          <div className="stack compact-stack">
+            <div>
+              <div className="eyebrow">Refine list</div>
+              <h2 className="section-title">Company filters</h2>
+            </div>
+            <CompanyFilters />
+          </div>
+        </SidebarToggle>
       </aside>
 
       <section className="stack page-stack-lg">

@@ -3,6 +3,7 @@ import { Pagination } from "@/components/Pagination";
 import { JobFilters } from "@/components/JobFilters";
 import { JobCard } from "@/components/JobCard";
 import { NewJobsButton } from "@/components/NewJobsButton";
+import { SidebarToggle } from "@/components/SidebarToggle";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { listJobs } from "@/lib/jobs";
@@ -63,12 +64,16 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="layout">
-      <aside className="sidebar stack compact-stack">
-        <div>
-          <div className="eyebrow">Search controls</div>
-          <h2 className="section-title">Filter real jobs</h2>
-        </div>
-        <JobFilters />
+      <aside className="sidebar">
+        <SidebarToggle>
+          <div className="stack compact-stack">
+            <div>
+              <div className="eyebrow">Search controls</div>
+              <h2 className="section-title">Filter real jobs</h2>
+            </div>
+            <JobFilters />
+          </div>
+        </SidebarToggle>
       </aside>
 
       <section className="stack page-stack-lg">

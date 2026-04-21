@@ -1,12 +1,20 @@
 import "./globals.css";
 import Link from "next/link";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { getCurrentUser } from "@/lib/auth";
 import { LogoutButton } from "@/components/LogoutButton";
+import { MarketingNav } from "@/components/MarketingNav";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 export const metadata: Metadata = {
   title: "Job Finder",
   description: "Aggregate jobs, track applications, and build targeted outreach.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const primaryNav = [
@@ -48,12 +56,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <header className="marketing-topbar">
               <div className="container marketing-topbar-card">
                 <Link href="/" className="brand brand-large">Job Finder</Link>
-                <nav className="marketing-nav">
-                  <Link href="/jobs">Jobs</Link>
-                  <Link href="/companies">Companies</Link>
-                  <Link href="/login">Sign in</Link>
-                  <Link href="/register" className="button">Create account</Link>
-                </nav>
+                <MarketingNav />
               </div>
             </header>
             <main className="container marketing-main">{children}</main>
@@ -114,7 +117,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="app-stage">
             <header className="topbar">
               <div className="topbar-card">
-                <div>
+                {/* Mobile: simple brand + logout */}
+                <div className="topbar-mobile-brand">
+                  <Link href="/dashboard" className="brand">Job Finder</Link>
+                </div>
+                {/* Desktop: full title */}
+                <div className="topbar-desktop-title">
                   <div className="eyebrow">Modern job search workspace</div>
                   <div className="topbar-title">Your signed-in job search workspace</div>
                 </div>
@@ -125,7 +133,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                         <div className="rail-section-label">Signed in</div>
                         <strong>{user.displayName || user.email}</strong>
                       </div>
-                      <Link href="/profile" className="button secondary">Profile settings</Link>
+                      <Link href="/profile" className="button secondary topbar-profile-btn">Profile settings</Link>
                       <LogoutButton />
                     </>
                   ) : (
@@ -138,6 +146,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </header>
             <main className="app-main container">{children}</main>
+            <MobileBottomNav />
           </div>
         </div>
       </body>
