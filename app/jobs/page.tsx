@@ -3,6 +3,7 @@ import { Pagination } from "@/components/Pagination";
 import { JobFilters } from "@/components/JobFilters";
 import { JobCard } from "@/components/JobCard";
 import { NewJobsButton } from "@/components/NewJobsButton";
+import { FullSyncButton } from "@/components/FullSyncButton";
 import { SidebarToggle } from "@/components/SidebarToggle";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -149,6 +150,9 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
             </div>
             <div className="muted">Page {data.page} of {data.totalPages}</div>
           </div>
+
+          {/* Full background sync — runs discovery + all sources without HTTP timeout */}
+          <FullSyncButton userId={user?.id} />
 
           {/* Refresh button — always visible so first sync can be triggered from browser */}
           <NewJobsButton
