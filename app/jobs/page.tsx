@@ -150,18 +150,15 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
             <div className="muted">Page {data.page} of {data.totalPages}</div>
           </div>
 
-          {/* Refresh button — shows jobs added since the last sync (or since page
-              load if no sync has run yet). Never resets filters or pagination. */}
-          {data.jobs.length > 0 && (
-            <NewJobsButton
-              sinceLastSync={
-                lastSync?.startedAt.toISOString() ??
-                (data.jobs[0] as any).createdAt as string
-              }
-              filters={serializableParams}
-              userId={user?.id}
-            />
-          )}
+          {/* Refresh button — always visible so first sync can be triggered from browser */}
+          <NewJobsButton
+            sinceLastSync={
+              lastSync?.startedAt.toISOString() ??
+              data.jobs[0] ? (data.jobs[0] as any).createdAt as string : new Date(0).toISOString()
+            }
+            filters={serializableParams}
+            userId={user?.id}
+          />
 
           {data.jobs.length === 0 ? (
             <div className="inset-card">
