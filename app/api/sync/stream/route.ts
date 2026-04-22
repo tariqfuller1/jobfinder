@@ -4,10 +4,14 @@ import { discoverSourcesForAllCompanies } from "@/lib/source-discovery";
 
 // Never cache this route
 export const dynamic = "force-dynamic";
+export const maxDuration = 300; // 5 min — maximum Railway allows on hobby plan
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const secret = searchParams.get("secret");
   const user = await getCurrentUser();
-  if (!user) {
+
+  if (!user && secret !== process.env.SYNC_SECRET) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
