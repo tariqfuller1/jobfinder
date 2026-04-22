@@ -100,7 +100,6 @@ export const getCurrentUser = cache(async function getCurrentUser(): Promise<Saf
     if (session) {
       await prisma.session.delete({ where: { id: session.id } }).catch(() => undefined);
     }
-    await clearSessionCookie();
     return null;
   }
 
