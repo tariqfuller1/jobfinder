@@ -2,11 +2,8 @@ import Link from "next/link";
 import { Pagination } from "@/components/Pagination";
 import { JobFilters } from "@/components/JobFilters";
 import { JobCard } from "@/components/JobCard";
-import { NewJobsButton } from "@/components/NewJobsButton";
-import { FullSyncButton } from "@/components/FullSyncButton";
 import { SidebarToggle } from "@/components/SidebarToggle";
 import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/db";
 import { listJobs } from "@/lib/jobs";
 import { getProfileForUserOrDefault } from "@/lib/profile";
 
@@ -17,17 +14,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   const page = typeof params.page === "string" ? Number(params.page) : 1;
   const sort = typeof params.sort === "string" && params.sort === "oldest" ? "oldest" : "recent";
 
-  // Fetch the last completed sync's start time in parallel with jobs.
-  // This becomes the "since" cursor for the new-jobs button — clicking it
-  // reveals any jobs added during or after the most recent sync run.
-  const lastSyncPromise = prisma.syncRun.findFirst({
-    where: { finishedAt: { not: null } },
-    orderBy: { startedAt: "desc" },
-    select: { startedAt: true },
-  });
-
-  const [data, lastSync] = await Promise.all([
-    listJobs({
+  const data = await listJobs({
       q: typeof params.q === "string" ? params.q : undefined,
       department: typeof params.department === "string" ? params.department : undefined,
       sort,
@@ -42,9 +29,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
       recommendedOnly: typeof params.recommendedOnly === "string" ? params.recommendedOnly === "true" : false,
       page,
       limit: 25,
-    }, profile),
-    lastSyncPromise,
-  ]);
+    }, profile);
 
   const serializableParams = {
     q: typeof params.q === "string" ? params.q : undefined,
@@ -151,18 +136,6 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
             <div className="muted">Page {data.page} of {data.totalPages}</div>
           </div>
 
-          {/* Full background sync — runs discovery + all sources without HTTP timeout */}
-          <FullSyncButton userId={user?.id} />
-
-          {/* Refresh button — always visible so first sync can be triggered from browser */}
-          <NewJobsButton
-            sinceLastSync={
-              lastSync?.startedAt.toISOString() ??
-              data.jobs[0] ? (data.jobs[0] as any).createdAt as string : new Date(0).toISOString()
-            }
-            filters={serializableParams}
-            userId={user?.id}
-          />
 
           {data.jobs.length === 0 ? (
             <div className="inset-card">
