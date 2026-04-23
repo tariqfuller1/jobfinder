@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# Check if the database already has jobs — if so, skip bootstrap.
-# This prevents re-running the full 30-min bootstrap on every deploy.
+# Ensure database schema exists on the persistent volume.
+# This runs at startup when /data is already mounted.
+echo "Running prisma db push against volume..."
+npx prisma db push --skip-generate
+
+# Check if the database already has jobs — skip bootstrap if populated.
 JOB_COUNT=$(node -e "
 const { PrismaClient } = require('@prisma/client');
 const p = new PrismaClient();
@@ -17,5 +21,4 @@ else
   npx tsx scripts/bootstrap.ts &
 fi
 
-# Start the web server in the foreground
 exec next start -H 0.0.0.0 -p ${PORT:-8080}
