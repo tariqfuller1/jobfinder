@@ -5,14 +5,13 @@ import { MatchReasons } from "@/components/MatchReasons";
 import { getCurrentUser } from "@/lib/auth";
 import { listCompanies } from "@/lib/companies";
 import { listJobs } from "@/lib/jobs";
-import { defaultUserProfile } from "@/lib/profile";
 
 // Cache the public landing data for 5 minutes — it only changes after a sync.
 const getLandingData = unstable_cache(
   async () => {
     const [jobs, companies] = await Promise.all([
       listJobs({ page: 1, limit: 6 }, null),
-      listCompanies({ page: 1, limit: 6, activeHiring: "true" }, defaultUserProfile),
+      listCompanies({ page: 1, limit: 6, activeHiring: "true" }, null),
     ]);
     return { jobs, companies };
   },
