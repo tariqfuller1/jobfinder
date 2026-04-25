@@ -29,8 +29,6 @@ function looksLikeUrl(value: string | null): boolean {
 
 function pickApplyUrl(obj: UnknownRecord): string | null {
   const direct = pickFirstString(obj, [
-    "jobLink",      // games-workbook specific
-    "job_link",
     "applyUrl",
     "apply_url",
     "jobUrl",
@@ -48,8 +46,6 @@ function pickApplyUrl(obj: UnknownRecord): string | null {
 
   for (const nested of nestedValues) {
     const nestedUrl = pickFirstString(nested, [
-      "jobLink",
-      "job_link",
       "applyUrl",
       "apply_url",
       "jobUrl",
@@ -79,7 +75,6 @@ function pickDescription(obj: UnknownRecord): string | null {
 
 function pickPostedAt(obj: UnknownRecord): Date | null {
   const raw = pickFirstString(obj, [
-    "activatedDate",   // games-workbook specific
     "postedAt",
     "posted_at",
     "createdAt",
@@ -92,19 +87,6 @@ function pickPostedAt(obj: UnknownRecord): Date | null {
   if (!raw) return null;
   const date = new Date(raw);
   return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function pickLocation(obj: UnknownRecord): string | null {
-  // games-workbook splits into city/state/country — build composite when possible
-  const city    = asString(obj.city);
-  const state   = asString(obj.state);
-  const country = asString(obj.country);
-  const region  = asString(obj.region);
-
-  const parts = [city, state || region, country].filter(Boolean);
-  if (parts.length > 0) return parts.join(", ");
-
-  return pickFirstString(obj, ["location", "jobLocation", "job_location"]);
 }
 
 function collectCandidates(value: unknown, out: UnknownRecord[]) {
@@ -135,10 +117,10 @@ function mapJob(record: UnknownRecord, index: number, apiUrl: string): Normalize
 
   if (!title || !applyUrl) return null;
 
-  const location = pickLocation(record);
+  const location =
+    pickFirstString(record, ["location", "jobLocation", "job_location", "city", "region", "country"]) || null;
 
   const workplaceHint = pickFirstString(record, [
-    "locationType",    // games-workbook: "On-site", "Remote", "Hybrid"
     "workplaceType",
     "workplace_type",
     "remote",
@@ -147,20 +129,16 @@ function mapJob(record: UnknownRecord, index: number, apiUrl: string): Normalize
     "arrangement",
   ]);
   const employmentHint = pickFirstString(record, [
-    "jobType",         // games-workbook: "Full-Time"
     "employmentType",
     "employment_type",
     "type",
+    "jobType",
     "job_type",
     "commitment",
   ]);
-  const experienceHint = pickFirstString(record, [
-    "experienceLevel", "experience_level", "seniority", "level",
-    "minExperience", "min_experience",
-  ]);
+  const experienceHint = pickFirstString(record, ["experienceLevel", "experience_level", "seniority", "level"]);
 
   const tags: string[] = [];
-  // Collect array-type tag fields
   for (const possibleArray of [record.tags, record.skills, record.categories, record.technologies]) {
     if (Array.isArray(possibleArray)) {
       for (const item of possibleArray) {
@@ -169,9 +147,6 @@ function mapJob(record: UnknownRecord, index: number, apiUrl: string): Normalize
       }
     }
   }
-  // Add overallCategory as a tag (e.g. "Engineering & Development", "Design")
-  const categoryTag = asString(record.overallCategory);
-  if (categoryTag) tags.push(categoryTag);
 
   const externalId =
     pickFirstString(record, ["id", "_id", "jobId", "job_id", "slug"]) || `${company}-${title}-${index}`;

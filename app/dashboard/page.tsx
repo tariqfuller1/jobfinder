@@ -4,7 +4,6 @@ import { listCompanies } from "@/lib/companies";
 import { listJobs } from "@/lib/jobs";
 import { getProfileForUserOrDefault } from "@/lib/profile";
 import { MatchReasons } from "@/components/MatchReasons";
-import { SyncButton } from "@/components/SyncButton";
 
 export default async function DashboardPage() {
   const user = await requireCurrentUser();
@@ -76,17 +75,6 @@ export default async function DashboardPage() {
           <p className="muted">Generate a targeted cover letter from your profile, the job description, and the company context.</p>
           <Link className="button secondary" href="/cover-letters">Open cover letters</Link>
         </article>
-      </section>
-
-      <section className="card stack compact-stack">
-        <div>
-          <div className="eyebrow">Job data</div>
-          <h2 className="section-title">Sync job board</h2>
-          <p className="muted" style={{ margin: "4px 0 0" }}>
-            Pull fresh listings from all configured sources. Each source reports as it finishes so you can see exactly what was fetched.
-          </p>
-        </div>
-        <SyncButton />
       </section>
 
       {profile.links.length > 0 && (

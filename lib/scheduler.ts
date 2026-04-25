@@ -17,10 +17,7 @@ export function startDailySync() {
     }
   }
 
-  // Run once 2 minutes after startup (give the server time to settle)
   setTimeout(runSync, 2 * 60 * 1000);
-
-  // Then once every 24 hours
   setInterval(runSync, 24 * 60 * 60 * 1000);
 
   console.log("[scheduler] Daily job sync scheduled.");

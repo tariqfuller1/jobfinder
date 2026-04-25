@@ -121,38 +121,21 @@ async function main() {
   console.log("  Pulling from Remotive, Games Workbook, Arbeitnow, and configured ATS tokens …\n");
   const s4 = Date.now();
 
+  const liveSyncSummary = await syncAllJobs();
+
   let liveTotal = 0;
-  let liveFetched = 0;
   let liveFailures = 0;
+  for (const row of liveSyncSummary) {
+    if (row.ok) {
+      liveTotal += row.jobsUpserted;
+      println(`  \x1b[32m✓\x1b[0m \x1b[1m${row.source}\x1b[0m  — ${row.jobsUpserted} jobs`);
+    } else {
+      liveFailures++;
+      println(`  \x1b[31m✗\x1b[0m \x1b[1m${row.source}\x1b[0m  — ${row.error ?? "failed"}`);
+    }
+  }
 
-  await syncAllJobs(
-    (result, completed, total, runningFetched, runningUpserted) => {
-      if (result.ok) {
-        liveTotal += result.jobsUpserted;
-        liveFetched += result.jobsFetched;
-        println(
-          `  \x1b[32m✓\x1b[0m ${bar(completed, total)}  \x1b[1m${result.source.padEnd(32)}\x1b[0m` +
-          `  ${String(result.jobsUpserted).padStart(4)} new  /  ${String(result.jobsFetched).padStart(4)} fetched` +
-          `  \x1b[2m(${runningUpserted} total new)\x1b[0m`,
-        );
-      } else {
-        liveFailures++;
-        println(
-          `  \x1b[31m✗\x1b[0m ${bar(completed, total)}  \x1b[1m${result.source.padEnd(32)}\x1b[0m` +
-          `  \x1b[31m${result.error ?? "failed"}\x1b[0m`,
-        );
-      }
-    },
-    (source, index, total) => {
-      overwrite(
-        `  \x1b[33m→\x1b[0m ${bar(index, total)}  \x1b[2mfetching  ${source.slice(0, 34)}\x1b[0m`,
-      );
-    },
-  );
-
-  println(
-    `\n  ✓ ${liveTotal} new jobs  ·  ${liveFetched} fetched  ·  ${liveFailures} failures  ${elapsed(s4)}`,
-  );
+  console.log(`\n  ✓ ${liveTotal} jobs imported  ·  ${liveFailures} failures  ${elapsed(s4)}`);
 
   // ── Summary ───────────────────────────────────────────────────────────────
   const totalJobs = await prisma.job.count({ where: { isActive: true } });

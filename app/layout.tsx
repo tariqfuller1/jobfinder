@@ -33,7 +33,6 @@ const creatorNav = [
 
 const companyNav = [
   { href: "/companies", label: "Companies", icon: "▣" },
-  { href: "/companies/import", label: "Import companies", icon: "+" },
 ];
 
 function RailLink({ href, label, icon }: { href: string; label: string; icon: string }) {

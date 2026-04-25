@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && node -e \"const fs=require('fs');const f='node_modules/next/dist/build/generate-build-id.js';let c=fs.readFileSync(f,'utf8');if(!c.includes('typeof generate')){c=c.replace('let buildId = await generate();','if(typeof generate!==\\'function\\'){let b;while(!b||/ad/i.test(b)){b=arguments[1]();}return b;}let buildId = await generate();');fs.writeFileSync(f,c);console.log('Patched generate-build-id.js');}\"",
     "build": "prisma generate && next build",
     "start": "bash start.sh",
     "lint": "next lint",

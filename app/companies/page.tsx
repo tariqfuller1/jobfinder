@@ -68,7 +68,6 @@ export default async function CompaniesPage({
               <Link href="/companies?state=NC" className="button">North Carolina focus</Link>
               <Link href="/companies?category=GAMING" className="button secondary">Game companies</Link>
               <Link href="/companies?category=SOFTWARE" className="button secondary">Software companies</Link>
-              <Link href="/companies/import" className="button secondary">Bulk import</Link>
             </div>
           </div>
           <div className="hero-panel stack compact-stack">
