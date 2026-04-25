@@ -99,6 +99,16 @@ export function CompanyFilters() {
           <option value="true">Active hiring only</option>
         </select>
       </label>
+
+      <label>
+        Sort by
+        <select defaultValue={searchParams.get("sort") ?? ""} onChange={(e) => updateParam("sort", e.target.value)}>
+          <option value="">Hiring status</option>
+          <option value="fit">Best fit score</option>
+          <option value="jobs">Most open jobs</option>
+          <option value="name">Company name (A–Z)</option>
+        </select>
+      </label>
     </div>
   );
 }

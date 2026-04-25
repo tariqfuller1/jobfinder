@@ -14,6 +14,7 @@ export type CompanyFilters = {
   state?: string;
   ats?: string;
   activeHiring?: string;
+  sort?: string;
   page?: number;
   limit?: number;
 };
@@ -112,32 +113,45 @@ export async function listCompanies(filters: CompanyFilters, profile: UserProfil
     ],
   };
 
+  const sort = filters.sort ?? "hiring";
+  const needsInMemorySort = sort === "fit" || sort === "jobs";
+
+  const dbOrderBy: Prisma.CompanyOrderByWithRelationInput[] =
+    sort === "name" ? [{ name: "asc" }] : [{ activeHiring: "desc" }, { name: "asc" }];
+
   const [rows, total, openJobCounts] = await Promise.all([
     prisma.company.findMany({
       where,
-      orderBy: [{ activeHiring: "desc" }, { name: "asc" }],
-      skip: (page - 1) * limit,
-      take: limit,
-      // contacts are only needed on the detail page, skip them in list queries
+      orderBy: dbOrderBy,
+      // For in-memory sorts, fetch everything so we can rank before paginating
+      ...(needsInMemorySort ? {} : { skip: (page - 1) * limit, take: limit }),
     }),
     prisma.company.count({ where }),
     getOpenJobCountsByCompany(),
   ]);
 
+  const enriched = rows.map((company: any) => {
+    const normalized = normalizeCompanyRow(company)!;
+    const openJobCount = Math.max(...companyNameVariants(company.name).map((variant) => openJobCounts.get(variant) ?? 0));
+    const fit = profile
+      ? scoreCompanyFit({ ...normalized, openJobCount }, profile)
+      : { score: 0, reasons: [] as string[] };
+    return { ...normalized, openJobCount, fitScore: fit.score, fitReasons: fit.reasons };
+  });
+
+  let companies;
+  if (sort === "fit") {
+    const sorted = [...enriched].sort((a, b) => b.fitScore - a.fitScore);
+    companies = sorted.slice((page - 1) * limit, page * limit);
+  } else if (sort === "jobs") {
+    const sorted = [...enriched].sort((a, b) => b.openJobCount - a.openJobCount);
+    companies = sorted.slice((page - 1) * limit, page * limit);
+  } else {
+    companies = enriched;
+  }
+
   return {
-    companies: rows.map((company: any) => {
-      const normalized = normalizeCompanyRow(company)!;
-      const openJobCount = Math.max(...companyNameVariants(company.name).map((variant) => openJobCounts.get(variant) ?? 0));
-      const fit = profile
-        ? scoreCompanyFit({ ...normalized, openJobCount }, profile)
-        : { score: 0, reasons: [] as string[] };
-      return {
-        ...normalized,
-        openJobCount,
-        fitScore: fit.score,
-        fitReasons: fit.reasons,
-      };
-    }),
+    companies,
     total,
     page,
     limit,

@@ -25,6 +25,7 @@ export default async function CompaniesPage({
     state: typeof params.state === "string" ? params.state : undefined,
     ats: typeof params.ats === "string" ? params.ats : undefined,
     activeHiring: typeof params.activeHiring === "string" ? params.activeHiring : undefined,
+    sort: typeof params.sort === "string" ? params.sort : undefined,
     page: typeof params.page === "string" ? Number(params.page) : 1,
   }, profile);
 
@@ -40,6 +41,7 @@ export default async function CompaniesPage({
     state: typeof params.state === "string" ? params.state : undefined,
     ats: typeof params.ats === "string" ? params.ats : undefined,
     activeHiring: typeof params.activeHiring === "string" ? params.activeHiring : undefined,
+    sort: typeof params.sort === "string" ? params.sort : undefined,
   };
 
   return (
