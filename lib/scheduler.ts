@@ -10,8 +10,10 @@ export function startDailySync() {
     try {
       console.log("[scheduler] Starting daily job sync...");
       const results = await syncAllJobs();
+      const fetched = results.reduce((s, r) => s + r.jobsFetched, 0);
       const upserted = results.reduce((s, r) => s + r.jobsUpserted, 0);
-      console.log(`[scheduler] Sync complete — ${upserted} jobs updated/added.`);
+      const failed = results.filter((r) => !r.ok).length;
+      console.log(`[scheduler] Sync complete — ${results.length} sources, ${fetched} fetched, ${upserted} upserted${failed ? `, ${failed} failed` : ""}.`);
     } catch (err) {
       console.error("[scheduler] Sync failed:", err);
     }

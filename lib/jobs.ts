@@ -417,6 +417,7 @@ export async function updateJob(id: string, data: {
 }
 
 async function runSingleSource(source: string, fetcher: () => Promise<NormalizedJob[]>) {
+  console.log(`[sync] Starting source: ${source}`);
   const syncRun = await prisma.syncRun.create({
     data: {
       source,
@@ -427,6 +428,7 @@ async function runSingleSource(source: string, fetcher: () => Promise<Normalized
 
   try {
     const jobs = await fetcher();
+    console.log(`[sync] ${source} — fetched ${jobs.length} jobs`);
 
     // SQLite is single-writer — upserts must run sequentially to avoid
     // write-lock contention and P1008 socket timeouts.
@@ -511,9 +513,11 @@ async function runSingleSource(source: string, fetcher: () => Promise<Normalized
       },
     });
 
+    console.log(`[sync] ${source} — done (${jobsUpserted} upserted)`);
     return { source, jobsFetched: jobs.length, jobsUpserted, ok: true as const };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
+    console.error(`[sync] ${source} — FAILED: ${message}`);
     await prisma.syncRun.update({
       where: { id: syncRun.id },
       data: {
