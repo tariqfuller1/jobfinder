@@ -10,7 +10,7 @@ import { getProfileForUserOrDefault } from "@/lib/profile";
 export default async function JobsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
   const user = await getCurrentUser();
-  const profile = await getProfileForUserOrDefault(user?.id);
+  const profile = user ? await getProfileForUserOrDefault(user.id) : null;
   const page = typeof params.page === "string" ? Number(params.page) : 1;
   const sort = typeof params.sort === "string" && params.sort === "oldest" ? "oldest" : "recent";
 
@@ -91,12 +91,12 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
               </div>
               <div className="metric-card inset-card">
                 <div className="metric-label">Profile skills</div>
-                <div className="metric-value">{profile.skills.length}</div>
+                <div className="metric-value">{profile?.skills.length ?? 0}</div>
                 <div className="metric-note">Used in job matching</div>
               </div>
               <div className="metric-card inset-card">
                 <div className="metric-label">Focus titles</div>
-                <div className="metric-value">{profile.targetTitles.length}</div>
+                <div className="metric-value">{profile?.targetTitles.length ?? 0}</div>
                 <div className="metric-note">Target roles on your account</div>
               </div>
             </div>

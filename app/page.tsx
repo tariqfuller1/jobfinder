@@ -11,7 +11,7 @@ import { defaultUserProfile } from "@/lib/profile";
 const getLandingData = unstable_cache(
   async () => {
     const [jobs, companies] = await Promise.all([
-      listJobs({ page: 1, limit: 6 }, defaultUserProfile),
+      listJobs({ page: 1, limit: 6 }, null),
       listCompanies({ page: 1, limit: 6, activeHiring: "true" }, defaultUserProfile),
     ]);
     return { jobs, companies };

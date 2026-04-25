@@ -1,5 +1,5 @@
 import type { ExperienceLevel, WorkplaceType } from "@prisma/client";
-import type { UserProfile } from "@/lib/profile";
+import { defaultUserProfile, type UserProfile } from "@/lib/profile";
 
 function normalizeBlob(parts: Array<string | null | undefined | string[]>) {
   return parts
@@ -124,7 +124,7 @@ export function buildResumeFeedback(
     tags?: string[];
     descriptionText?: string | null;
   },
-  profile: UserProfile,
+  profile: UserProfile = defaultUserProfile,
 ): ResumeFeedback {
   const text = normalizeBlob([job.title, job.company, job.location, job.tags ?? [], job.descriptionText]);
   const roleFamily = detectRoleFamily(text);

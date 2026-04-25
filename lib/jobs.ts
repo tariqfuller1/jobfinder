@@ -163,7 +163,7 @@ async function ensureCompanyExistsFromJob(job: NormalizedJob) {
   });
 }
 
-export async function listJobs(filters: JobFilters, profile: UserProfile = defaultUserProfile) {
+export async function listJobs(filters: JobFilters, profile: UserProfile | null = null) {
   const page = filters.page && filters.page > 0 ? filters.page : 1;
   const limit = filters.limit && filters.limit > 0 ? filters.limit : 20;
 
@@ -250,18 +250,20 @@ export async function listJobs(filters: JobFilters, profile: UserProfile = defau
     const tags = JSON.parse(job.tags || "[]") as string[];
     const companyMatch = companyLookup.get(normalizeName(job.company));
 
-    const fit = scoreJobFit(
-      {
-        title: job.title,
-        company: job.company,
-        location: job.location,
-        workplaceType: job.workplaceType,
-        experienceLevel: job.experienceLevel,
-        tags,
-        companyCategory: companyMatch?.category,
-      },
-      profile,
-    );
+    const fit = profile
+      ? scoreJobFit(
+          {
+            title: job.title,
+            company: job.company,
+            location: job.location,
+            workplaceType: job.workplaceType,
+            experienceLevel: job.experienceLevel,
+            tags,
+            companyCategory: companyMatch?.category,
+          },
+          profile,
+        )
+      : { score: 0, reasons: [] as string[] };
 
     return {
       ...job,
@@ -325,7 +327,7 @@ export async function listJobs(filters: JobFilters, profile: UserProfile = defau
   };
 }
 
-export async function getJobById(id: string, profile: UserProfile = defaultUserProfile) {
+export async function getJobById(id: string, profile: UserProfile | null = null) {
   const [job, companyLookup] = await Promise.all([
     prisma.job.findUnique({ where: { id } }),
     getCompanyLookup(),
@@ -339,19 +341,21 @@ export async function getJobById(id: string, profile: UserProfile = defaultUserP
   const employmentType = job.employmentType !== "UNKNOWN" ? job.employmentType : inferred.employmentType;
   const experienceLevel = job.experienceLevel !== "UNKNOWN" ? job.experienceLevel : inferred.experienceLevel;
 
-  const fit = scoreJobFit(
-    {
-      title: job.title,
-      company: job.company,
-      location: job.location,
-      workplaceType,
-      experienceLevel,
-      tags,
-      descriptionText: job.descriptionText,
-      companyCategory: companyMatch?.category,
-    },
-    profile,
-  );
+  const fit = profile
+    ? scoreJobFit(
+        {
+          title: job.title,
+          company: job.company,
+          location: job.location,
+          workplaceType,
+          experienceLevel,
+          tags,
+          descriptionText: job.descriptionText,
+          companyCategory: companyMatch?.category,
+        },
+        profile,
+      )
+    : { score: 0, reasons: [] as string[] };
   const links = resolveJobLinks({
     applyUrl: job.applyUrl,
     sourceUrl: job.sourceUrl,

@@ -43,16 +43,16 @@ function fmtSource(v: string) {
 export default async function JobDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await getCurrentUser();
-  const profile = await getProfileForUserOrDefault(user?.id);
+  const profile = user ? await getProfileForUserOrDefault(user.id) : null;
   const job = await getJobById(id, profile);
 
   if (!job) notFound();
 
   const connectionSearches = suggestConnectionSearches(
     { name: job.company, headquarters: job.location ?? undefined },
-    profile,
+    profile ?? undefined,
   );
-  const resumeFeedback = buildResumeFeedback(job, profile);
+  const resumeFeedback = buildResumeFeedback(job, profile ?? undefined);
 
   const workplace = fmtWorkplace(job.workplaceType);
   const employment = fmtEmployment(job.employmentType);
