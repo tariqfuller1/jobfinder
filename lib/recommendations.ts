@@ -51,13 +51,13 @@ export function scoreCompanyFit(
 
   const skillHits = includesAny(structuredText, profile.skills);
   if (skillHits.length) {
-    score += Math.min(40, skillHits.length * 6);
+    score += Math.min(50, skillHits.length * 10);
     reasons.push(`Skill overlap: ${skillHits.slice(0, 4).join(", ")}`);
   }
 
   const titleHits = includesAny(structuredText, profile.targetTitles);
   if (titleHits.length) {
-    score += Math.min(24, titleHits.length * 5);
+    score += Math.min(35, titleHits.length * 12);
     reasons.push(`Target role match: ${titleHits.slice(0, 3).join(", ")}`);
   }
 
@@ -67,27 +67,27 @@ export function scoreCompanyFit(
     locText.includes(loc.toLowerCase()),
   );
   if (locationHits.length) {
-    score += 18;
+    score += 20;
     reasons.push(`Location fit: ${locationHits[0]}`);
   }
 
   if (company.remotePolicy === "REMOTE_FRIENDLY" || company.remotePolicy === "FLEXIBLE") {
-    score += 12;
+    score += 15;
     reasons.push("Remote-friendly or flexible hiring setup");
   }
 
   if (company.companyCategory === "GAMING" || company.companyCategory === "BOTH") {
-    score += 10;
+    score += 12;
     reasons.push("Strong game-tech relevance");
   }
 
   if (company.activeHiring) {
-    score += 8;
+    score += 10;
     reasons.push("Marked as actively hiring");
   }
 
   if ((company.openJobCount ?? 0) > 0) {
-    score += Math.min(15, (company.openJobCount ?? 0) * 2);
+    score += Math.min(20, (company.openJobCount ?? 0) * 2);
     reasons.push(`${company.openJobCount} open job${company.openJobCount === 1 ? "" : "s"} in your feed`);
   }
 
@@ -117,13 +117,13 @@ export function scoreJobFit(
 
   const titleHits = includesAny(structuredText, profile.targetTitles);
   if (titleHits.length) {
-    score += Math.min(35, titleHits.length * 7);
+    score += Math.min(50, titleHits.length * 15);
     reasons.push(`Title match: ${titleHits.slice(0, 3).join(", ")}`);
   }
 
   const skillHits = includesAny(structuredText, profile.skills);
   if (skillHits.length) {
-    score += Math.min(40, skillHits.length * 5);
+    score += Math.min(50, skillHits.length * 10);
     reasons.push(`Skill overlap: ${skillHits.slice(0, 4).join(", ")}`);
   }
 
@@ -134,26 +134,26 @@ export function scoreJobFit(
     locationText.includes(loc.toLowerCase()),
   );
   if (locationHits.length) {
-    score += 15;
+    score += 20;
     reasons.push(`Location fit: ${locationHits[0]}`);
   }
 
   // Remote/hybrid bonus is separate from location — it applies regardless of geography.
   if (job.workplaceType === "REMOTE") {
-    score += 10;
+    score += 15;
     reasons.push("Remote role");
   } else if (job.workplaceType === "HYBRID") {
-    score += 8;
+    score += 12;
     reasons.push("Hybrid role");
   }
 
   if (job.experienceLevel === "ENTRY" || job.experienceLevel === "INTERN") {
-    score += 12;
+    score += 18;
     reasons.push("Good level for early-career applications");
   }
 
   if (job.companyCategory === "GAMING" || job.companyCategory === "BOTH") {
-    score += 8;
+    score += 10;
     reasons.push("Gaming-adjacent company match");
   }
 

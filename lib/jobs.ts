@@ -280,10 +280,10 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
   // Sort once, reuse for both the paged results and the sidebar widget
   const sortedByFit = [...lightEnriched].sort((a, b) => b.fitScore - a.fitScore);
 
-  // Threshold of 20 reflects the tighter scoring model (structured fields only).
-  // A remote (10) + entry-level (12) job already clears this bar.
+  // Threshold of 35: a remote (15) + entry-level (18) job clears it with 33,
+  // and any single title hit (15) + remote (15) = 30 — pad catches the rest.
   const aboveThreshold = filters.recommendedOnly
-    ? sortedByFit.filter((job: any) => job.fitScore >= 20)
+    ? sortedByFit.filter((job: any) => job.fitScore >= 35)
     : lightEnriched;
 
   // If too few jobs clear the threshold, pad with the next-best fits so the
