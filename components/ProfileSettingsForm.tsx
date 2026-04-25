@@ -110,7 +110,7 @@ export function ProfileSettingsForm({ profile }: { profile: UserProfile }) {
         </label>
         <label>
           Current location
-          <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Raleigh, NC" />
+          <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="City, State" />
         </label>
       </div>
 
@@ -127,27 +127,27 @@ export function ProfileSettingsForm({ profile }: { profile: UserProfile }) {
       <div className="grid-2 profile-edit-grid">
         <label>
           Preferred job locations
-          <input value={preferredLocations} onChange={(event) => setPreferredLocations(event.target.value)} placeholder="Remote US, Raleigh, Durham" />
+          <input value={preferredLocations} onChange={(event) => setPreferredLocations(event.target.value)} placeholder="Remote US, Austin TX, New York NY" />
         </label>
         <label>
           Preferred states
-          <input value={preferredStates} onChange={(event) => setPreferredStates(event.target.value)} placeholder="NC, WA" />
+          <input value={preferredStates} onChange={(event) => setPreferredStates(event.target.value)} placeholder="TX, NY, CA" />
         </label>
         <label>
           Target job titles
-          <input value={targetTitles} onChange={(event) => setTargetTitles(event.target.value)} placeholder="software engineer, gameplay programmer" />
+          <input value={targetTitles} onChange={(event) => setTargetTitles(event.target.value)} placeholder="software engineer, backend engineer" />
         </label>
         <label>
           Industries
-          <input value={industries} onChange={(event) => setIndustries(event.target.value)} placeholder="game development, cloud" />
+          <input value={industries} onChange={(event) => setIndustries(event.target.value)} placeholder="SaaS, FinTech, Healthcare" />
         </label>
         <label>
           Skills
-          <textarea rows={4} value={skills} onChange={(event) => setSkills(event.target.value)} placeholder="Unity, C#, React" />
+          <textarea rows={4} value={skills} onChange={(event) => setSkills(event.target.value)} placeholder="Python, Java, SQL" />
         </label>
         <label>
           Tech stacks
-          <textarea rows={4} value={stacks} onChange={(event) => setStacks(event.target.value)} placeholder="Next.js, Prisma, TypeScript" />
+          <textarea rows={4} value={stacks} onChange={(event) => setStacks(event.target.value)} placeholder="Django, PostgreSQL, AWS" />
         </label>
         <label>
           Education entries

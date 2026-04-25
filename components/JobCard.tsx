@@ -69,7 +69,7 @@ export function JobCard({
             ) : null}
           </div>
         </div>
-        <MatchReasons score={job.fitScore} reasons={job.fitReasons} />
+        <MatchReasons score={job.fitScore} reasons={job.fitReasons} userId={userId} />
       </div>
 
       {job.salary && (
