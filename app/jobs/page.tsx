@@ -13,7 +13,8 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   const user = await getCurrentUser();
   const profile = user ? await getProfileForUserOrDefault(user.id) : null;
   const page = typeof params.page === "string" ? Number(params.page) : 1;
-  const sort = typeof params.sort === "string" && params.sort === "oldest" ? "oldest" : "recent";
+  const sortParam = typeof params.sort === "string" ? params.sort : "";
+  const sort = (["oldest", "fit", "salary"].includes(sortParam) ? sortParam : "recent") as "recent" | "oldest" | "fit" | "salary";
 
   const data = await listJobs({
       q: typeof params.q === "string" ? params.q : undefined,
@@ -35,7 +36,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   const serializableParams = {
     q: typeof params.q === "string" ? params.q : undefined,
     department: typeof params.department === "string" ? params.department : undefined,
-    sort: sort === "oldest" ? "oldest" : undefined,
+    sort: sort !== "recent" ? sort : undefined,
     workplaceType: typeof params.workplaceType === "string" ? params.workplaceType : undefined,
     employmentType: typeof params.employmentType === "string" ? params.employmentType : undefined,
     experienceLevel: typeof params.experienceLevel === "string" ? params.experienceLevel : undefined,

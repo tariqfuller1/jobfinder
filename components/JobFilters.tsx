@@ -165,6 +165,8 @@ export function JobFilters() {
         <select value={fields.sort} onChange={set("sort")} style={inputStyle(!!fields.sort)}>
           <option value="">Most recent</option>
           <option value="oldest">Oldest first</option>
+          <option value="fit">Best fit score</option>
+          <option value="salary">Highest salary</option>
         </select>
       </label>
 

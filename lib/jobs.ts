@@ -28,7 +28,7 @@ const US_STATE_ABBRS = [
 export type JobFilters = {
   q?: string;
   department?: string;
-  sort?: "recent" | "oldest";
+  sort?: "recent" | "oldest" | "fit" | "salary";
   workplaceType?: string;
   employmentType?: string;
   experienceLevel?: string;
@@ -206,12 +206,11 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
     ],
   };
 
-  // Recommended mode scores a pool of recent jobs then picks the top fits.
-  // Pool size of 50 is enough for meaningful ranking while halving the data
-  // fetched compared to 100.
-  const RECOMMENDED_POOL = 50;
-  const take = filters.recommendedOnly ? RECOMMENDED_POOL : limit;
-  const skip = filters.recommendedOnly ? 0 : (page - 1) * limit;
+  // Fit/salary sorts and recommendedOnly score a pool then re-sort in memory.
+  const needsPool = filters.recommendedOnly || filters.sort === "fit" || filters.sort === "salary";
+  const POOL_SIZE = 300;
+  const take = needsPool ? POOL_SIZE : limit;
+  const skip = needsPool ? 0 : (page - 1) * limit;
 
   // For the recommended pool we skip descriptionText entirely — structured
   // fields (workplaceType, experienceLevel, tags) are stored during sync and
@@ -233,7 +232,7 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
         : [{ postedAt: "desc" }, { updatedAt: "desc" }],
       skip,
       take,
-      select: filters.recommendedOnly
+      select: needsPool
         ? selectBase
         : { ...selectBase, descriptionText: true },
     }),
@@ -277,14 +276,28 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
   });
 
   // ── Phase 2: sort + filter + paginate ─────────────────────────────────────
-  // Sort once, reuse for both the paged results and the sidebar widget
   const sortedByFit = [...lightEnriched].sort((a, b) => b.fitScore - a.fitScore);
+
+  let sorted: typeof lightEnriched;
+  if (filters.sort === "fit") {
+    sorted = sortedByFit;
+  } else if (filters.sort === "salary") {
+    sorted = [...lightEnriched].sort((a, b) => {
+      const aSal = estimateSalary({ title: a.title, experienceLevel: a.experienceLevel, employmentType: a.employmentType, location: a.location, company: a.company, tags: a.tags });
+      const bSal = estimateSalary({ title: b.title, experienceLevel: b.experienceLevel, employmentType: b.employmentType, location: b.location, company: b.company, tags: b.tags });
+      const aVal = aSal ? (aSal.low + aSal.high) / 2 : 0;
+      const bVal = bSal ? (bSal.low + bSal.high) / 2 : 0;
+      return bVal - aVal;
+    });
+  } else {
+    sorted = lightEnriched;
+  }
 
   // Threshold of 35: a remote (15) + entry-level (18) job clears it with 33,
   // and any single title hit (15) + remote (15) = 30 — pad catches the rest.
   const aboveThreshold = filters.recommendedOnly
     ? sortedByFit.filter((job: any) => job.fitScore >= 35)
-    : lightEnriched;
+    : sorted;
 
   // If too few jobs clear the threshold, pad with the next-best fits so the
   // dashboard is never empty when jobs actually exist in the database.
@@ -293,7 +306,7 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
       ? sortedByFit.slice(0, limit)
       : aboveThreshold;
 
-  const paged = filters.recommendedOnly ? filtered.slice((page - 1) * limit, page * limit) : filtered;
+  const paged = needsPool ? filtered.slice((page - 1) * limit, page * limit) : filtered;
 
   // ── Phase 3: full enrich — links + salary on the display slice only ───────
   // This avoids running resolveJobLinks + estimateSalary on ~92 jobs that are
@@ -322,8 +335,8 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
     recommendedJobs: sortedByFit.slice(0, 8).map(({ _companyMatch, ...j }: any) => j),
     page,
     limit,
-    total: filters.recommendedOnly ? filtered.length : total,
-    totalPages: Math.max(1, Math.ceil((filters.recommendedOnly ? filtered.length : total) / limit)),
+    total: needsPool ? filtered.length : total,
+    totalPages: Math.max(1, Math.ceil((needsPool ? filtered.length : total) / limit)),
   };
 }
 
