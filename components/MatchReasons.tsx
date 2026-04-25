@@ -1,22 +1,5 @@
-export function MatchReasons({ score, reasons, userId }: { score: number; reasons: string[]; userId?: string | null }) {
-  if (score === 0 && reasons.length === 0) {
-    return (
-      <div style={{ flexShrink: 0 }}>
-        <a
-          href={userId ? "/profile" : "/login?next=/profile"}
-          style={{
-            fontSize: 12,
-            color: "#6b7280",
-            textDecoration: "underline",
-            textUnderlineOffset: 3,
-            whiteSpace: "nowrap",
-          }}
-        >
-          Set up profile for fit score
-        </a>
-      </div>
-    );
-  }
+export function MatchReasons({ score, reasons }: { score: number; reasons: string[]; userId?: string | null }) {
+  if (score === 0 && reasons.length === 0) return null;
 
   return (
     <div className="stack compact-stack">
@@ -26,6 +9,19 @@ export function MatchReasons({ score, reasons, userId }: { score: number; reason
           <span key={reason} className="badge">{reason}</span>
         ))}
       </div>
+    </div>
+  );
+}
+
+export function FitScorePrompt({ userId }: { userId?: string | null }) {
+  return (
+    <div className="inset-card" style={{ padding: "10px 14px" }}>
+      <a
+        href={userId ? "/profile" : "/login?next=/profile"}
+        style={{ fontSize: 13, color: "#a1a1aa", textDecoration: "underline", textUnderlineOffset: 3 }}
+      >
+        Set up your profile to see fit scores for every job
+      </a>
     </div>
   );
 }

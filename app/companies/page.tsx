@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CompanyFilters } from "@/components/CompanyFilters";
-import { MatchReasons } from "@/components/MatchReasons";
+import { FitScorePrompt, MatchReasons } from "@/components/MatchReasons";
 import { Pagination } from "@/components/Pagination";
 import { SidebarToggle } from "@/components/SidebarToggle";
 import { getCurrentUser } from "@/lib/auth";
@@ -14,7 +14,7 @@ export default async function CompaniesPage({
 }) {
   const params = await searchParams;
   const user = await getCurrentUser();
-  const profile = await getProfileForUserOrDefault(user?.id);
+  const profile = user ? await getProfileForUserOrDefault(user.id) : null;
   const data = await listCompanies({
     q: typeof params.q === "string" ? params.q : undefined,
     category: typeof params.category === "string" ? params.category : undefined,
@@ -85,7 +85,7 @@ export default async function CompaniesPage({
               </div>
               <div className="metric-card inset-card">
                 <div className="metric-label">Profile skills</div>
-                <div className="metric-value">{profile.skills.length}</div>
+                <div className="metric-value">{profile?.skills.length ?? 0}</div>
                 <div className="metric-note">Used in company fit</div>
               </div>
             </div>
@@ -96,6 +96,8 @@ export default async function CompaniesPage({
           <div className="muted">Page {data.page} of {data.totalPages} — {data.total} companies</div>
         </div>
 
+        {!profile ? <FitScorePrompt userId={user?.id} /> : null}
+
         {data.companies.map((company: (typeof data.companies)[number]) => (
           <article key={company.id} className="card hero-card stack">
             <div className="space-between">
@@ -105,7 +107,7 @@ export default async function CompaniesPage({
                   {company.headquarters ?? "HQ not listed"} • {company.remotePolicy.replaceAll("_", " ")} • {company.companySize ?? "Size unknown"}
                 </p>
               </div>
-              <MatchReasons score={company.fitScore} reasons={company.fitReasons} />
+              <MatchReasons score={company.fitScore} reasons={company.fitReasons} userId={user?.id} />
             </div>
 
             <div className="badges">

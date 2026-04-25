@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Pagination } from "@/components/Pagination";
 import { JobFilters } from "@/components/JobFilters";
 import { JobCard } from "@/components/JobCard";
+import { FitScorePrompt } from "@/components/MatchReasons";
 import { SidebarToggle } from "@/components/SidebarToggle";
 import { getCurrentUser } from "@/lib/auth";
 import { listJobs } from "@/lib/jobs";
@@ -136,6 +137,8 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
             <div className="muted">Page {data.page} of {data.totalPages}</div>
           </div>
 
+
+          {!profile ? <FitScorePrompt userId={user?.id} /> : null}
 
           {data.jobs.length === 0 ? (
             <div className="inset-card">

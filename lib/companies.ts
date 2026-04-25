@@ -73,7 +73,7 @@ async function getOpenJobCountsByCompany() {
   return counts;
 }
 
-export async function listCompanies(filters: CompanyFilters, profile: UserProfile = defaultUserProfile) {
+export async function listCompanies(filters: CompanyFilters, profile: UserProfile | null = null) {
   const page = filters.page && filters.page > 0 ? filters.page : 1;
   const limit = filters.limit && filters.limit > 0 ? filters.limit : 24;
 
@@ -128,7 +128,9 @@ export async function listCompanies(filters: CompanyFilters, profile: UserProfil
     companies: rows.map((company: any) => {
       const normalized = normalizeCompanyRow(company)!;
       const openJobCount = Math.max(...companyNameVariants(company.name).map((variant) => openJobCounts.get(variant) ?? 0));
-      const fit = scoreCompanyFit({ ...normalized, openJobCount }, profile);
+      const fit = profile
+        ? scoreCompanyFit({ ...normalized, openJobCount }, profile)
+        : { score: 0, reasons: [] as string[] };
       return {
         ...normalized,
         openJobCount,
@@ -143,7 +145,7 @@ export async function listCompanies(filters: CompanyFilters, profile: UserProfil
   };
 }
 
-export async function getCompanyBySlug(slug: string, profile: UserProfile = defaultUserProfile) {
+export async function getCompanyBySlug(slug: string, profile: UserProfile | null = null) {
   const [company] = await Promise.all([
     prisma.company.findUnique({
       where: { slug },
@@ -172,19 +174,21 @@ export async function getCompanyBySlug(slug: string, profile: UserProfile = defa
   });
 
   const relatedJobs = relatedJobsRaw.map((job: any) => {
-    const fit = scoreJobFit(
-      {
-        title: job.title,
-        company: job.company,
-        location: job.location,
-        workplaceType: job.workplaceType,
-        experienceLevel: job.experienceLevel,
-        tags: parseJsonArray(job.tags),
-        descriptionText: job.descriptionText,
-        companyCategory: normalized.companyCategory,
-      },
-      profile,
-    );
+    const fit = profile
+      ? scoreJobFit(
+          {
+            title: job.title,
+            company: job.company,
+            location: job.location,
+            workplaceType: job.workplaceType,
+            experienceLevel: job.experienceLevel,
+            tags: parseJsonArray(job.tags),
+            descriptionText: job.descriptionText,
+            companyCategory: normalized.companyCategory,
+          },
+          profile,
+        )
+      : { score: 0, reasons: [] as string[] };
 
     return {
       ...job,
@@ -200,27 +204,29 @@ export async function getCompanyBySlug(slug: string, profile: UserProfile = defa
     };
   });
 
-  const fit = scoreCompanyFit({ ...normalized, openJobCount: relatedJobs.length }, profile);
+  const fit = profile
+    ? scoreCompanyFit({ ...normalized, openJobCount: relatedJobs.length }, profile)
+    : { score: 0, reasons: [] as string[] };
 
   return {
     ...normalized,
     relatedJobs,
     fitScore: fit.score,
     fitReasons: fit.reasons,
-    suggestedSearches: suggestContactSearches(normalized, profile),
-    connectionSearches: suggestConnectionSearches(normalized, profile),
+    suggestedSearches: suggestContactSearches(normalized, profile ?? undefined),
+    connectionSearches: suggestConnectionSearches(normalized, profile ?? undefined),
     outreachMessage: buildOutreachMessage(
       {
         companyName: normalized.name,
         focusTags: [...normalized.stackTags, ...normalized.gameTags, ...normalized.roleFocusTags],
         notes: normalized.outreachTips,
       },
-      profile,
+      profile ?? undefined,
     ),
   };
 }
 
-export async function listTopCompanyMatches(limit = 8, profile: UserProfile = defaultUserProfile) {
+export async function listTopCompanyMatches(limit = 8, profile: UserProfile | null = null) {
   const { companies } = await listCompanies({ page: 1, limit, activeHiring: "true" }, profile);
   return [...companies].sort((a, b) => b.fitScore - a.fitScore).slice(0, limit);
 }

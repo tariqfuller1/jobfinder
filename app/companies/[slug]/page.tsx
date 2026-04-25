@@ -10,7 +10,7 @@ import { getProfileForUserOrDefault } from "@/lib/profile";
 export default async function CompanyDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const user = await getCurrentUser();
-  const profile = await getProfileForUserOrDefault(user?.id);
+  const profile = user ? await getProfileForUserOrDefault(user.id) : null;
   const company = await getCompanyBySlug(slug, profile);
 
   if (!company) notFound();
