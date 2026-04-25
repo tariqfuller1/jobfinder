@@ -230,8 +230,8 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
         // Workplace / level bonus signals
         { workplaceType: "REMOTE" as never },
         { workplaceType: "HYBRID" as never },
-        { experienceLevel: "ENTRY_LEVEL" as never },
-        { experienceLevel: "INTERNSHIP" as never },
+        { experienceLevel: "ENTRY" as never },
+        { experienceLevel: "INTERN" as never },
       ],
     };
     poolWhere = { ...where, AND: [...(where.AND as Prisma.JobWhereInput[]), profilePreFilter] };
