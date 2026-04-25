@@ -206,14 +206,40 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
     ],
   };
 
-  // Fit/salary sorts and recommendedOnly score all matching jobs then re-sort
-  // in memory so every job in the database gets a real score — no arbitrary cap.
-  // Salary sort is capped at 5000 since it doesn't need the full set to rank well.
+  // Fit/salary sorts and recommendedOnly score a pool in memory then re-sort.
+  // The pool WHERE clause is derived from the profile's scoring signals so that
+  // every job that could possibly score > 0 is included, while zero-score jobs
+  // (no skill/title/location/remote/level match) are excluded before fetching.
+  // This is mathematically equivalent to scoring all 70k jobs but avoids loading
+  // ~150MB of data that would all score 0 anyway.
   const needsPool = filters.recommendedOnly || filters.sort === "fit" || filters.sort === "salary";
+  const skip = needsPool ? 0 : (page - 1) * limit;
+
+  // Build profile-aware WHERE for pool queries.
+  let poolWhere = where;
+  if (needsPool && filters.sort !== "salary" && profile &&
+    (profile.skills.length > 0 || profile.targetTitles.length > 0 || profile.preferredLocations.length > 0)) {
+    const terms = [...profile.skills, ...profile.targetTitles];
+    const profilePreFilter: Prisma.JobWhereInput = {
+      OR: [
+        // Skill / title hits in structured fields
+        ...terms.map((t) => ({ tags: { contains: t } })),
+        ...terms.map((t) => ({ title: { contains: t } })),
+        // Location bonus signal
+        ...profile.preferredLocations.map((l) => ({ location: { contains: l } })),
+        // Workplace / level bonus signals
+        { workplaceType: "REMOTE" as const },
+        { workplaceType: "HYBRID" as const },
+        { experienceLevel: "ENTRY_LEVEL" as const },
+        { experienceLevel: "INTERNSHIP" as const },
+      ],
+    };
+    poolWhere = { ...where, AND: [...(where.AND as Prisma.JobWhereInput[]), profilePreFilter] };
+  }
+
   const take: number | undefined = needsPool
     ? (filters.sort === "salary" ? 5000 : undefined)
     : limit;
-  const skip = needsPool ? 0 : (page - 1) * limit;
 
   // For the recommended pool we skip descriptionText entirely — structured
   // fields (workplaceType, experienceLevel, tags) are stored during sync and
@@ -229,7 +255,7 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
 
   const [jobs, total, companyLookup] = await Promise.all([
     prisma.job.findMany({
-      where,
+      where: poolWhere,
       orderBy: filters.sort === "oldest"
         ? [{ postedAt: "asc" }, { updatedAt: "asc" }]
         : [{ postedAt: "desc" }, { updatedAt: "desc" }],
