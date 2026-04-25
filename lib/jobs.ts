@@ -206,10 +206,13 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
     ],
   };
 
-  // Fit/salary sorts and recommendedOnly score a pool then re-sort in memory.
+  // Fit/salary sorts and recommendedOnly score all matching jobs then re-sort
+  // in memory so every job in the database gets a real score — no arbitrary cap.
+  // Salary sort is capped at 5000 since it doesn't need the full set to rank well.
   const needsPool = filters.recommendedOnly || filters.sort === "fit" || filters.sort === "salary";
-  const POOL_SIZE = 300;
-  const take = needsPool ? POOL_SIZE : limit;
+  const take: number | undefined = needsPool
+    ? (filters.sort === "salary" ? 5000 : undefined)
+    : limit;
   const skip = needsPool ? 0 : (page - 1) * limit;
 
   // For the recommended pool we skip descriptionText entirely — structured
@@ -231,7 +234,7 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
         ? [{ postedAt: "asc" }, { updatedAt: "asc" }]
         : [{ postedAt: "desc" }, { updatedAt: "desc" }],
       skip,
-      take,
+      ...(take !== undefined ? { take } : {}),
       select: needsPool
         ? selectBase
         : { ...selectBase, descriptionText: true },
