@@ -19,15 +19,15 @@ export default async function DashboardPage() {
     <div className="stack page-stack-lg" style={{ padding: "24px 0 40px" }}>
       <section className="hero-grid card hero-card">
         <div className="stack compact-stack hero-copy">
-          <div className="eyebrow">Signed-in dashboard</div>
-          <h1 className="section-title">Welcome back, {profile.name || user.displayName || user.email}</h1>
+          <div className="eyebrow">Dashboard</div>
+          <h1 className="section-title">Hey, {profile.name || user.displayName || user.email}</h1>
           <p className="muted hero-lead">
-            This dashboard is built from your saved resume, preferences, and target roles. Jump into the highest-fit jobs, rewrite your resume for a role, or move into company research and outreach while the sync layer keeps widening source coverage.
+            Your top jobs and companies are ranked by profile fit. Pick a role and start tailoring.
           </p>
           <div className="actions">
-            <Link className="button" href="/jobs">Browse all live jobs</Link>
-            <Link className="button secondary" href="/profile">Update profile</Link>
-            <Link className="button secondary" href="/recommended">Open best-fit view</Link>
+            <Link className="button" href="/jobs">Browse jobs</Link>
+            <Link className="button secondary" href="/profile">Edit profile</Link>
+            <Link className="button secondary" href="/recommended">Best fit</Link>
           </div>
         </div>
         <div className="hero-panel stack compact-stack">
@@ -60,20 +60,20 @@ export default async function DashboardPage() {
         <article className="card stack compact-stack feature-card">
           <div className="feature-icon">✎</div>
           <h2 className="section-title">Resume rewriter</h2>
-          <p className="muted">Build a tailored version of your resume for a specific job using the profile saved to your account.</p>
-          <Link className="button secondary" href="/resume-rewrite">Open rewriter</Link>
+          <p className="muted">Rewrite your resume for a specific role using your saved profile.</p>
+          <Link className="button secondary" href="/resume-rewrite">Rewrite resume</Link>
         </article>
         <article className="card stack compact-stack feature-card">
           <div className="feature-icon">△</div>
           <h2 className="section-title">Resume tips</h2>
-          <p className="muted">See gaps, mirror keywords, and get role-specific suggestions before you apply.</p>
-          <Link className="button secondary" href="/resume-feedback">Open resume tips</Link>
+          <p className="muted">See keyword gaps and get suggestions tailored to the role.</p>
+          <Link className="button secondary" href="/resume-feedback">Get tips</Link>
         </article>
         <article className="card stack compact-stack feature-card">
           <div className="feature-icon">✦</div>
           <h2 className="section-title">Cover letters</h2>
-          <p className="muted">Generate a targeted cover letter from your profile, the job description, and the company context.</p>
-          <Link className="button secondary" href="/cover-letters">Open cover letters</Link>
+          <p className="muted">Generate a cover letter from your profile and the job description.</p>
+          <Link className="button secondary" href="/cover-letters">Write letter</Link>
         </article>
       </section>
 

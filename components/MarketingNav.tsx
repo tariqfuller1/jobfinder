@@ -31,7 +31,7 @@ export function MarketingNav() {
       {open && (
         <div className="mobile-menu-overlay" onClick={close}>
           <nav className="mobile-menu" onClick={(e) => e.stopPropagation()}>
-            <div className="mobile-menu-brand">Job Finder</div>
+            <div className="mobile-menu-brand">Hyrd</div>
             <Link href="/jobs" className="mobile-menu-link" onClick={close}>⌘ Jobs</Link>
             <Link href="/companies" className="mobile-menu-link" onClick={close}>▣ Companies</Link>
             <div className="mobile-menu-divider" />

@@ -61,10 +61,10 @@ export default async function CompaniesPage({
       <section className="stack page-stack-lg">
         <div className="hero-grid card hero-card">
           <div className="stack compact-stack hero-copy">
-            <div className="eyebrow">Outreach and research hub</div>
-            <h1 className="section-title">Build a smarter target-company list</h1>
+            <div className="eyebrow">Company research</div>
+            <h1 className="section-title">Find the right companies</h1>
             <p className="muted hero-lead">
-              Search companies, spot who is actively hiring, and use your saved profile to prioritize the right places to apply and network.
+              See who's hiring, filter by stack and location, and prioritize based on your profile.
             </p>
             <div className="actions">
               <Link href="/companies?state=NC" className="button">North Carolina focus</Link>

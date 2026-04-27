@@ -68,14 +68,14 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
         <div className="hero-grid card hero-card">
           <div className="stack compact-stack hero-copy">
             <div className="eyebrow">Live job board</div>
-            <h1 className="section-title">Browse real synced jobs and tailor every application</h1>
+            <h1 className="section-title">Real jobs, ranked by fit</h1>
             <p className="muted hero-lead">
-              This board only shows synced jobs from live sources. The app combines public feeds with ATS boards it auto-discovers from company career pages, then uses your saved profile to rank fit, generate cover letters, and rewrite your resume for each role.
+              Live postings from ATS boards and public feeds, scored against your profile.
             </p>
             <div className="actions">
-              <Link className="button" href={user ? "/dashboard" : "/register?next=/dashboard"}>{user ? "Open dashboard" : "Create account"}</Link>
-              <Link className="button secondary" href={user ? "/recommended" : "/login?next=/recommended"}>Open best-fit jobs</Link>
-              <Link className="button secondary" href="/companies?state=NC">Explore companies</Link>
+              <Link className="button" href={user ? "/dashboard" : "/register?next=/dashboard"}>{user ? "Dashboard" : "Create account"}</Link>
+              <Link className="button secondary" href={user ? "/recommended" : "/login?next=/recommended"}>Best fit</Link>
+              <Link className="button secondary" href="/companies?state=NC">Companies</Link>
             </div>
           </div>
 
@@ -103,10 +103,10 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
               </div>
             </div>
             <div className="feature-strip">
-              <div className="feature-pill">Real jobs only</div>
-              <div className="feature-pill">Auto-discovered sources</div>
-              <div className="feature-pill">Job-specific cover letters</div>
-              <div className="feature-pill">Resume rewrite by role</div>
+              <div className="feature-pill">Live sources</div>
+              <div className="feature-pill">Fit scoring</div>
+              <div className="feature-pill">Cover letters</div>
+              <div className="feature-pill">Resume rewriter</div>
             </div>
           </div>
         </div>
@@ -143,10 +143,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
 
           {data.jobs.length === 0 ? (
             <div className="inset-card">
-              <p style={{ marginTop: 0 }}>No jobs matched your current filters.</p>
-              <p className="muted" style={{ marginBottom: 0 }}>
-                This board only shows real synced jobs. Clear your filters or run <code>npm run bootstrap</code> / <code>npm run sync:jobs</code> to auto-discover more supported sources and refresh live postings.
-              </p>
+              <p style={{ marginTop: 0, marginBottom: 0 }}>No jobs matched your filters. Try clearing some.</p>
             </div>
           ) : null}
 

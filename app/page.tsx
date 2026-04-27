@@ -31,21 +31,21 @@ export default async function LandingPage() {
     <div className="stack page-stack-lg marketing-page" style={{ padding: "24px 0 40px" }}>
       <section className="hero-grid card hero-card marketing-hero">
         <div className="stack compact-stack hero-copy">
-          <div className="eyebrow">Marketing homepage</div>
-          <h1 className="section-title">A real-job search workspace with resume tailoring built in</h1>
+          <div className="eyebrow">Job search, simplified</div>
+          <h1 className="section-title">Get hyrd.</h1>
           <p className="muted hero-lead">
-            Save your resume to your account, set preferences and target locations, browse only real synced jobs, and let the app auto-discover more career-page sources before generating tailored cover letters and resume rewrites for each role.
+            Real jobs, tailored resumes, and cover letters — all from one profile.
           </p>
           <div className="actions">
-            <Link className="button" href="/register?next=/dashboard">Create your account</Link>
+            <Link className="button" href="/register?next=/dashboard">Get started</Link>
             <Link className="button secondary" href="/login?next=/dashboard">Sign in</Link>
-            <Link className="button secondary" href="/jobs">Browse live jobs</Link>
+            <Link className="button secondary" href="/jobs">Browse jobs</Link>
           </div>
           <div className="feature-strip">
-            <div className="feature-pill">Real synced jobs only</div>
-            <div className="feature-pill">Auto-discovered ATS sources</div>
-            <div className="feature-pill">Resume saved to account</div>
-            <div className="feature-pill">Job-specific resume rewrite</div>
+            <div className="feature-pill">Live job board</div>
+            <div className="feature-pill">Fit scoring</div>
+            <div className="feature-pill">Resume rewriter</div>
+            <div className="feature-pill">Cover letters</div>
           </div>
         </div>
 
@@ -79,17 +79,17 @@ export default async function LandingPage() {
         <article className="card stack compact-stack feature-card">
           <div className="feature-icon">⌘</div>
           <h2 className="section-title">Live jobs</h2>
-          <p className="muted">The site pulls from synced public feeds and automatically discovered ATS boards. No example starter jobs are shown on the board.</p>
+          <p className="muted">Pulled from real ATS boards and public feeds. No fake or sample listings.</p>
         </article>
         <article className="card stack compact-stack feature-card">
           <div className="feature-icon">◫</div>
-          <h2 className="section-title">Saved profile</h2>
-          <p className="muted">Upload your resume, save job preferences and locations, and keep everything tied to your own account.</p>
+          <h2 className="section-title">One profile</h2>
+          <p className="muted">Upload your resume once. Your skills, titles, and preferences power everything else.</p>
         </article>
         <article className="card stack compact-stack feature-card">
           <div className="feature-icon">✎</div>
-          <h2 className="section-title">Tailor by role</h2>
-          <p className="muted">Build a cover letter, get resume advice, and rewrite your resume for each job from one workspace.</p>
+          <h2 className="section-title">Tailor per job</h2>
+          <p className="muted">Cover letters, resume tips, and full rewrites — specific to each role you apply for.</p>
         </article>
       </section>
 

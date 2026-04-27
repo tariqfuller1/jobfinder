@@ -7,8 +7,8 @@ import { MarketingNav } from "@/components/MarketingNav";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 export const metadata: Metadata = {
-  title: "Job Finder",
-  description: "Aggregate jobs, track applications, and build targeted outreach.",
+  title: "Hyrd",
+  description: "Find jobs, tailor your resume, and track applications in one place.",
 };
 
 export const viewport: Viewport = {
@@ -54,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="marketing-shell">
             <header className="marketing-topbar">
               <div className="container marketing-topbar-card">
-                <Link href="/" className="brand brand-large">Job Finder</Link>
+                <Link href="/" className="brand brand-large">Hyrd</Link>
                 <MarketingNav />
               </div>
             </header>
@@ -71,9 +71,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="app-shell">
           <aside className="app-rail">
             <div className="rail-brand card hero-card">
-              <Link href="/dashboard" className="brand brand-large">Job Finder</Link>
+              <Link href="/dashboard" className="brand brand-large">Hyrd</Link>
               <p className="muted rail-copy">
-                Job search, resume tailoring, company research, and outreach tools in one workspace.
+                Jobs, resume tools, and company research in one place.
               </p>
             </div>
 
@@ -108,7 +108,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <div className="rail-stat-label">Built for</div>
               <div className="rail-stat-value">Fast targeting</div>
               <p className="muted rail-copy" style={{ marginTop: 8 }}>
-                Save one profile, generate job-specific materials, and move from discovery to application faster.
+                One profile. Tailored cover letters, tips, and rewrites for every role.
               </p>
             </div>
           </aside>
@@ -118,12 +118,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <div className="topbar-card">
                 {/* Mobile: simple brand + logout */}
                 <div className="topbar-mobile-brand">
-                  <Link href="/dashboard" className="brand">Job Finder</Link>
+                  <Link href="/dashboard" className="brand">Hyrd</Link>
                 </div>
                 {/* Desktop: full title */}
                 <div className="topbar-desktop-title">
                   <div className="eyebrow">Modern job search workspace</div>
-                  <div className="topbar-title">Your signed-in job search workspace</div>
+                  <div className="topbar-title">Your job search workspace</div>
                 </div>
                 <div className="topbar-actions">
                   {user ? (
