@@ -33,6 +33,8 @@ function pickApplyUrl(obj: UnknownRecord): string | null {
     "apply_url",
     "jobUrl",
     "job_url",
+    "jobLink",
+    "job_link",
     "url",
     "link",
     "postingUrl",
@@ -75,6 +77,7 @@ function pickDescription(obj: UnknownRecord): string | null {
 
 function pickPostedAt(obj: UnknownRecord): Date | null {
   const raw = pickFirstString(obj, [
+    "activatedDate",
     "postedAt",
     "posted_at",
     "createdAt",
@@ -117,10 +120,17 @@ function mapJob(record: UnknownRecord, index: number, apiUrl: string): Normalize
 
   if (!title || !applyUrl) return null;
 
+  // API returns city/state/country as separate fields — assemble them
+  const city = pickFirstString(record, ["city"]);
+  const state = pickFirstString(record, ["state"]);
+  const country = pickFirstString(record, ["country"]);
   const location =
-    pickFirstString(record, ["location", "jobLocation", "job_location", "city", "region", "country"]) || null;
+    pickFirstString(record, ["location", "jobLocation", "job_location"]) ||
+    [city, state, country].filter(Boolean).join(", ") ||
+    null;
 
   const workplaceHint = pickFirstString(record, [
+    "locationType",
     "workplaceType",
     "workplace_type",
     "remote",
