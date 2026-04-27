@@ -16,15 +16,17 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   const sortParam = typeof params.sort === "string" ? params.sort : "";
   const sort = (["oldest", "fit", "salary"].includes(sortParam) ? sortParam : "recent") as "recent" | "oldest" | "fit" | "salary";
 
+  const parseList = (v: unknown) => typeof v === "string" ? v.split(",").filter(Boolean) : undefined;
+
   const data = await listJobs({
       q: typeof params.q === "string" ? params.q : undefined,
-      department: typeof params.department === "string" ? params.department : undefined,
+      departments: parseList(params.departments),
       sort,
-      workplaceType: typeof params.workplaceType === "string" ? params.workplaceType : undefined,
-      employmentType: typeof params.employmentType === "string" ? params.employmentType : undefined,
-      experienceLevel: typeof params.experienceLevel === "string" ? params.experienceLevel : undefined,
+      workplaceTypes: parseList(params.workplaceTypes),
+      employmentTypes: parseList(params.employmentTypes),
+      experienceLevels: parseList(params.experienceLevels),
       location: typeof params.location === "string" ? params.location : undefined,
-      states: typeof params.states === "string" ? params.states.split(",").filter(Boolean) : undefined,
+      states: parseList(params.states),
       country: typeof params.country === "string" ? params.country : undefined,
       source: typeof params.source === "string" ? params.source : undefined,
       company: typeof params.company === "string" ? params.company : undefined,
@@ -35,11 +37,11 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
 
   const serializableParams = {
     q: typeof params.q === "string" ? params.q : undefined,
-    department: typeof params.department === "string" ? params.department : undefined,
+    departments: typeof params.departments === "string" ? params.departments : undefined,
     sort: sort !== "recent" ? sort : undefined,
-    workplaceType: typeof params.workplaceType === "string" ? params.workplaceType : undefined,
-    employmentType: typeof params.employmentType === "string" ? params.employmentType : undefined,
-    experienceLevel: typeof params.experienceLevel === "string" ? params.experienceLevel : undefined,
+    workplaceTypes: typeof params.workplaceTypes === "string" ? params.workplaceTypes : undefined,
+    employmentTypes: typeof params.employmentTypes === "string" ? params.employmentTypes : undefined,
+    experienceLevels: typeof params.experienceLevels === "string" ? params.experienceLevels : undefined,
     location: typeof params.location === "string" ? params.location : undefined,
     states: typeof params.states === "string" ? params.states : undefined,
     country: typeof params.country === "string" ? params.country : undefined,

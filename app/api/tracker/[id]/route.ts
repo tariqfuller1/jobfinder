@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { updateApplication } from "@/lib/tracker";
+import { updateApplication, deleteApplication } from "@/lib/tracker";
 import { getCurrentUserFromRequest } from "@/lib/auth";
 
 const updateSchema = z.object({
@@ -29,6 +29,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not update the application." },
+      { status: 404 },
+    );
+  }
+}
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getCurrentUserFromRequest(request);
+  if (!user) return NextResponse.json({ error: "Sign in to manage your tracker." }, { status: 401 });
+  const { id } = await params;
+  try {
+    await deleteApplication(user.id, id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Could not remove the application." },
       { status: 404 },
     );
   }

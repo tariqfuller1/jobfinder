@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { MatchReasons } from "@/components/MatchReasons";
+import { SaveToTracker } from "@/components/SaveToTracker";
 
 export type JobCardData = {
   id: string;
@@ -86,6 +87,7 @@ export function JobCard({
 
       <div className="actions">
         <Link className="button" href={`/jobs/${job.id}`}>Open job</Link>
+        <SaveToTracker jobId={job.id} userId={userId} />
         <Link
           className="button secondary"
           href={userId ? `/cover-letters/${job.id}` : `/login?next=/cover-letters/${job.id}`}
@@ -102,7 +104,7 @@ export function JobCard({
           className="button secondary"
           href={userId ? `/resume-rewrite/${job.id}` : `/login?next=/resume-rewrite/${job.id}`}
         >
-          Rewrite resume
+          Rewrite
         </Link>
       </div>
     </article>

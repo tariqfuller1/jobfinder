@@ -27,22 +27,19 @@ const US_STATE_ABBRS = [
 
 export type JobFilters = {
   q?: string;
-  department?: string;
+  departments?: string[];
   sort?: "recent" | "oldest" | "fit" | "salary";
-  workplaceType?: string;
-  employmentType?: string;
-  experienceLevel?: string;
+  workplaceTypes?: string[];
+  employmentTypes?: string[];
+  experienceLevels?: string[];
   location?: string;
   source?: string;
   company?: string;
   recommendedOnly?: boolean;
   page?: number;
   limit?: number;
-  // ISO timestamp — only return jobs created after this point (for incremental updates)
   since?: string;
-  // US state abbreviations — e.g. ["NC", "TX", "CA"]
   states?: string[];
-  // Country name — "United States" triggers US-state matching; others use contains
   country?: string;
 };
 
@@ -167,26 +164,23 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
   const page = filters.page && filters.page > 0 ? filters.page : 1;
   const limit = filters.limit && filters.limit > 0 ? filters.limit : 20;
 
-  const departmentKeywords = filters.department ? (DEPARTMENT_KEYWORDS[filters.department] ?? []) : [];
+  const deptKeywords = (filters.departments ?? []).flatMap((d) => DEPARTMENT_KEYWORDS[d] ?? []);
 
   const where: Prisma.JobWhereInput = {
     isActive: true,
     AND: [
-      // Search title + company only — descriptionText LIKE scans megabytes per
-      // job and kills query time; title/company searches hit indexed columns.
       filters.q
         ? { OR: [{ title: { contains: filters.q } }, { company: { contains: filters.q } }] }
         : {},
-      departmentKeywords.length > 0
-        ? { OR: departmentKeywords.map((kw) => ({ title: { contains: kw } })) }
+      deptKeywords.length > 0
+        ? { OR: deptKeywords.map((kw) => ({ title: { contains: kw } })) }
         : {},
-      filters.workplaceType ? { workplaceType: filters.workplaceType as never } : {},
-      filters.employmentType ? { employmentType: filters.employmentType as never } : {},
-      filters.experienceLevel ? { experienceLevel: filters.experienceLevel as never } : {},
+      filters.workplaceTypes?.length ? { workplaceType: { in: filters.workplaceTypes as never[] } } : {},
+      filters.employmentTypes?.length ? { employmentType: { in: filters.employmentTypes as never[] } } : {},
+      filters.experienceLevels?.length ? { experienceLevel: { in: filters.experienceLevels as never[] } } : {},
       filters.location ? { location: { contains: filters.location } } : {},
       filters.source ? { source: { contains: filters.source } } : {},
       filters.company ? { company: { contains: filters.company } } : {},
-      // Incremental update — only jobs inserted into our DB after this timestamp
       filters.since ? { createdAt: { gt: new Date(filters.since) } } : {},
       // Country / state filter
       // US: require a US location pattern AND explicitly exclude locations that

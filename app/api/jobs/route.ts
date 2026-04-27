@@ -4,13 +4,19 @@ import { listJobs } from "@/lib/jobs";
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
+  const parseList = (key: string) => {
+    const v = searchParams.get(key);
+    return v ? v.split(",").filter(Boolean) : undefined;
+  };
+
   const data = await listJobs({
     q: searchParams.get("q") ?? undefined,
-    workplaceType: searchParams.get("workplaceType") ?? undefined,
-    employmentType: searchParams.get("employmentType") ?? undefined,
-    experienceLevel: searchParams.get("experienceLevel") ?? undefined,
+    workplaceTypes: parseList("workplaceTypes"),
+    employmentTypes: parseList("employmentTypes"),
+    experienceLevels: parseList("experienceLevels"),
+    departments: parseList("departments"),
     location: searchParams.get("location") ?? undefined,
-    states: searchParams.get("states") ? searchParams.get("states")!.split(",").filter(Boolean) : undefined,
+    states: parseList("states"),
     country: searchParams.get("country") ?? undefined,
     source: searchParams.get("source") ?? undefined,
     company: searchParams.get("company") ?? undefined,

@@ -13,23 +13,8 @@ export async function createApplication(userId: string, jobId: string) {
   const job = await prisma.job.findUnique({ where: { id: jobId } });
   if (!job) throw new Error("Job not found");
 
-  const existing = await prisma.application.findFirst({
-    where: {
-      userId,
-      jobId: job.id,
-    },
-  });
-
-  if (existing) {
-    return prisma.application.update({
-      where: { id: existing.id },
-      data: {
-        dateApplied: existing.dateApplied ?? new Date(),
-        status: ApplicationStatus.APPLIED,
-        updatedAt: new Date(),
-      },
-    });
-  }
+  const existing = await prisma.application.findFirst({ where: { userId, jobId: job.id } });
+  if (existing) return existing;
 
   return prisma.application.create({
     data: {
@@ -39,20 +24,19 @@ export async function createApplication(userId: string, jobId: string) {
       roleTitle: job.title,
       sourceUrl: job.sourceUrl,
       applyUrl: job.applyUrl,
-      dateApplied: new Date(),
-      status: ApplicationStatus.APPLIED,
+      status: ApplicationStatus.SAVED,
     },
   });
 }
 
+export async function deleteApplication(userId: string, id: string) {
+  const existing = await prisma.application.findFirst({ where: { id, userId } });
+  if (!existing) throw new Error("Not found.");
+  return prisma.application.delete({ where: { id } });
+}
+
 export async function updateApplication(userId: string, id: string, data: Record<string, unknown>) {
   const existing = await prisma.application.findFirst({ where: { id, userId } });
-  if (!existing) {
-    throw new Error("Application not found for this account.");
-  }
-
-  return prisma.application.update({
-    where: { id },
-    data,
-  });
+  if (!existing) throw new Error("Application not found for this account.");
+  return prisma.application.update({ where: { id }, data });
 }
