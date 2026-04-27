@@ -189,19 +189,51 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
       // Incremental update — only jobs inserted into our DB after this timestamp
       filters.since ? { createdAt: { gt: new Date(filters.since) } } : {},
       // Country / state filter
-      // US + specific states → match ", TX" patterns
-      // US + no states     → match any of the 50 state suffixes
-      // Other country      → match country name in location string
+      // US: require a US location pattern AND explicitly exclude locations that
+      // name a foreign country — catches ambiguous codes like IN (Indiana/India)
+      // and TN (Tennessee/Tamil Nadu).
       filters.country === "United States"
         ? {
-            OR: (filters.states && filters.states.length > 0 ? filters.states : US_STATE_ABBRS).map(
-              (s) => ({ location: { contains: `, ${s}` } }),
-            ),
+            AND: [
+              {
+                OR: [
+                  { location: { contains: "United States" } },
+                  { location: { contains: " USA" } },
+                  { location: { contains: ", USA" } },
+                  ...(filters.states && filters.states.length > 0 ? filters.states : US_STATE_ABBRS).flatMap((s) => [
+                    { location: { endsWith: `, ${s}` } },    // "Austin, TX"
+                    { location: { contains: `, ${s} ` } },   // "Austin, TX 78701"
+                    { location: { contains: `, ${s},` } },   // "Austin, TX, United States"
+                  ]),
+                ],
+              },
+              // Exclude jobs whose location string names a non-US country
+              { NOT: { location: { contains: "India" } } },
+              { NOT: { location: { contains: "Germany" } } },
+              { NOT: { location: { contains: "Canada" } } },
+              { NOT: { location: { contains: "United Kingdom" } } },
+              { NOT: { location: { contains: "Australia" } } },
+              { NOT: { location: { contains: "Brazil" } } },
+              { NOT: { location: { contains: "Poland" } } },
+              { NOT: { location: { contains: "Netherlands" } } },
+              { NOT: { location: { contains: "France" } } },
+              { NOT: { location: { contains: "Spain" } } },
+              { NOT: { location: { contains: "Singapore" } } },
+              { NOT: { location: { contains: "Romania" } } },
+              { NOT: { location: { contains: "Pakistan" } } },
+              { NOT: { location: { contains: "Philippines" } } },
+            ],
           }
         : filters.country
           ? { location: { contains: filters.country } }
           : filters.states && filters.states.length > 0
-            ? { OR: filters.states.map((s) => ({ location: { contains: `, ${s}` } })) }
+            ? {
+                OR: filters.states.flatMap((s) => [
+                  { location: { endsWith: `, ${s}` } },
+                  { location: { contains: `, ${s} ` } },
+                  { location: { contains: `, ${s},` } },
+                ]),
+              }
             : {},
     ],
   };
