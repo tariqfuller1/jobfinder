@@ -57,8 +57,8 @@ export default function ForgotPasswordPage() {
       <div className="auth-shell">
         <section className="card stack auth-card">
           <div>
-            <h1 className="section-title">Check your email</h1>
-            <p className="muted">If that email has an account, a reset link has been generated.</p>
+            <h1 className="section-title">No account found</h1>
+            <p className="muted">No account is registered with that email address.</p>
           </div>
           <Link href="/login" className="button" style={{ textAlign: "center" }}>Back to sign in</Link>
         </section>

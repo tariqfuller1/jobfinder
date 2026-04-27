@@ -526,7 +526,6 @@ async function runSingleSource(source: string, fetcher: () => Promise<Normalized
           applyUrl: job.applyUrl,
           descriptionHtml: job.descriptionHtml,
           descriptionText: job.descriptionText,
-          postedAt: job.postedAt,
           tags: JSON.stringify(job.tags),
           lastSeenAt: new Date(),
           isActive: true,
@@ -653,9 +652,15 @@ export async function syncAllJobs(
   ashbyTokens.forEach((token) => {
     sourceDefs.push({ source: `ashby:${token}`, fetcher: () => maybeFilter(() => fetchAshbyJobs(token)) });
   });
+  if (workableAccounts.length === 0) {
+    console.log("[sync] workable — skipped (no WORKABLE_COMPANY_TOKENS configured)");
+  }
   workableAccounts.forEach((account) => {
     sourceDefs.push({ source: `workable:${account}`, fetcher: () => maybeFilter(() => fetchWorkableJobs(account)) });
   });
+  if (recruiteeCompanies.length === 0) {
+    console.log("[sync] recruitee — skipped (no RECRUITEE_COMPANY_TOKENS configured)");
+  }
   recruiteeCompanies.forEach((company) => {
     sourceDefs.push({ source: `recruitee:${company}`, fetcher: () => maybeFilter(() => fetchRecruiteeJobs(company)) });
   });
@@ -666,7 +671,15 @@ export async function syncAllJobs(
     sourceDefs.push({ source: "arbeitnow", fetcher: () => maybeFilter(() => fetchArbeitnowJobs()) });
   }
   if (useUsaJobs) {
-    sourceDefs.push({ source: "usajobs", fetcher: () => maybeFilter(() => fetchUsaJobs()) });
+    const hasApiKey = !!process.env.USAJOBS_API_KEY?.trim();
+    const hasEmail = !!process.env.USAJOBS_USER_AGENT_EMAIL?.trim();
+    if (!hasApiKey || !hasEmail) {
+      console.log(`[sync] usajobs — skipped (missing: ${[!hasApiKey && "USAJOBS_API_KEY", !hasEmail && "USAJOBS_USER_AGENT_EMAIL"].filter(Boolean).join(", ")})`);
+    } else {
+      sourceDefs.push({ source: "usajobs", fetcher: () => maybeFilter(() => fetchUsaJobs()) });
+    }
+  } else {
+    console.log("[sync] usajobs — skipped (ENABLE_USAJOBS is not true)");
   }
   if (useGamesWorkbook) {
     sourceDefs.push({ source: "games-workbook", fetcher: () => maybeFilter(() => fetchGamesWorkbookJobs()) });
