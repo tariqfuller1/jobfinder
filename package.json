@@ -24,6 +24,7 @@
     "app": "bash ./run-local.sh"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.6.0",
     "cheerio": "^1.0.0",
     "clsx": "^2.1.1",

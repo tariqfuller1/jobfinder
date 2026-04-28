@@ -51,7 +51,14 @@ export default async function CoverLetterDetailPage({ params }: { params: Promis
       <div className="grid-2" style={{ gap: 14, alignItems: "start" }}>
         <section className="card" style={{ display: "grid", gap: 10, padding: "16px 18px" }}>
           <h2 className="section-title">Editable letter</h2>
-          <CoverLetterEditor initialValue={draft} fileName={`${safeCompany}-${safeTitle}-cover-letter.txt`} />
+          <CoverLetterEditor
+            initialValue={draft}
+            fileName={`${safeCompany}-${safeTitle}-cover-letter.txt`}
+            type="cover-letter"
+            jobTitle={job.title}
+            jobCompany={job.company}
+            jobDescriptionText={job.descriptionText ?? ""}
+          />
         </section>
 
         <aside style={{ display: "grid", gap: 10 }}>

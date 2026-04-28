@@ -45,7 +45,14 @@ export default async function ResumeRewriteDetailPage({ params }: { params: Prom
       <div className="grid-2" style={{ gap: 14, alignItems: "start" }}>
         <section className="card" style={{ display: "grid", gap: 10, padding: "16px 18px" }}>
           <h2 className="section-title">Editable resume draft</h2>
-          <CoverLetterEditor initialValue={rewrite.draft} fileName={`${safeCompany}-${safeTitle}-resume.txt`} />
+          <CoverLetterEditor
+            initialValue={rewrite.draft}
+            fileName={`${safeCompany}-${safeTitle}-resume.txt`}
+            type="resume"
+            jobTitle={job.title}
+            jobCompany={job.company}
+            jobDescriptionText={job.descriptionText ?? ""}
+          />
         </section>
 
         <aside style={{ display: "grid", gap: 10 }}>
