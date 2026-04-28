@@ -171,11 +171,12 @@ code {
   padding: 20px;
   position: sticky;
   top: 94px;
-  height: fit-content;
+  max-height: calc(100vh - 94px - 28px);
+  overflow-y: auto;
 }
 
 .card {
-  padding: 20px;
+  padding: 18px;
 }
 
 .inset-card {
@@ -186,8 +187,8 @@ code {
   padding: 16px;
 }
 
-.stack { display: grid; gap: 18px; }
-.compact-stack { gap: 14px; }
+.stack { display: grid; gap: 16px; }
+.compact-stack { gap: 10px; }
 
 .job-card {
   display: grid;
@@ -377,7 +378,7 @@ select optgroup {
   text-transform: uppercase;
 }
 
-.section-title { margin: 0 0 12px; }
+.section-title { margin: 0; }
 
 .space-between {
   display: flex;
@@ -678,7 +679,7 @@ select optgroup {
 }
 
 .page-stack-lg {
-  gap: 24px;
+  gap: 20px;
 }
 
 .hero-grid {

@@ -22,41 +22,35 @@ export default async function ResumeRewriteDetailPage({ params }: { params: Prom
   const safeTitle = job.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "role";
 
   return (
-    <div className="stack" style={{ padding: "24px 0 40px" }}>
-      <section className="card stack compact-stack">
+    <div style={{ padding: "20px 0 36px", display: "grid", gap: 14 }}>
+      <section className="card" style={{ display: "grid", gap: 10, padding: "16px 18px" }}>
         <div className="space-between">
-          <div>
+          <div style={{ display: "grid", gap: 3 }}>
             <h1 className="section-title">Resume rewrite draft</h1>
-            <p className="muted" style={{ margin: 0 }}>
+            <p className="muted" style={{ margin: 0, fontSize: 13 }}>
               {job.title} • {job.company} • {job.location ?? "Location not listed"}
             </p>
           </div>
           <div className="actions">
-            <Link className="button secondary" href={`/jobs/${job.id}`}>
-              Back to job
-            </Link>
-            <Link className="button secondary" href={`/resume-feedback/${job.id}`}>
-              Resume tips
-            </Link>
-            <Link className="button secondary" href={`/cover-letters/${job.id}`}>
-              Cover letter
-            </Link>
+            <Link className="button secondary" href={`/jobs/${job.id}`}>Back to job</Link>
+            <Link className="button secondary" href={`/resume-feedback/${job.id}`}>Resume tips</Link>
+            <Link className="button secondary" href={`/cover-letters/${job.id}`}>Cover letter</Link>
           </div>
         </div>
-        <p className="muted">
-          This draft uses the account profile saved for {user.displayName || user.email}. Edit it before exporting so the final resume uses real metrics, specific project names, and truthful scope.
+        <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+          Built from the profile saved for {user.displayName || user.email}. Edit before exporting so the final resume uses real metrics, project names, and truthful scope.
         </p>
       </section>
 
-      <div className="grid-2">
-        <section className="card stack">
+      <div className="grid-2" style={{ gap: 14, alignItems: "start" }}>
+        <section className="card" style={{ display: "grid", gap: 10, padding: "16px 18px" }}>
           <h2 className="section-title">Editable resume draft</h2>
           <CoverLetterEditor initialValue={rewrite.draft} fileName={`${safeCompany}-${safeTitle}-resume.txt`} />
         </section>
 
-        <aside className="card stack compact-stack">
-          <div>
-            <h2 className="section-title">What this rewrite is emphasizing</h2>
+        <aside style={{ display: "grid", gap: 10 }}>
+          <div className="card" style={{ padding: "14px 16px", display: "grid", gap: 8 }}>
+            <h2 className="section-title" style={{ fontSize: "0.95rem" }}>What this rewrite emphasizes</h2>
             <div className="badges">
               {rewrite.highlights.map((item) => (
                 <span key={item} className="badge">{item}</span>
@@ -64,15 +58,17 @@ export default async function ResumeRewriteDetailPage({ params }: { params: Prom
             </div>
           </div>
 
-          <ResumeFeedbackPanel feedback={rewrite.feedback} compact jobId={job.id} />
-
-          <div>
-            <h2 className="section-title">Before you export</h2>
-            <div className="stack compact-stack">
-              <div className="inset-card">Replace the placeholder bullets with the exact project names, shipped work, and measurable outcomes from your background.</div>
-              <div className="inset-card">Move your strongest matching project or experience entry to the top half of the final resume.</div>
-              <div className="inset-card">Keep only keywords you can defend in an interview and remove anything that feels inflated.</div>
+          <div className="card" style={{ padding: "14px 16px", display: "grid", gap: 8 }}>
+            <h2 className="section-title" style={{ fontSize: "0.95rem" }}>Before you export</h2>
+            <div style={{ display: "grid", gap: 6 }}>
+              <div className="inset-card" style={{ padding: "10px 12px", fontSize: 13 }}>Replace placeholder bullets with exact project names, shipped work, and measurable outcomes from your background.</div>
+              <div className="inset-card" style={{ padding: "10px 12px", fontSize: 13 }}>Move your strongest matching project or experience to the top half of the final resume.</div>
+              <div className="inset-card" style={{ padding: "10px 12px", fontSize: 13 }}>Keep only keywords you can defend in an interview and remove anything that feels inflated.</div>
             </div>
+          </div>
+
+          <div className="card" style={{ padding: "14px 16px" }}>
+            <ResumeFeedbackPanel feedback={rewrite.feedback} compact jobId={job.id} />
           </div>
         </aside>
       </div>

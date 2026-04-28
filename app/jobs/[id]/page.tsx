@@ -91,10 +91,10 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
         <div style={{ display: "grid", gap: 18, minWidth: 0 }}>
 
           {/* Header card */}
-          <div className="card hero-card" style={{ padding: "28px 28px 24px" }}>
+          <div className="card hero-card" style={{ padding: "20px 22px 18px" }}>
 
             {/* Company + location */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
               {job.companySlug ? (
                 <Link
                   href={`/companies/${job.companySlug}`}
@@ -119,7 +119,7 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
               fontWeight: 800,
               letterSpacing: "-0.035em",
               lineHeight: 1.1,
-              margin: "0 0 20px",
+              margin: "0 0 12px",
               color: "#f5f5f5",
             }}>
               {job.title}
@@ -175,7 +175,7 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
           </div>
 
           {/* Description card */}
-          <div className="card" style={{ padding: "26px 28px" }}>
+          <div className="card" style={{ padding: "18px 22px" }}>
             {job.descriptionHtml ? (
               <div className="job-body" dangerouslySetInnerHTML={{ __html: job.descriptionHtml }} />
             ) : job.descriptionText ? (

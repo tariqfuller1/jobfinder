@@ -19,12 +19,12 @@ export default async function ResumeFeedbackDetailPage({ params }: { params: Pro
   const feedback = buildResumeFeedback(job, profile);
 
   return (
-    <div className="stack" style={{ padding: "24px 0 40px" }}>
-      <section className="card stack compact-stack">
+    <div style={{ padding: "20px 0 36px", display: "grid", gap: 14 }}>
+      <section className="card" style={{ display: "grid", gap: 10, padding: "16px 18px" }}>
         <div className="space-between">
-          <div>
+          <div style={{ display: "grid", gap: 3 }}>
             <h1 className="section-title">Resume tips for this job</h1>
-            <p className="muted" style={{ margin: 0 }}>{job.title} • {job.company} • {job.location ?? "Location not listed"}</p>
+            <p className="muted" style={{ margin: 0, fontSize: 13 }}>{job.title} • {job.company} • {job.location ?? "Location not listed"}</p>
           </div>
           <div className="actions">
             <Link className="button secondary" href={`/jobs/${job.id}`}>Back to job</Link>
@@ -35,13 +35,12 @@ export default async function ResumeFeedbackDetailPage({ params }: { params: Pro
             ) : null}
           </div>
         </div>
-
-        <p className="muted">
-          Use this page to tailor your resume before you apply. The advice is based on the overlap and gaps between this job description and the profile saved to your account.
+        <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+          Tailor your resume before you apply. Advice is based on the overlap and gaps between this job and the profile saved to your account.
         </p>
       </section>
 
-      <section className="card stack">
+      <section className="card" style={{ padding: "16px 18px" }}>
         <ResumeFeedbackPanel feedback={feedback} />
       </section>
     </div>

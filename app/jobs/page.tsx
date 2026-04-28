@@ -4,7 +4,6 @@ import { JobFilters } from "@/components/JobFilters";
 import { JobCard } from "@/components/JobCard";
 import { FitScorePrompt } from "@/components/MatchReasons";
 import { SearchBar } from "@/components/SearchBar";
-import { SidebarToggle } from "@/components/SidebarToggle";
 import { getCurrentUser } from "@/lib/auth";
 import { listJobs } from "@/lib/jobs";
 import { getProfileForUserOrDefault } from "@/lib/profile";
@@ -54,19 +53,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   const reliableApplyCount = data.jobs.filter((job) => job.hasReliableApplyLink).length;
 
   return (
-    <div className="layout">
-      <aside className="sidebar">
-        <SidebarToggle>
-          <div className="stack compact-stack">
-            <div>
-              <div className="eyebrow">Search controls</div>
-              <h2 className="section-title">Filter real jobs</h2>
-            </div>
-            <JobFilters />
-          </div>
-        </SidebarToggle>
-      </aside>
-
+    <div className="stack page-stack-lg" style={{ padding: "28px 0 44px" }}>
       <section className="stack page-stack-lg">
         <div className="hero-grid card hero-card">
           <div className="stack compact-stack hero-copy">
@@ -140,7 +127,10 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
             </div>
             <div className="muted">Page {data.page} of {data.totalPages}</div>
           </div>
-          <SearchBar placeholder="Search by title, company, location…" />
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div style={{ flex: 1 }}><SearchBar placeholder="Search by title, company, location…" /></div>
+            <JobFilters />
+          </div>
 
 
           {!profile ? <FitScorePrompt userId={user?.id} /> : null}

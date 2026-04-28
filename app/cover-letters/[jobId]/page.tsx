@@ -25,12 +25,12 @@ export default async function CoverLetterDetailPage({ params }: { params: Promis
   const safeTitle = job.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "role";
 
   return (
-    <div className="stack" style={{ padding: "24px 0 40px" }}>
-      <section className="card stack compact-stack">
+    <div style={{ padding: "20px 0 36px", display: "grid", gap: 14 }}>
+      <section className="card" style={{ display: "grid", gap: 10, padding: "16px 18px" }}>
         <div className="space-between">
-          <div>
+          <div style={{ display: "grid", gap: 3 }}>
             <h1 className="section-title">Cover letter draft</h1>
-            <p className="muted" style={{ margin: 0 }}>
+            <p className="muted" style={{ margin: 0, fontSize: 13 }}>
               {job.title} • {job.company} • {job.location ?? "Location not listed"}
             </p>
           </div>
@@ -43,21 +43,20 @@ export default async function CoverLetterDetailPage({ params }: { params: Promis
             ) : null}
           </div>
         </div>
-
-        <p className="muted">
-          This draft is built from the profile saved for {user.displayName || user.email}. Edit it before sending so the final version sounds like you and reflects the exact role.
+        <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+          Built from the profile saved for {user.displayName || user.email}. Edit before sending so the final version sounds like you.
         </p>
       </section>
 
-      <div className="grid-2">
-        <section className="card stack">
+      <div className="grid-2" style={{ gap: 14, alignItems: "start" }}>
+        <section className="card" style={{ display: "grid", gap: 10, padding: "16px 18px" }}>
           <h2 className="section-title">Editable letter</h2>
           <CoverLetterEditor initialValue={draft} fileName={`${safeCompany}-${safeTitle}-cover-letter.txt`} />
         </section>
 
-        <aside className="card stack compact-stack">
-          <div>
-            <h2 className="section-title">What this draft is using</h2>
+        <aside style={{ display: "grid", gap: 10 }}>
+          <div className="card" style={{ padding: "14px 16px", display: "grid", gap: 8 }}>
+            <h2 className="section-title" style={{ fontSize: "0.95rem" }}>What this draft uses</h2>
             <div className="badges">
               {talkingPoints.matchedSkills.map((skill) => (<span key={skill} className="badge">{skill}</span>))}
               {talkingPoints.roleHighlights.map((item) => (<span key={item} className="badge">{item}</span>))}
@@ -66,16 +65,18 @@ export default async function CoverLetterDetailPage({ params }: { params: Promis
             </div>
           </div>
 
-          <div>
-            <h2 className="section-title">How to improve it</h2>
-            <div className="stack compact-stack">
-              <div className="inset-card">Replace <strong>Hiring Team</strong> with a real recruiter or manager name if you find one.</div>
-              <div className="inset-card">Add one concrete result, project, or system you built that best matches this job.</div>
-              <div className="inset-card">Cut anything that feels generic so the first two paragraphs stay strong and specific.</div>
+          <div className="card" style={{ padding: "14px 16px", display: "grid", gap: 8 }}>
+            <h2 className="section-title" style={{ fontSize: "0.95rem" }}>How to improve it</h2>
+            <div style={{ display: "grid", gap: 6 }}>
+              <div className="inset-card" style={{ padding: "10px 12px", fontSize: 13 }}>Replace <strong>Hiring Team</strong> with a real recruiter or manager name if you find one.</div>
+              <div className="inset-card" style={{ padding: "10px 12px", fontSize: 13 }}>Add one concrete result, project, or system you built that best matches this job.</div>
+              <div className="inset-card" style={{ padding: "10px 12px", fontSize: 13 }}>Cut anything that feels generic so the first two paragraphs stay strong and specific.</div>
             </div>
           </div>
 
-          <ResumeFeedbackPanel feedback={resumeFeedback} compact jobId={job.id} />
+          <div className="card" style={{ padding: "14px 16px" }}>
+            <ResumeFeedbackPanel feedback={resumeFeedback} compact jobId={job.id} />
+          </div>
         </aside>
       </div>
     </div>
