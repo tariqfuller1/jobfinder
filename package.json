@@ -24,11 +24,11 @@
     "app": "bash ./run-local.sh"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.6.0",
     "cheerio": "^1.0.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "groq-sdk": "^1.1.2",
     "mammoth": "^1.8.0",
     "next": "^15.5.15",
     "pdf-parse": "^1.1.1",

@@ -1,6 +1,6 @@
 "use server";
 
-import { getGeminiModel } from "@/lib/gemini";
+import { getGroqClient } from "@/lib/groq";
 
 type RewriteType = "cover-letter" | "resume";
 
@@ -13,7 +13,7 @@ export async function regenerateWithSuggestion(
   jobDescriptionText: string,
 ): Promise<{ ok: true; draft: string } | { ok: false; error: string }> {
   try {
-    const model = getGeminiModel();
+    const groq = getGroqClient();
     const label = type === "cover-letter" ? "cover letter" : "resume";
     const descSnippet = jobDescriptionText.slice(0, 1000);
 
@@ -28,16 +28,22 @@ The user wants this change: ${suggestion}
 
 Rewrite the ${label} incorporating the requested change. Keep the same general structure and tone unless asked to change it. Return only the ${label} text with no extra commentary or markdown formatting.`;
 
-    const result = await model.generateContent(prompt);
-    const draft = result.response.text().trim();
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
+      max_tokens: 1500,
+    });
+
+    const draft = completion.choices[0]?.message?.content?.trim() ?? "";
     return { ok: true, draft };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("429") || message.toLowerCase().includes("quota") || message.toLowerCase().includes("too many requests")) {
+    if (message.includes("429") || message.toLowerCase().includes("quota") || message.toLowerCase().includes("rate limit")) {
       return { ok: false, error: "The AI is temporarily rate-limited. Wait a moment and try again." };
     }
-    if (message.includes("API_KEY") || message.includes("API key")) {
-      return { ok: false, error: "Gemini API key is missing or invalid. Add GEMINI_API_KEY to your environment variables." };
+    if (message.includes("API key") || message.includes("auth")) {
+      return { ok: false, error: "Groq API key is missing or invalid. Add GROQ_API_KEY to your environment variables." };
     }
     return { ok: false, error: "Something went wrong generating the draft. Try again." };
   }
