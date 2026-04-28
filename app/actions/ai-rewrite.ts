@@ -33,6 +33,12 @@ Rewrite the ${label} incorporating the requested change. Keep the same general s
     return { ok: true, draft };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return { ok: false, error: message };
+    if (message.includes("429") || message.toLowerCase().includes("quota") || message.toLowerCase().includes("too many requests")) {
+      return { ok: false, error: "The AI is temporarily rate-limited. Wait a moment and try again." };
+    }
+    if (message.includes("API_KEY") || message.includes("API key")) {
+      return { ok: false, error: "Gemini API key is missing or invalid. Add GEMINI_API_KEY to your environment variables." };
+    }
+    return { ok: false, error: "Something went wrong generating the draft. Try again." };
   }
 }
