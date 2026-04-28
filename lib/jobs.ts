@@ -170,7 +170,7 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
     isActive: true,
     AND: [
       filters.q
-        ? { OR: [{ title: { contains: filters.q } }, { company: { contains: filters.q } }] }
+        ? { OR: [{ title: { contains: filters.q } }, { company: { contains: filters.q } }, { location: { contains: filters.q } }] }
         : {},
       deptKeywords.length > 0
         ? { OR: deptKeywords.map((kw) => ({ title: { contains: kw } })) }

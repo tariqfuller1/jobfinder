@@ -3,6 +3,7 @@ import { Pagination } from "@/components/Pagination";
 import { JobFilters } from "@/components/JobFilters";
 import { JobCard } from "@/components/JobCard";
 import { FitScorePrompt } from "@/components/MatchReasons";
+import { SearchBar } from "@/components/SearchBar";
 import { SidebarToggle } from "@/components/SidebarToggle";
 import { getCurrentUser } from "@/lib/auth";
 import { listJobs } from "@/lib/jobs";
@@ -139,6 +140,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
             </div>
             <div className="muted">Page {data.page} of {data.totalPages}</div>
           </div>
+          <SearchBar placeholder="Search by title, company, location…" />
 
 
           {!profile ? <FitScorePrompt userId={user?.id} /> : null}

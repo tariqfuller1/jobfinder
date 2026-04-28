@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CompanyFilters } from "@/components/CompanyFilters";
 import { FitScorePrompt, MatchReasons } from "@/components/MatchReasons";
 import { Pagination } from "@/components/Pagination";
+import { SearchBar } from "@/components/SearchBar";
 import { SidebarToggle } from "@/components/SidebarToggle";
 import { getCurrentUser } from "@/lib/auth";
 import { listCompanies } from "@/lib/companies";
@@ -96,6 +97,8 @@ export default async function CompaniesPage({
         <div className="space-between section-heading-row">
           <div className="muted">Page {data.page} of {data.totalPages} — {data.total} companies</div>
         </div>
+
+        <SearchBar placeholder="Search by name, location, stack, tags…" />
 
         {!profile ? <FitScorePrompt userId={user?.id} /> : null}
 
