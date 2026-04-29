@@ -25,7 +25,12 @@ async function improveOnce(
   jobTitle: string,
   jobCompany: string,
   jobDescriptionText: string,
+  profileLinks: { label: string; url: string }[],
 ): Promise<{ resume: string; rating: QualityRating; feedback: string } | null> {
+  const linksNote = profileLinks.length > 0
+    ? `\n- Preserve these links in the contact line: ${profileLinks.map((l) => `${l.label}: ${l.url}`).join(" | ")}`
+    : "";
+
   const prompt = `You are an expert resume writer and ATS specialist.
 
 This resume was rated "${rating}" for the ${jobTitle} role at ${jobCompany}.
@@ -38,7 +43,7 @@ Rules:
 - Focus the rewrite on the specific weakness in the feedback
 - Strengthen the professional summary to better match the role
 - Make bullets more impactful and keyword-rich for this job
-- Do not change the overall resume structure or format
+- Do not change the overall resume structure or format${linksNote}
 
 JOB DESCRIPTION:
 ${jobDescriptionText.slice(0, 1500)}
@@ -90,6 +95,7 @@ export async function autoImproveResume(
   jobTitle: string,
   jobCompany: string,
   jobDescriptionText: string,
+  profileLinks: { label: string; url: string }[] = [],
 ): Promise<AutoImproveResult> {
   try {
     const groq = getGroqClient();
@@ -100,7 +106,7 @@ export async function autoImproveResume(
 
     while (attempts < MAX_ATTEMPTS && (rating === "Fair" || rating === "Poor")) {
       attempts++;
-      const result = await improveOnce(groq, resume, rating, feedback, jobTitle, jobCompany, jobDescriptionText);
+      const result = await improveOnce(groq, resume, rating, feedback, jobTitle, jobCompany, jobDescriptionText, profileLinks);
       if (!result) break;
       resume = result.resume;
       rating = result.rating;

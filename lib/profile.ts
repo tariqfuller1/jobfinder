@@ -7,6 +7,7 @@ export type TargetCategory = "SOFTWARE" | "GAMING" | "BOTH";
 export type ProfileLink = {
   label: string;
   url: string;
+  includeInResume?: boolean;
 };
 
 export type WorkExperienceEntry = {

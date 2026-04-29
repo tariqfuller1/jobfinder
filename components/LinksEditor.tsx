@@ -86,61 +86,83 @@ export function LinksEditor({ initialLinks }: { initialLinks: ProfileLink[] }) {
       {/* Saved links list */}
       {links.length > 0 ? (
         <div className="stack compact-stack">
-          {links.map((link, i) => (
-            <div
-              key={i}
-              className="inset-card"
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px" }}
-            >
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{link.label}</div>
-                <div
-                  className="muted"
-                  style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                >
-                  {link.url}
+          {links.map((link, i) => {
+            const inResume = link.includeInResume !== false;
+            return (
+              <div
+                key={i}
+                className="inset-card"
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px" }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{link.label}</div>
+                  <div
+                    className="muted"
+                    style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                  >
+                    {link.url}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 6, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  <button
+                    className="button secondary"
+                    style={{
+                      padding: "4px 10px", fontSize: 11, fontWeight: 600,
+                      borderColor: inResume ? "rgba(74,222,128,0.45)" : undefined,
+                      color: inResume ? "#4ade80" : "#6b7280",
+                      background: inResume ? "rgba(74,222,128,0.08)" : undefined,
+                    }}
+                    onClick={() => {
+                      const updated = links.map((l, j) =>
+                        j === i ? { ...l, includeInResume: !inResume } : l
+                      );
+                      save(updated);
+                    }}
+                    disabled={saving}
+                    title={inResume ? "Included in resume — click to exclude" : "Excluded from resume — click to include"}
+                  >
+                    {inResume ? "✓ In resume" : "In resume"}
+                  </button>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="button secondary"
+                    style={{ padding: "4px 10px", fontSize: 12 }}
+                  >
+                    Open
+                  </a>
+                  <button
+                    className="button secondary"
+                    style={{ padding: "4px 8px", fontSize: 12 }}
+                    onClick={() => moveUp(i)}
+                    disabled={i === 0 || saving}
+                    title="Move up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    className="button secondary"
+                    style={{ padding: "4px 8px", fontSize: 12 }}
+                    onClick={() => moveDown(i)}
+                    disabled={i === links.length - 1 || saving}
+                    title="Move down"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    className="button secondary"
+                    style={{ padding: "4px 10px", fontSize: 12, color: "#f87171" }}
+                    onClick={() => removeLink(i)}
+                    disabled={saving}
+                    title="Remove"
+                  >
+                    ✕
+                  </button>
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="button secondary"
-                  style={{ padding: "4px 10px", fontSize: 12 }}
-                >
-                  Open
-                </a>
-                <button
-                  className="button secondary"
-                  style={{ padding: "4px 8px", fontSize: 12 }}
-                  onClick={() => moveUp(i)}
-                  disabled={i === 0 || saving}
-                  title="Move up"
-                >
-                  ↑
-                </button>
-                <button
-                  className="button secondary"
-                  style={{ padding: "4px 8px", fontSize: 12 }}
-                  onClick={() => moveDown(i)}
-                  disabled={i === links.length - 1 || saving}
-                  title="Move down"
-                >
-                  ↓
-                </button>
-                <button
-                  className="button secondary"
-                  style={{ padding: "4px 10px", fontSize: 12, color: "#f87171" }}
-                  onClick={() => removeLink(i)}
-                  disabled={saving}
-                  title="Remove"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <p className="muted" style={{ margin: 0 }}>No links saved yet. Add one below.</p>

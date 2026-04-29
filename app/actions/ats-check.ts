@@ -45,6 +45,7 @@ export async function runATSCheck(
   educationEntries: string[],
   name: string,
   resumeText: string,
+  profileLinks: { label: string; url: string }[],
 ): Promise<ATSCheckResult> {
   const hasStructuredData = workExperience.length > 0 || projects.length > 0;
   const hasResume = resumeText.trim().length > 0;
@@ -76,6 +77,10 @@ export async function runATSCheck(
       ? `\nRAW RESUME (use this to extract experience if structured sections are empty):\n${resumeText.slice(0, 2500)}`
       : "";
 
+    const linksSection = profileLinks.length > 0
+      ? `Links: ${profileLinks.map((l) => `${l.label}: ${l.url}`).join(" | ")}`
+      : "";
+
     const prompt = `You are an expert ATS resume writer and career coach. Generate the best possible ATS-optimized resume for this specific job.
 
 JOB TARGET: ${jobTitle} at ${jobCompany}
@@ -85,6 +90,7 @@ ${jobDescriptionText.slice(0, 2000)}
 
 CANDIDATE PROFILE:
 Name: ${name || "Candidate"}
+${linksSection}
 ${skillsSection}
 
 ${experienceSection}
@@ -109,7 +115,7 @@ YOUR TASKS:
 
 --- RESUME FORMAT (plain text, NO tables, NO columns, NO special characters) ---
 [FULL NAME]
-[Email] | [Phone] | [Location] | [LinkedIn/GitHub if available]
+[Email] | [Phone] | [Location]${profileLinks.length > 0 ? ` | ${profileLinks.map((l) => `${l.label}: ${l.url}`).join(" | ")}` : ""}
 
 PROFESSIONAL SUMMARY
 [2-3 sentences using job-relevant keywords, highlighting strongest match to this role]

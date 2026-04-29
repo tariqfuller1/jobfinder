@@ -51,6 +51,7 @@ export default async function ATSCheckPage({ params }: { params: Promise<{ jobId
         educationEntries={profile.educationEntries}
         name={profile.name}
         safeFileName={`${safeCompany}-${safeTitle}-resume`}
+        profileLinks={profile.links}
       />
     </div>
   );

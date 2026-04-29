@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { runATSCheck, type ATSCheckResult, type QualityRating } from "@/app/actions/ats-check";
 import { autoImproveResume } from "@/app/actions/auto-improve-resume";
 import { regenerateWithSuggestion } from "@/app/actions/ai-rewrite";
-import type { WorkExperienceEntry, ProjectEntry } from "@/lib/profile";
+import type { WorkExperienceEntry, ProjectEntry, ProfileLink } from "@/lib/profile";
 
 function QualityBadge({ rating }: { rating: QualityRating }) {
   const config = {
@@ -195,6 +195,7 @@ export function ATSChecker({
   educationEntries,
   name,
   safeFileName,
+  profileLinks,
 }: {
   jobTitle: string;
   jobCompany: string;
@@ -207,6 +208,7 @@ export function ATSChecker({
   educationEntries: string[];
   name: string;
   safeFileName: string;
+  profileLinks: ProfileLink[];
 }) {
   const [result, setResult] = useState<Extract<ATSCheckResult, { ok: true }> | null>(null);
   const [editedResume, setEditedResume] = useState("");
@@ -219,6 +221,7 @@ export function ATSChecker({
   const [copied, setCopied] = useState(false);
   const [isChecking, startCheck] = useTransition();
   const [isRefining, startRefine] = useTransition();
+  const resumeLinks = profileLinks.filter((l) => l.includeInResume !== false);
 
   const hasData = resumeText.trim().length > 0 || workExperience.length > 0 || projects.length > 0;
 
@@ -226,7 +229,7 @@ export function ATSChecker({
     setError("");
     setImproveAttempts(0);
     startCheck(async () => {
-      const res = await runATSCheck(jobTitle, jobCompany, jobDescriptionText, workExperience, projects, skills, stacks, educationEntries, name, resumeText);
+      const res = await runATSCheck(jobTitle, jobCompany, jobDescriptionText, workExperience, projects, skills, stacks, educationEntries, name, resumeText, resumeLinks);
       if (!res.ok) { setError(res.error); return; }
 
       setResult(res);
@@ -241,6 +244,7 @@ export function ATSChecker({
           jobTitle,
           jobCompany,
           jobDescriptionText,
+          resumeLinks,
         );
         if (improved.ok) {
           setEditedResume(improved.optimizedResume);
@@ -290,6 +294,11 @@ export function ATSChecker({
           <div style={{ fontSize: 13, color: "#a1a1aa" }}>
             Groq AI scores your resume against the job description, rewrites it with missing keywords, and automatically improves it until it reaches Good or Excellent quality.
           </div>
+          {resumeLinks.length > 0 && (
+            <div style={{ fontSize: 12, color: "#6b7280" }}>
+              Links included: {resumeLinks.map((l) => l.label).join(", ")} — <a href="/profile" style={{ color: "#9ca3af", textDecoration: "underline" }}>manage in profile</a>
+            </div>
+          )}
           {error && <p style={{ margin: 0, fontSize: 13, color: "#f87171" }}>{error}</p>}
           <button
             className="button"
