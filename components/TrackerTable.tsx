@@ -30,7 +30,7 @@ const STATUS_COLORS: Record<string, string> = {
   GHOSTED: "#4b5563",
 };
 
-type Row = { id: string; company: string; roleTitle: string; applyUrl: string; status: string; dateApplied: string | null; followUpDate: string | null; notes: string | null; userReachedOut: boolean; companyReachedOut: boolean };
+type Row = { id: string; jobId: string; company: string; roleTitle: string; applyUrl: string; status: string; dateApplied: string | null; followUpDate: string | null; notes: string | null; userReachedOut: boolean; companyReachedOut: boolean };
 type SortKey = "company" | "roleTitle" | "status" | "dateApplied" | "followUpDate";
 type SortDir = "asc" | "desc";
 
@@ -127,7 +127,7 @@ export function TrackerTable({ initialRows }: { initialRows: any[] }) {
                 </a>
               </td>
               <td>
-                <a href={row.applyUrl} target="_blank" rel="noreferrer" style={{ color: "#d4d4d8" }}>
+                <a href={`/jobs/${row.jobId}`} style={{ color: "#d4d4d8" }}>
                   {row.roleTitle}
                 </a>
               </td>

@@ -5,6 +5,15 @@ import { useRouter } from "next/navigation";
 export function ApplyButton({ applyUrl, jobId, requireLogin = false }: { applyUrl: string; jobId: string; requireLogin?: boolean }) {
   const router = useRouter();
 
+  const trackApplied = () => {
+    if (requireLogin) return;
+    fetch("/api/tracker", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobId }),
+    });
+  };
+
   const markApplied = async () => {
     if (requireLogin) {
       router.push(`/login?next=/jobs/${jobId}`);
@@ -27,7 +36,7 @@ export function ApplyButton({ applyUrl, jobId, requireLogin = false }: { applyUr
 
   return (
     <div className="actions">
-      <a className="button" href={applyUrl} target="_blank" rel="noreferrer">
+      <a className="button" href={applyUrl} target="_blank" rel="noreferrer" onClick={trackApplied}>
         Apply
       </a>
       <button className="button secondary" onClick={markApplied}>

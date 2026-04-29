@@ -14,7 +14,15 @@ export async function createApplication(userId: string, jobId: string) {
   if (!job) throw new Error("Job not found");
 
   const existing = await prisma.application.findFirst({ where: { userId, jobId: job.id } });
-  if (existing) return existing;
+  if (existing) {
+    if (existing.status === ApplicationStatus.SAVED || existing.status === ApplicationStatus.REACHING_OUT) {
+      return prisma.application.update({
+        where: { id: existing.id },
+        data: { status: ApplicationStatus.APPLIED, dateApplied: new Date() },
+      });
+    }
+    return existing;
+  }
 
   return prisma.application.create({
     data: {
@@ -24,7 +32,8 @@ export async function createApplication(userId: string, jobId: string) {
       roleTitle: job.title,
       sourceUrl: job.sourceUrl,
       applyUrl: job.applyUrl,
-      status: ApplicationStatus.SAVED,
+      status: ApplicationStatus.APPLIED,
+      dateApplied: new Date(),
     },
   });
 }
