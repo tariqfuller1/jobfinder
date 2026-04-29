@@ -52,17 +52,25 @@ function esc(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Escape text but turn bare URLs into clickable hyperlinks for the PDF
+// Escape text and linkify:
+// "Label: URL"  → the label word becomes the blue hyperlink (URL hidden)
+// bare URL      → the URL itself becomes the blue hyperlink
 function linkifyEsc(text: string): string {
-  const urlRegex = /https?:\/\/[^\s|<>]+/g;
+  const combined = /([\w][\w\s.-]*?):\s*(https?:\/\/[^\s|<>]+)|(https?:\/\/[^\s|<>]+)/g;
   let result = "";
   let lastIndex = 0;
   let match: RegExpExecArray | null;
-  while ((match = urlRegex.exec(text)) !== null) {
+  while ((match = combined.exec(text)) !== null) {
     result += esc(text.slice(lastIndex, match.index));
-    const url = match[0].replace(/[.,;)]+$/, ""); // strip trailing punctuation
-    result += `<a href="${esc(url)}" style="color:#1a56db;text-decoration:underline;">${esc(url)}</a>`;
-    lastIndex = match.index + url.length;
+    if (match[1] !== undefined) {
+      const label = match[1].trim();
+      const url = match[2].replace(/[.,;)]+$/, "");
+      result += `<a href="${esc(url)}" style="color:#1a56db;text-decoration:underline;">${esc(label)}</a>`;
+    } else {
+      const url = match[3].replace(/[.,;)]+$/, "");
+      result += `<a href="${esc(url)}" style="color:#1a56db;text-decoration:underline;">${esc(url)}</a>`;
+    }
+    lastIndex = match.index + match[0].length;
   }
   result += esc(text.slice(lastIndex));
   return result;
@@ -73,16 +81,14 @@ function isSectionHead(line: string) {
 }
 
 function renderBodyLine(line: string): string {
-  // Bullet point — simple indented paragraph, no flex, so parsers read it naturally
   if (line.startsWith("•") || line.startsWith("·")) {
     const text = line.replace(/^[•·]\s*/, "");
-    return `<p class="bullet">&#8226; ${esc(text)}</p>`;
+    return `<p class="bullet">&#8226; ${linkifyEsc(text)}</p>`;
   }
-  // Entry header (job or project) — everything inline on one line so ATS reads left→right
   if (line.includes(" | ")) {
     return `<p class="entry">${linkifyEsc(line)}</p>`;
   }
-  return `<p class="body-text">${esc(line)}</p>`;
+  return `<p class="body-text">${linkifyEsc(line)}</p>`;
 }
 
 function buildResumeHTML(text: string, jobTitle: string, company: string): string {

@@ -9,16 +9,23 @@ function esc(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// "Label: URL" → label word becomes the blue hyperlink; bare URL → URL is the link text
 function linkifyEsc(text: string): string {
-  const urlRegex = /https?:\/\/[^\s|<>]+/g;
+  const combined = /([\w][\w\s.-]*?):\s*(https?:\/\/[^\s|<>]+)|(https?:\/\/[^\s|<>]+)/g;
   let result = "";
   let lastIndex = 0;
   let match: RegExpExecArray | null;
-  while ((match = urlRegex.exec(text)) !== null) {
+  while ((match = combined.exec(text)) !== null) {
     result += esc(text.slice(lastIndex, match.index));
-    const url = match[0].replace(/[.,;)]+$/, "");
-    result += `<a href="${esc(url)}" style="color:#1a56db;text-decoration:underline;">${esc(url)}</a>`;
-    lastIndex = match.index + url.length;
+    if (match[1] !== undefined) {
+      const label = match[1].trim();
+      const url = match[2].replace(/[.,;)]+$/, "");
+      result += `<a href="${esc(url)}" style="color:#1a56db;text-decoration:underline;">${esc(label)}</a>`;
+    } else {
+      const url = match[3].replace(/[.,;)]+$/, "");
+      result += `<a href="${esc(url)}" style="color:#1a56db;text-decoration:underline;">${esc(url)}</a>`;
+    }
+    lastIndex = match.index + match[0].length;
   }
   result += esc(text.slice(lastIndex));
   return result;
