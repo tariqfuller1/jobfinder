@@ -30,12 +30,10 @@ export async function parseResumeWithAI(resumeText: string): Promise<
   try {
     const groq = getGroqClient();
 
-    const prompt = `Parse this resume into structured JSON. Extract all information accurately and completely.
+    const prompt = `You must respond with ONLY a JSON object — no text before or after it, no markdown, no explanation.
 
-Resume:
-${resumeText.slice(0, 4000)}
+Parse this resume and return the following JSON structure (fill in all values from the resume):
 
-Return a JSON object with this exact structure:
 {
   "name": "Full Name or null",
   "email": "email or null",
@@ -73,24 +71,31 @@ Rules:
 - Include ALL projects found
 - Keep bullets exactly as written — do not summarize
 - Use null for missing string fields, [] for missing arrays
-- IDs must be unique: exp-1, exp-2, proj-1, proj-2, etc.`;
+- IDs must be unique: exp-1, exp-2, proj-1, proj-2, etc.
+
+RESUME TEXT:
+${resumeText.slice(0, 4000)}
+
+Respond NOW with only the JSON object starting with { and ending with }:`;
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
-        { role: "system", content: "You are a resume parser. Output only the raw JSON object — no markdown, no code fences, no explanation." },
+        { role: "system", content: "You are a JSON API that parses resumes. You ONLY output raw JSON. Never output text, explanation, or markdown. Your entire response must be a single valid JSON object starting with { and ending with }." },
         { role: "user", content: prompt },
       ],
       temperature: 0.1,
       max_tokens: 4000,
     });
 
-    const raw = completion.choices[0]?.message?.content ?? "";
-    // Extract the JSON object regardless of surrounding markdown or text
+    const raw = (completion.choices[0]?.message?.content ?? "").trim();
+    if (!raw) {
+      return { ok: false, error: "AI returned an empty response. Try again or add entries manually." };
+    }
     const start = raw.indexOf("{");
     const end = raw.lastIndexOf("}");
-    if (start === -1 || end === -1) {
-      return { ok: false, error: "AI returned an unexpected format. Try again." };
+    if (start === -1 || end === -1 || end < start) {
+      return { ok: false, error: "AI returned an unexpected format. Try again or add entries manually." };
     }
     const parsed = JSON.parse(raw.slice(start, end + 1));
 
