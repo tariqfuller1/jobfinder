@@ -6,8 +6,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { getJobById } from "@/lib/jobs";
 import { getProfileForUserOrDefault } from "@/lib/profile";
 import { suggestConnectionSearches } from "@/lib/recommendations";
-import { buildResumeFeedback } from "@/lib/resume-feedback";
-import { ResumeFeedbackPanel } from "@/components/ResumeFeedbackPanel";
 import { notFound } from "next/navigation";
 
 function fmtWorkplace(v: string) {
@@ -52,7 +50,6 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
     { name: job.company, headquarters: job.location ?? undefined },
     profile ?? undefined,
   );
-  const resumeFeedback = buildResumeFeedback(job, profile ?? undefined);
 
   const workplace = fmtWorkplace(job.workplaceType);
   const employment = fmtEmployment(job.employmentType);
@@ -259,17 +256,10 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
               </Link>
               <Link
                 className="button secondary"
-                href={user ? `/resume-feedback/${job.id}` : `/login?next=/resume-feedback/${job.id}`}
+                href={user ? `/ats-check/${job.id}` : `/login?next=/ats-check/${job.id}`}
                 style={{ justifyContent: "flex-start", fontSize: 13, gap: 10 }}
               >
-                <span style={{ opacity: 0.7 }}>✦</span> Resume tips
-              </Link>
-              <Link
-                className="button secondary"
-                href={user ? `/resume-rewrite/${job.id}` : `/login?next=/resume-rewrite/${job.id}`}
-                style={{ justifyContent: "flex-start", fontSize: 13, gap: 10 }}
-              >
-                <span style={{ opacity: 0.7 }}>✦</span> Rewrite my resume
+                <span style={{ opacity: 0.7 }}>✦</span> ATS score &amp; resume
               </Link>
               {job.companySlug && (
                 <Link
@@ -283,33 +273,17 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
             </div>
           </div>
 
-          {/* Resume tips panel / sign-in CTA */}
-          {user ? (
-            <div className="inset-card" style={{ padding: "16px 18px" }}>
-              <ResumeFeedbackPanel feedback={resumeFeedback} compact jobId={job.id} />
-            </div>
-          ) : (
+          {/* Sign-in CTA for logged-out users */}
+          {!user && (
             <div className="inset-card" style={{ padding: "16px 18px", display: "grid", gap: 10 }}>
               <div className="eyebrow">Personalized help</div>
-              <strong style={{ fontSize: 15 }}>Sign in for tailored feedback</strong>
+              <strong style={{ fontSize: 15 }}>Sign in for AI tools</strong>
               <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-                Save your resume, set preferred locations, and get tailored cover letters and resume rewrites for this job.
+                Save your resume and get an ATS score, optimized resume, and cover letter tailored to this job.
               </p>
               <div style={{ display: "flex", gap: 8 }}>
-                <Link
-                  className="button secondary"
-                  href={`/login?next=/jobs/${job.id}`}
-                  style={{ flex: 1, justifyContent: "center", fontSize: 13 }}
-                >
-                  Sign in
-                </Link>
-                <Link
-                  className="button"
-                  href={`/register?next=/jobs/${job.id}`}
-                  style={{ flex: 1, justifyContent: "center", fontSize: 13 }}
-                >
-                  Create account
-                </Link>
+                <Link className="button secondary" href={`/login?next=/jobs/${job.id}`} style={{ flex: 1, justifyContent: "center", fontSize: 13 }}>Sign in</Link>
+                <Link className="button" href={`/register?next=/jobs/${job.id}`} style={{ flex: 1, justifyContent: "center", fontSize: 13 }}>Create account</Link>
               </div>
             </div>
           )}

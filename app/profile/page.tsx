@@ -1,6 +1,8 @@
 import { ResumeImportForm } from "@/components/ResumeImportForm";
 import { ProfileSettingsForm } from "@/components/ProfileSettingsForm";
 import { LinksEditor } from "@/components/LinksEditor";
+import { WorkExperienceEditor } from "@/components/WorkExperienceEditor";
+import { ProjectsEditor } from "@/components/ProjectsEditor";
 import { requireCurrentUser } from "@/lib/auth";
 import { getProfileForUserOrDefault } from "@/lib/profile";
 import { buildGoogleSearchUrl, buildLinkedInSearchUrl } from "@/lib/recommendations";
@@ -89,6 +91,28 @@ export default async function ProfilePage() {
             </div>
           </div>
         </article>
+      </section>
+
+      <section className="card stack">
+        <div>
+          <div className="eyebrow">Work history</div>
+          <h2 className="section-title">Work experience</h2>
+          <p className="muted">
+            Each entry feeds directly into the ATS resume generator. Click "Extract from resume" to auto-fill from your uploaded resume, then edit and save.
+          </p>
+        </div>
+        <WorkExperienceEditor initialEntries={profile.workExperience} resumeText={profile.resumeText} />
+      </section>
+
+      <section className="card stack">
+        <div>
+          <div className="eyebrow">Portfolio</div>
+          <h2 className="section-title">Projects</h2>
+          <p className="muted">
+            Projects are included in every generated resume and weighted toward the job's tech stack. Extract from resume or add manually.
+          </p>
+        </div>
+        <ProjectsEditor initialProjects={profile.projects} resumeText={profile.resumeText} />
       </section>
 
       <section className="card stack">

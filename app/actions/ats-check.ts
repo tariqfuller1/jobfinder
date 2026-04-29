@@ -1,0 +1,169 @@
+"use server";
+
+import { getGroqClient } from "@/lib/groq";
+import type { WorkExperienceEntry, ProjectEntry } from "@/lib/profile";
+
+export type ATSCheckResult =
+  | {
+      ok: true;
+      score: number;
+      matchedKeywords: string[];
+      missingKeywords: string[];
+      optimizedResume: string;
+    }
+  | { ok: false; error: string };
+
+function formatExperience(entries: WorkExperienceEntry[]): string {
+  return entries.map((e) => {
+    const header = `${e.company} | ${e.title}${e.location ? ` | ${e.location}` : ""} | ${e.startDate} – ${e.endDate}`;
+    const bullets = e.bullets.filter(Boolean).map((b) => `• ${b}`).join("\n");
+    return `${header}\n${bullets}`;
+  }).join("\n\n");
+}
+
+function formatProjects(entries: ProjectEntry[]): string {
+  return entries.map((p) => {
+    const header = `${p.name}${p.technologies.length ? ` | ${p.technologies.join(", ")}` : ""}${p.url ? ` | ${p.url}` : ""}`;
+    const bullets = p.bullets.filter(Boolean).map((b) => `• ${b}`).join("\n");
+    return `${header}\n${bullets}`;
+  }).join("\n\n");
+}
+
+export async function runATSCheck(
+  jobTitle: string,
+  jobCompany: string,
+  jobDescriptionText: string,
+  workExperience: WorkExperienceEntry[],
+  projects: ProjectEntry[],
+  skills: string[],
+  stacks: string[],
+  educationEntries: string[],
+  name: string,
+  resumeText: string,
+): Promise<ATSCheckResult> {
+  const hasStructuredData = workExperience.length > 0 || projects.length > 0;
+  const hasResume = resumeText.trim().length > 0;
+
+  if (!hasStructuredData && !hasResume) {
+    return { ok: false, error: "No resume or work experience found on your profile. Add your resume or fill in your work experience first." };
+  }
+
+  try {
+    const groq = getGroqClient();
+
+    const experienceSection = workExperience.length > 0
+      ? `WORK EXPERIENCE\n${formatExperience(workExperience)}`
+      : "";
+
+    const projectsSection = projects.length > 0
+      ? `PROJECTS\n${formatProjects(projects)}`
+      : "";
+
+    const skillsSection = [...skills, ...stacks].length > 0
+      ? `SKILLS: ${[...skills, ...stacks].join(", ")}`
+      : "";
+
+    const educationSection = educationEntries.length > 0
+      ? `EDUCATION\n${educationEntries.map((e) => `• ${e}`).join("\n")}`
+      : "";
+
+    const fallbackNote = !hasStructuredData && hasResume
+      ? `\nRAW RESUME (use this to extract experience if structured sections are empty):\n${resumeText.slice(0, 2500)}`
+      : "";
+
+    const prompt = `You are an expert ATS resume writer and career coach. Generate the best possible ATS-optimized resume for this specific job.
+
+JOB TARGET: ${jobTitle} at ${jobCompany}
+
+JOB DESCRIPTION:
+${jobDescriptionText.slice(0, 2000)}
+
+CANDIDATE PROFILE:
+Name: ${name || "Candidate"}
+${skillsSection}
+
+${experienceSection}
+
+${projectsSection}
+
+${educationSection}
+${fallbackNote}
+
+YOUR TASKS:
+1. Extract the top 20 ATS keywords/skills from the job description (technical skills, tools, methodologies, certifications, soft skills)
+2. Identify which keywords the candidate already covers (matchedKeywords)
+3. Identify which are missing (missingKeywords)
+4. Calculate score 0-100 based on keyword coverage
+5. Generate a complete, ATS-optimized resume using this format:
+
+--- RESUME FORMAT (plain text, NO tables, NO columns, NO special characters) ---
+[FULL NAME]
+[Email] | [Phone] | [Location] | [LinkedIn/GitHub if available]
+
+PROFESSIONAL SUMMARY
+[2-3 sentences using job-relevant keywords, highlighting strongest match to this role]
+
+CORE SKILLS
+[comma-separated list of skills optimized for this job's ATS keywords — include matched AND relevant missing ones the candidate can honestly claim]
+
+WORK EXPERIENCE
+[Company] | [Title] | [Location] | [Start] – [End]
+• [Action verb + accomplishment + result/metric — work in relevant keywords naturally]
+• [Another bullet]
+
+PROJECTS
+[Project Name] | [Technologies]
+• [What it does, impact, technologies used]
+
+EDUCATION
+[Degree, Institution, Year]
+---
+
+RULES:
+- Use ONLY the candidate's real experience — do not fabricate jobs, titles, or skills
+- Naturally work in missing keywords where they genuinely fit the candidate's background
+- Use strong action verbs: Engineered, Built, Designed, Optimized, Led, Delivered, Implemented
+- Add metrics and numbers where the experience implies them (e.g. "team of N", "reduced by X%")
+- Keep bullets concise and impactful — one strong bullet beats three weak ones
+- If structured experience is empty, extract and restructure from the raw resume
+
+Return JSON:
+{
+  "score": <number 0-100>,
+  "matchedKeywords": ["keyword", ...],
+  "missingKeywords": ["keyword", ...],
+  "optimizedResume": "<complete ATS resume as plain text>"
+}`;
+
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        { role: "system", content: "You are an expert ATS resume writer. Always respond with valid JSON only, no markdown fences." },
+        { role: "user", content: prompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.4,
+      max_tokens: 4000,
+    });
+
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(raw);
+
+    return {
+      ok: true,
+      score: typeof parsed.score === "number" ? Math.min(100, Math.max(0, Math.round(parsed.score))) : 0,
+      matchedKeywords: Array.isArray(parsed.matchedKeywords) ? parsed.matchedKeywords.map(String) : [],
+      missingKeywords: Array.isArray(parsed.missingKeywords) ? parsed.missingKeywords.map(String) : [],
+      optimizedResume: typeof parsed.optimizedResume === "string" ? parsed.optimizedResume.trim() : "",
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("429") || message.toLowerCase().includes("rate limit") || message.toLowerCase().includes("quota")) {
+      return { ok: false, error: "AI is temporarily rate-limited. Wait a moment and try again." };
+    }
+    if (message.includes("API key") || message.includes("auth")) {
+      return { ok: false, error: "Groq API key is missing or invalid. Add GROQ_API_KEY to your environment variables." };
+    }
+    return { ok: false, error: "Something went wrong generating the resume. Try again." };
+  }
+}

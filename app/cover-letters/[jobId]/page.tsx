@@ -4,8 +4,6 @@ import { CoverLetterEditor } from "@/components/CoverLetterEditor";
 import { getJobById } from "@/lib/jobs";
 import { getProfileForUserOrDefault } from "@/lib/profile";
 import { buildCoverLetter, buildCoverLetterTalkingPoints } from "@/lib/cover-letter";
-import { buildResumeFeedback } from "@/lib/resume-feedback";
-import { ResumeFeedbackPanel } from "@/components/ResumeFeedbackPanel";
 import { requireCurrentUser } from "@/lib/auth";
 
 export default async function CoverLetterDetailPage({ params }: { params: Promise<{ jobId: string }> }) {
@@ -20,7 +18,6 @@ export default async function CoverLetterDetailPage({ params }: { params: Promis
 
   const talkingPoints = buildCoverLetterTalkingPoints(job, profile);
   const draft = buildCoverLetter(job, profile);
-  const resumeFeedback = buildResumeFeedback(job, profile);
   const safeCompany = job.company.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "company";
   const safeTitle = job.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "role";
 
@@ -36,8 +33,7 @@ export default async function CoverLetterDetailPage({ params }: { params: Promis
           </div>
           <div className="actions">
             <Link className="button secondary" href={`/jobs/${job.id}`}>Back to job</Link>
-            <Link className="button secondary" href={`/resume-feedback/${job.id}`}>Resume tips</Link>
-            <Link className="button secondary" href={`/resume-rewrite/${job.id}`}>Rewrite resume</Link>
+            <Link className="button secondary" href={`/ats-check/${job.id}`}>ATS score</Link>
             {job.primaryApplyUrl ? (
               <a className="button secondary" href={job.primaryApplyUrl} target="_blank" rel="noreferrer">{job.primaryApplyLabel}</a>
             ) : null}
@@ -81,8 +77,12 @@ export default async function CoverLetterDetailPage({ params }: { params: Promis
             </div>
           </div>
 
-          <div className="card" style={{ padding: "14px 16px" }}>
-            <ResumeFeedbackPanel feedback={resumeFeedback} compact jobId={job.id} />
+          <div className="card" style={{ padding: "14px 16px", display: "grid", gap: 8 }}>
+            <h2 className="section-title" style={{ fontSize: "0.95rem" }}>ATS resume check</h2>
+            <p className="muted" style={{ margin: 0, fontSize: 12 }}>Score your resume against this job's keywords and download an optimized PDF.</p>
+            <Link className="button secondary" href={`/ats-check/${job.id}`} style={{ justifyContent: "center", fontSize: 13 }}>
+              Run ATS check
+            </Link>
           </div>
         </aside>
       </div>

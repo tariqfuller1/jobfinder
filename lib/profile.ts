@@ -9,6 +9,24 @@ export type ProfileLink = {
   url: string;
 };
 
+export type WorkExperienceEntry = {
+  id: string;
+  company: string;
+  title: string;
+  location?: string;
+  startDate: string;
+  endDate: string;
+  bullets: string[];
+};
+
+export type ProjectEntry = {
+  id: string;
+  name: string;
+  url?: string;
+  technologies: string[];
+  bullets: string[];
+};
+
 export type UserProfile = {
   name: string;
   email?: string;
@@ -30,6 +48,8 @@ export type UserProfile = {
   schoolKeywords: string[];
   connectionKeywords: string[];
   links: ProfileLink[];
+  workExperience: WorkExperienceEntry[];
+  projects: ProjectEntry[];
   resumeText?: string;
   rawUploadName?: string;
 };
@@ -91,6 +111,8 @@ export const defaultUserProfile: UserProfile = {
   schoolKeywords: [],
   connectionKeywords: [],
   links: [],
+  workExperience: [],
+  projects: [],
 };
 
 export function createDefaultProfileInputForUser(seed?: { name?: string; email?: string }): UserProfileInput {
@@ -127,6 +149,8 @@ function mergeProfile(profile?: UserProfileInput | null): UserProfile {
     schoolKeywords: unique(profile?.schoolKeywords ?? defaultUserProfile.schoolKeywords),
     connectionKeywords: unique(profile?.connectionKeywords ?? defaultUserProfile.connectionKeywords),
     links: profile?.links ?? defaultUserProfile.links,
+    workExperience: profile?.workExperience ?? [],
+    projects: profile?.projects ?? [],
     resumeText: profile?.resumeText,
     rawUploadName: profile?.rawUploadName,
   };
@@ -158,7 +182,42 @@ function serializeProfile(profile: UserProfile, userId: string) {
     schoolKeywords: JSON.stringify(profile.schoolKeywords),
     connectionKeywords: JSON.stringify(profile.connectionKeywords),
     links: JSON.stringify(profile.links),
+    workExperience: JSON.stringify(profile.workExperience),
+    projects: JSON.stringify(profile.projects),
   };
+}
+
+function parseWorkExperience(value?: string | null): WorkExperienceEntry[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is WorkExperienceEntry =>
+        item && typeof item === "object" &&
+        typeof item.id === "string" &&
+        typeof item.company === "string" &&
+        typeof item.title === "string",
+    );
+  } catch {
+    return [];
+  }
+}
+
+function parseProjects(value?: string | null): ProjectEntry[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is ProjectEntry =>
+        item && typeof item === "object" &&
+        typeof item.id === "string" &&
+        typeof item.name === "string",
+    );
+  } catch {
+    return [];
+  }
 }
 
 type CandidateProfileRecord = Awaited<ReturnType<typeof prisma.candidateProfile.findFirst>>;
@@ -189,6 +248,8 @@ function normalizeRecord(record: CandidateProfileRecord): UserProfile {
     schoolKeywords: parseJsonArray(record.schoolKeywords),
     connectionKeywords: parseJsonArray(record.connectionKeywords),
     links: parseLinks((record as any).links),
+    workExperience: parseWorkExperience((record as any).workExperience),
+    projects: parseProjects((record as any).projects),
   });
 }
 
