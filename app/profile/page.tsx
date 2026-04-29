@@ -23,12 +23,14 @@ export default async function ProfilePage() {
 
   return (
     <div className="stack page-stack-lg" style={{ padding: "24px 0 40px" }}>
+
+      {/* Hero */}
       <section className="hero-grid card hero-card">
         <div className="stack compact-stack hero-copy">
           <div className="eyebrow">Account workspace</div>
           <h1 className="section-title">Your saved profile powers the whole site</h1>
           <p className="muted hero-lead">
-            Signed in as {user.displayName || user.email}. Your resume, preferred locations, target roles, and job preferences live here and stay attached to this account.
+            Signed in as {user.displayName || user.email}. Your resume, work history, and preferences live here and feed every ATS resume, cover letter, and job match.
           </p>
         </div>
         <div className="hero-panel stack compact-stack">
@@ -39,26 +41,27 @@ export default async function ProfilePage() {
               <div className="metric-note">Used in matching</div>
             </div>
             <div className="metric-card inset-card">
-              <div className="metric-label">Target titles</div>
-              <div className="metric-value">{profile.targetTitles.length}</div>
-              <div className="metric-note">Preferred job families</div>
+              <div className="metric-label">Jobs tracked</div>
+              <div className="metric-value">{profile.workExperience.length}</div>
+              <div className="metric-note">Work experience entries</div>
             </div>
             <div className="metric-card inset-card">
-              <div className="metric-label">Connection angles</div>
-              <div className="metric-value">{profile.schoolKeywords.length + profile.companiesWorked.length}</div>
-              <div className="metric-note">Schools and orgs</div>
+              <div className="metric-label">Projects</div>
+              <div className="metric-value">{profile.projects.length}</div>
+              <div className="metric-note">In your portfolio</div>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Resume import + profile snapshot */}
       <section className="grid-2">
         <section className="card hero-card stack">
           <div>
             <div className="eyebrow">Resume source of truth</div>
             <h2 className="section-title">Import or replace your resume</h2>
             <p className="muted">
-              Upload your resume and the app will extract your schools, skills, and connection angles so job matches, resume rewrites, cover letters, and outreach suggestions use your actual background.
+              Upload your resume and the app automatically extracts your work experience, projects, skills, and connection angles. Everything populates below — review and edit after importing.
             </p>
           </div>
           <ResumeImportForm />
@@ -74,7 +77,7 @@ export default async function ProfilePage() {
           </div>
 
           <div>
-            <h3 className="section-title" style={{ marginBottom: 8 }}>Preferred job locations</h3>
+            <h3 className="section-title" style={{ marginBottom: 8 }}>Preferred locations</h3>
             <div className="badges">
               {profile.preferredLocations.map((entry) => (
                 <span key={entry} className="badge">{entry}</span>
@@ -83,7 +86,7 @@ export default async function ProfilePage() {
           </div>
 
           <div>
-            <h3 className="section-title" style={{ marginBottom: 8 }}>Skills powering job match</h3>
+            <h3 className="section-title" style={{ marginBottom: 8 }}>Skills</h3>
             <div className="badges">
               {profile.skills.slice(0, 20).map((skill) => (
                 <span key={skill} className="badge">{skill}</span>
@@ -93,57 +96,61 @@ export default async function ProfilePage() {
         </article>
       </section>
 
+      {/* Work experience — right under personal info */}
       <section className="card stack">
         <div>
           <div className="eyebrow">Work history</div>
           <h2 className="section-title">Work experience</h2>
           <p className="muted">
-            Each entry feeds directly into the ATS resume generator. Click "Extract from resume" to auto-fill from your uploaded resume, then edit and save.
+            Automatically populated when you import a resume. You can also add or edit entries manually. Each entry is used directly in the ATS resume generator.
           </p>
         </div>
         <WorkExperienceEditor initialEntries={profile.workExperience} resumeText={profile.resumeText} />
       </section>
 
+      {/* Projects — right under work experience */}
       <section className="card stack">
         <div>
           <div className="eyebrow">Portfolio</div>
           <h2 className="section-title">Projects</h2>
           <p className="muted">
-            Projects are included in every generated resume and weighted toward the job's tech stack. Extract from resume or add manually.
+            Automatically extracted from your resume. Add or edit projects here — they're included in every ATS-optimized resume, weighted toward each job's tech stack.
           </p>
         </div>
         <ProjectsEditor initialProjects={profile.projects} resumeText={profile.resumeText} />
       </section>
 
+      {/* Links */}
       <section className="card stack">
         <div>
           <div className="eyebrow">Quick access</div>
           <h2 className="section-title">Your links</h2>
           <p className="muted">
-            Save your LinkedIn, GitHub, portfolio, and any other links here. They appear on your dashboard for one-click access and are always in one place.
+            Save your LinkedIn, GitHub, portfolio, and any other links here. They appear on your dashboard for one-click access.
           </p>
         </div>
         <LinksEditor initialLinks={profile.links} />
       </section>
 
+      {/* Profile settings */}
       <section className="card stack">
         <div>
           <div className="eyebrow">Preference tuning</div>
           <h2 className="section-title">Edit profile settings</h2>
           <p className="muted">
-            Set your location preferences, job targets, and keywords here. These settings shape which roles are recommended and how the site rewrites your resume for each job.
+            Set your location preferences, job targets, and keywords here. These shape which roles are recommended and how cover letters are written.
           </p>
         </div>
         <ProfileSettingsForm profile={profile} />
       </section>
 
+      {/* Connection angles */}
       <section className="grid-2">
         <article className="card stack compact-stack">
           <h2 className="section-title">Connection angles</h2>
           <p className="muted">
-            These searches turn your saved resume details into warm-intro angles you can use on company pages and job detail pages.
+            These searches turn your saved background into warm-intro angles for company pages and outreach.
           </p>
-
           <div>
             <h3 className="section-title" style={{ marginBottom: 8 }}>Schools and alumni</h3>
             <div className="badges">
@@ -152,9 +159,8 @@ export default async function ProfilePage() {
               ))}
             </div>
           </div>
-
           <div>
-            <h3 className="section-title" style={{ marginBottom: 8 }}>Past companies and orgs</h3>
+            <h3 className="section-title" style={{ marginBottom: 8 }}>Past companies</h3>
             <div className="badges">
               {profile.companiesWorked.map((entry) => (
                 <span key={entry} className="badge">{entry}</span>

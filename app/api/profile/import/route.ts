@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { parseResumeText } from "@/lib/resume";
 import { saveUserProfileForUser } from "@/lib/profile";
 import { getCurrentUserFromRequest } from "@/lib/auth";
+import { parseResumeWithAI } from "@/lib/parse-resume-ai";
+import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -50,8 +52,22 @@ export async function POST(request: Request) {
     const parsedProfile = parseResumeText(extractedText, fileName);
     const saved = await saveUserProfileForUser(user.id, parsedProfile);
 
+    // AI extraction runs in parallel — failures are non-fatal
+    const aiResult = await parseResumeWithAI(extractedText).catch(() => null);
+    if (aiResult?.ok) {
+      const { workExperience, projects } = aiResult.data;
+      await prisma.candidateProfile.update({
+        where: { userId: user.id },
+        data: {
+          workExperience: JSON.stringify(workExperience),
+          projects: JSON.stringify(projects),
+        },
+      }).catch(() => null);
+    }
+
     return NextResponse.json({
       ok: true,
+      aiParsed: aiResult?.ok ?? false,
       profile: {
         name: saved.name,
         email: saved.email,
