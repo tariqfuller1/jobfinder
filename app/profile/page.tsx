@@ -96,30 +96,6 @@ export default async function ProfilePage() {
         </article>
       </section>
 
-      {/* Work experience — right under personal info */}
-      <section className="card stack">
-        <div>
-          <div className="eyebrow">Work history</div>
-          <h2 className="section-title">Work experience</h2>
-          <p className="muted">
-            Automatically populated when you import a resume. You can also add or edit entries manually. Each entry is used directly in the ATS resume generator.
-          </p>
-        </div>
-        <WorkExperienceEditor initialEntries={profile.workExperience} resumeText={profile.resumeText} />
-      </section>
-
-      {/* Projects — right under work experience */}
-      <section className="card stack">
-        <div>
-          <div className="eyebrow">Portfolio</div>
-          <h2 className="section-title">Projects</h2>
-          <p className="muted">
-            Automatically extracted from your resume. Add or edit projects here — they're included in every ATS-optimized resume, weighted toward each job's tech stack.
-          </p>
-        </div>
-        <ProjectsEditor initialProjects={profile.projects} resumeText={profile.resumeText} />
-      </section>
-
       {/* Links */}
       <section className="card stack">
         <div>
@@ -142,6 +118,24 @@ export default async function ProfilePage() {
           </p>
         </div>
         <ProfileSettingsForm profile={profile} />
+
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 4 }}>Work history</div>
+          <h3 className="section-title" style={{ marginBottom: 4 }}>Work experience</h3>
+          <p className="muted" style={{ marginBottom: 12 }}>
+            Automatically populated when you import a resume. You can also add or edit entries manually.
+          </p>
+          <WorkExperienceEditor initialEntries={profile.workExperience} resumeText={profile.resumeText} />
+        </div>
+
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 4 }}>Portfolio</div>
+          <h3 className="section-title" style={{ marginBottom: 4 }}>Projects</h3>
+          <p className="muted" style={{ marginBottom: 12 }}>
+            Automatically extracted from your resume. Add or edit projects here — they're included in every ATS-optimized resume.
+          </p>
+          <ProjectsEditor initialProjects={profile.projects} resumeText={profile.resumeText} />
+        </div>
       </section>
 
       {/* Connection angles */}
