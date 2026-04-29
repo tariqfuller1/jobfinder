@@ -1,6 +1,7 @@
 "use server";
 
 import { getGroqClient } from "@/lib/groq";
+import { parseJsonSafe } from "@/lib/safe-json";
 import type { QualityRating } from "./ats-check";
 
 export type AutoImproveResult =
@@ -70,7 +71,7 @@ Respond NOW with only this JSON starting with {:
   const end = raw.lastIndexOf("}");
   if (start === -1 || end === -1 || end < start) return null;
 
-  const parsed = JSON.parse(raw.slice(start, end + 1));
+  const parsed = parseJsonSafe(raw.slice(start, end + 1)) as Record<string, unknown>;
   const newRating = typeof parsed.qualityRating === "string" && VALID_RATINGS.includes(parsed.qualityRating as QualityRating)
     ? (parsed.qualityRating as QualityRating)
     : rating;

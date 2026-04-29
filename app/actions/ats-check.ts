@@ -1,6 +1,7 @@
 "use server";
 
 import { getGroqClient } from "@/lib/groq";
+import { parseJsonSafe } from "@/lib/safe-json";
 import type { WorkExperienceEntry, ProjectEntry } from "@/lib/profile";
 
 export type QualityRating = "Excellent" | "Good" | "Fair" | "Poor";
@@ -163,7 +164,7 @@ Return JSON:
     if (start === -1 || end === -1) {
       return { ok: false, error: "AI returned an unexpected format. Try again." };
     }
-    const parsed = JSON.parse(raw.slice(start, end + 1));
+    const parsed = parseJsonSafe(raw.slice(start, end + 1)) as Record<string, unknown>;
 
     const validRatings: QualityRating[] = ["Excellent", "Good", "Fair", "Poor"];
     const rawRating = typeof parsed.qualityRating === "string" ? parsed.qualityRating.trim() : "";

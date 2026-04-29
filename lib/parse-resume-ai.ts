@@ -1,4 +1,5 @@
 import { getGroqClient } from "@/lib/groq";
+import { parseJsonSafe } from "@/lib/safe-json";
 import type { WorkExperienceEntry, ProjectEntry } from "@/lib/profile";
 
 export type ParsedResumeAI = {
@@ -97,15 +98,15 @@ Respond NOW with only the JSON object starting with { and ending with }:`;
     if (start === -1 || end === -1 || end < start) {
       return { ok: false, error: "AI returned an unexpected format. Try again or add entries manually." };
     }
-    const parsed = JSON.parse(raw.slice(start, end + 1));
+    const parsed = parseJsonSafe(raw.slice(start, end + 1)) as Record<string, unknown>;
 
     const data: ParsedResumeAI = {
-      name: parsed.name ?? undefined,
-      email: parsed.email ?? undefined,
-      phone: parsed.phone ?? undefined,
-      location: parsed.location ?? undefined,
-      headline: parsed.headline ?? undefined,
-      summary: parsed.summary ?? undefined,
+      name: typeof parsed.name === "string" ? parsed.name : undefined,
+      email: typeof parsed.email === "string" ? parsed.email : undefined,
+      phone: typeof parsed.phone === "string" ? parsed.phone : undefined,
+      location: typeof parsed.location === "string" ? parsed.location : undefined,
+      headline: typeof parsed.headline === "string" ? parsed.headline : undefined,
+      summary: typeof parsed.summary === "string" ? parsed.summary : undefined,
       skills: Array.isArray(parsed.skills) ? parsed.skills.map(String) : [],
       stacks: Array.isArray(parsed.stacks) ? parsed.stacks.map(String) : [],
       educationEntries: Array.isArray(parsed.educationEntries) ? parsed.educationEntries.map(String) : [],
