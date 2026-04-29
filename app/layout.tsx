@@ -26,6 +26,7 @@ const primaryNav = [
 ];
 
 const creatorNav = [
+  { href: "/ats-check", label: "ATS resume", icon: "✎" },
   { href: "/cover-letters", label: "Cover letters", icon: "✦" },
 ];
 
