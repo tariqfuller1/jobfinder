@@ -24,25 +24,145 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-function downloadPDF(resumeText: string, jobTitle: string, company: string) {
-  const escaped = resumeText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const html = `<!DOCTYPE html>
+function esc(s: string) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function isSectionHead(line: string) {
+  return /^[A-Z][A-Z\s&/,()-]{2,}$/.test(line) && !line.includes("|");
+}
+
+function hasDatePattern(s: string) {
+  return /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Present|\d{4})\b/.test(s);
+}
+
+function renderBodyLine(line: string): string {
+  if (line.startsWith("•") || line.startsWith("·")) {
+    const text = line.replace(/^[•·]\s*/, "");
+    return `<div class="bullet"><span class="dot">•</span><span>${esc(text)}</span></div>`;
+  }
+  if (line.includes(" | ")) {
+    const parts = line.split(/\s*\|\s*/);
+    const last = parts[parts.length - 1];
+    if (parts.length >= 2 && hasDatePattern(last)) {
+      const left = parts.slice(0, -1).join(" | ");
+      return `<div class="entry"><span class="entry-left">${esc(left)}</span><span class="entry-date">${esc(last)}</span></div>`;
+    }
+    return `<div class="entry-flat">${parts.map(esc).join('<span class="pipe"> | </span>')}</div>`;
+  }
+  return `<p class="body-text">${esc(line)}</p>`;
+}
+
+function buildResumeHTML(text: string, jobTitle: string, company: string): string {
+  const lines = text.split("\n").map((l) => l.trimEnd());
+  let body = "";
+  let i = 0;
+
+  while (i < lines.length && !lines[i].trim()) i++;
+
+  if (i < lines.length) {
+    body += `<h1 class="name">${esc(lines[i].trim())}</h1>`;
+    i++;
+  }
+
+  while (i < lines.length && !lines[i].trim()) i++;
+
+  if (i < lines.length && !isSectionHead(lines[i].trim()) && !lines[i].startsWith("•")) {
+    const parts = lines[i].trim().split(/\s*\|\s*/);
+    body += `<div class="contact">${parts.map(esc).join(" &nbsp;|&nbsp; ")}</div>`;
+    body += `<hr class="name-rule">`;
+    i++;
+  }
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    i++;
+    if (!line) continue;
+    if (isSectionHead(line)) {
+      body += `<div class="section-head">${esc(line)}</div>`;
+    } else {
+      body += renderBodyLine(line);
+    }
+  }
+
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>${jobTitle} — ${company} Resume</title>
+  <title>${esc(jobTitle)} — ${esc(company)}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #000; padding: 0.75in; }
-    pre { white-space: pre-wrap; font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; }
-    @media print { body { padding: 0.5in; } @page { margin: 0.5in; } }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.45;
+      color: #111;
+      padding: 0.65in 0.8in;
+      max-width: 8.5in;
+      margin: 0 auto;
+    }
+    .name {
+      font-size: 20pt;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0.02em;
+      margin-bottom: 5px;
+    }
+    .contact {
+      font-size: 9.5pt;
+      text-align: center;
+      color: #555;
+      margin-bottom: 7px;
+    }
+    .name-rule {
+      border: none;
+      border-top: 2px solid #111;
+      margin: 6px 0 10px;
+    }
+    .section-head {
+      font-size: 10.5pt;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      border-bottom: 1px solid #666;
+      padding-bottom: 2px;
+      margin: 13px 0 5px;
+    }
+    .entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-weight: 600;
+      font-size: 10.5pt;
+      margin: 7px 0 2px;
+    }
+    .entry-left { flex: 1; margin-right: 8px; }
+    .entry-date { font-weight: normal; font-size: 9.5pt; color: #333; white-space: nowrap; }
+    .entry-flat { font-weight: 600; font-size: 10.5pt; margin: 7px 0 2px; }
+    .pipe { color: #888; font-weight: normal; }
+    .bullet {
+      display: flex;
+      gap: 5px;
+      margin: 2px 0;
+      padding-left: 10px;
+      font-size: 10pt;
+    }
+    .dot { flex-shrink: 0; }
+    .body-text { font-size: 10.5pt; margin: 3px 0; }
+    @media print {
+      html, body { padding: 0; margin: 0; }
+      @page { size: letter; margin: 0.6in 0.75in; }
+    }
   </style>
 </head>
 <body>
-  <pre>${escaped}</pre>
-  <script>window.onload = function() { window.print(); }<\/script>
+${body}
+<script>window.onload = function() { setTimeout(function() { window.print(); }, 150); }<\/script>
 </body>
 </html>`;
+}
+
+function downloadPDF(resumeText: string, jobTitle: string, company: string) {
+  const html = buildResumeHTML(resumeText, jobTitle, company);
   const win = window.open("", "_blank");
   if (win) {
     win.document.write(html);
