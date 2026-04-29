@@ -70,6 +70,12 @@ export default async function DashboardPage() {
           <p className="muted">Generate a cover letter from your profile and the job description.</p>
           <Link className="button secondary" href="/cover-letters">Write letter</Link>
         </article>
+        <article className="card stack compact-stack feature-card">
+          <div className="feature-icon">◎</div>
+          <h2 className="section-title">Edit profile</h2>
+          <p className="muted">Update your skills, experience, resume, and links to sharpen your job fit scores.</p>
+          <Link className="button secondary" href="/profile">Go to profile</Link>
+        </article>
       </section>
 
       {profile.links.length > 0 && (
