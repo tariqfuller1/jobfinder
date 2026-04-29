@@ -52,6 +52,22 @@ function esc(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// Escape text but turn bare URLs into clickable hyperlinks for the PDF
+function linkifyEsc(text: string): string {
+  const urlRegex = /https?:\/\/[^\s|<>]+/g;
+  let result = "";
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = urlRegex.exec(text)) !== null) {
+    result += esc(text.slice(lastIndex, match.index));
+    const url = match[0].replace(/[.,;)]+$/, ""); // strip trailing punctuation
+    result += `<a href="${esc(url)}" style="color:#1a56db;text-decoration:underline;">${esc(url)}</a>`;
+    lastIndex = match.index + url.length;
+  }
+  result += esc(text.slice(lastIndex));
+  return result;
+}
+
 function isSectionHead(line: string) {
   return /^[A-Z][A-Z\s&/,()-]{2,}$/.test(line) && !line.includes("|");
 }
@@ -64,7 +80,7 @@ function renderBodyLine(line: string): string {
   }
   // Entry header (job or project) — everything inline on one line so ATS reads left→right
   if (line.includes(" | ")) {
-    return `<p class="entry">${esc(line)}</p>`;
+    return `<p class="entry">${linkifyEsc(line)}</p>`;
   }
   return `<p class="body-text">${esc(line)}</p>`;
 }
@@ -86,7 +102,7 @@ function buildResumeHTML(text: string, jobTitle: string, company: string): strin
 
   // Contact line — second non-blank line if not a section header
   if (i < lines.length && !isSectionHead(lines[i].trim()) && !lines[i].trim().startsWith("•")) {
-    body += `<p class="contact">${esc(lines[i].trim())}</p>`;
+    body += `<p class="contact">${linkifyEsc(lines[i].trim())}</p>`;
     body += `<hr class="name-rule">`;
     i++;
   }

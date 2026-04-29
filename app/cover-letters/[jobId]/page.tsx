@@ -54,6 +54,15 @@ export default async function CoverLetterDetailPage({ params }: { params: Promis
             jobTitle={job.title}
             jobCompany={job.company}
             jobDescriptionText={job.descriptionText ?? ""}
+            name={profile.name ?? ""}
+            email={profile.email ?? ""}
+            phone={profile.phone ?? ""}
+            summary={profile.summary ?? ""}
+            skills={profile.skills ?? []}
+            stacks={profile.stacks ?? []}
+            workExperience={profile.workExperience ?? []}
+            educationEntries={profile.educationEntries ?? []}
+            profileLinks={(profile.links ?? []).filter((l) => l.includeInResume !== false)}
           />
         </section>
 

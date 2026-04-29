@@ -4,6 +4,7 @@ import { listCompanies } from "@/lib/companies";
 import { listJobs } from "@/lib/jobs";
 import { getProfileForUserOrDefault } from "@/lib/profile";
 import { MatchReasons } from "@/components/MatchReasons";
+import { QuickLinks } from "@/components/QuickLinks";
 
 export default async function DashboardPage() {
   const user = await requireCurrentUser();
@@ -77,20 +78,7 @@ export default async function DashboardPage() {
             <div className="eyebrow">Quick access</div>
             <h2 className="section-title">Your links</h2>
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {profile.links.map((link, i) => (
-              <a
-                key={i}
-                href={link.url}
-                target="_blank"
-                rel="noreferrer"
-                className="button secondary"
-                style={{ fontSize: 13 }}
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
+          <QuickLinks links={profile.links} />
         </section>
       )}
 

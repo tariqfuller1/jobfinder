@@ -181,21 +181,33 @@ function mapJob(record: UnknownRecord, index: number, apiUrl: string): Normalize
 }
 
 export async function fetchGamesWorkbookJobs(apiUrl = process.env.GAMES_WORKBOOK_API_URL || DEFAULT_API_URL) {
-  const response = await fetch(apiUrl, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "JobFinder/1.0",
-    },
-    cache: "no-store",
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 120_000); // 2 min — large payload
 
-  if (!response.ok) {
-    throw new Error(`Games Workbook API failed: ${response.status} ${response.statusText}`);
+  let data: unknown;
+  try {
+    const response = await fetch(apiUrl, {
+      headers: { Accept: "application/json", "User-Agent": "JobFinder/1.0" },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    if (!response.ok) {
+      throw new Error(`Games Workbook API failed: ${response.status} ${response.statusText}`);
+    }
+
+    data = await response.json();
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
   }
 
-  const data = await response.json();
-  const candidates: UnknownRecord[] = [];
-  collectCandidates(data, candidates);
+  // Fast path: API returns a flat array with known shape (jobLink field present)
+  const candidates: UnknownRecord[] =
+    Array.isArray(data) && data.length > 0 && "jobLink" in (data[0] as object)
+      ? (data as UnknownRecord[])
+      : (() => { const out: UnknownRecord[] = []; collectCandidates(data, out); return out; })();
 
   const deduped = new Map<string, NormalizedJob>();
   candidates.forEach((candidate, index) => {

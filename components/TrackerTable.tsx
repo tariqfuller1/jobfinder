@@ -91,10 +91,17 @@ export function TrackerTable({ initialRows }: { initialRows: any[] }) {
   }
 
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table className="table">
+    <div style={{ position: "relative" }}>
+      <div
+        className="tracker-scroll-hint"
+        style={{ fontSize: 11, color: "#6b7280", textAlign: "center", padding: "0 0 10px", display: "none" }}
+      >
+        ← swipe to see all columns →
+      </div>
+      <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as any }}>
+      <table className="table" style={{ minWidth: 860 }}>
         <thead>
-          <tr>
+          <tr style={{ whiteSpace: "nowrap" }}>
             <SortHeader col="company" label="Company" />
             <SortHeader col="roleTitle" label="Role" />
             <SortHeader col="status" label="Status" />
@@ -109,7 +116,16 @@ export function TrackerTable({ initialRows }: { initialRows: any[] }) {
         <tbody>
           {sorted.map((row) => (
             <tr key={row.id}>
-              <td style={{ fontWeight: 500 }}>{row.company}</td>
+              <td style={{ fontWeight: 500 }}>
+                <a
+                  href={`/companies/${row.company.toLowerCase().replace(/&/g, "-and-").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`}
+                  style={{ color: "inherit", textDecoration: "none" }}
+                  onMouseOver={(e) => (e.currentTarget.style.color = "#f87171")}
+                  onMouseOut={(e) => (e.currentTarget.style.color = "inherit")}
+                >
+                  {row.company}
+                </a>
+              </td>
               <td>
                 <a href={row.applyUrl} target="_blank" rel="noreferrer" style={{ color: "#d4d4d8" }}>
                   {row.roleTitle}
@@ -167,6 +183,7 @@ export function TrackerTable({ initialRows }: { initialRows: any[] }) {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

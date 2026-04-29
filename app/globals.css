@@ -1180,6 +1180,9 @@ select optgroup {
   /* ── Prevent horizontal overflow on mobile ── */
   .app-stage { overflow-x: hidden; }
 
+  /* ── Tracker: show swipe hint on mobile ── */
+  .tracker-scroll-hint { display: block !important; }
+
   /* ── Resume textarea: shorter on phone ── */
   .letter-textarea { min-height: 260px; }
 
