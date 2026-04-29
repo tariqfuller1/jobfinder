@@ -138,17 +138,20 @@ Return JSON:
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
-        { role: "system", content: "You are an expert ATS resume writer. Always respond with valid JSON only, no markdown fences." },
+        { role: "system", content: "You are an expert ATS resume writer. Output only the raw JSON object — no markdown, no code fences, no explanation." },
         { role: "user", content: prompt },
       ],
-      response_format: { type: "json_object" },
       temperature: 0.4,
       max_tokens: 4000,
     });
 
-    const raw = completion.choices[0]?.message?.content ?? "{}";
-    const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
-    const parsed = JSON.parse(jsonStr);
+    const raw = completion.choices[0]?.message?.content ?? "";
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start === -1 || end === -1) {
+      return { ok: false, error: "AI returned an unexpected format. Try again." };
+    }
+    const parsed = JSON.parse(raw.slice(start, end + 1));
 
     return {
       ok: true,
