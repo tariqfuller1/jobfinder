@@ -182,8 +182,8 @@ export function JobFilters() {
           position: "absolute",
           top: "calc(100% + 8px)",
           right: 0,
-          zIndex: 50,
-          width: 340,
+          zIndex: 150,
+          width: "min(340px, calc(100vw - 20px))",
           background: "linear-gradient(180deg, rgba(20,20,22,0.99), rgba(12,12,14,1))",
           border: "1px solid var(--border)",
           borderRadius: "var(--radius-xl)",
@@ -191,6 +191,8 @@ export function JobFilters() {
           padding: 20,
           display: "grid",
           gap: 14,
+          maxHeight: "calc(100vh - 180px)",
+          overflowY: "auto",
         }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 500, color: departments.size ? "#f87171" : "#d4d4d8", marginBottom: 8 }}>

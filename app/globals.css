@@ -1177,6 +1177,12 @@ select optgroup {
     padding-bottom: calc(68px + env(safe-area-inset-bottom));
   }
 
+  /* ── Prevent horizontal overflow on mobile ── */
+  .app-stage { overflow-x: hidden; }
+
+  /* ── Resume textarea: shorter on phone ── */
+  .letter-textarea { min-height: 260px; }
+
   /* ── Topbar: simplified on mobile ── */
   .topbar { padding: 10px 12px 0; }
 
