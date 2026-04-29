@@ -394,16 +394,8 @@ export function ATSChecker({
               <button
                 className="button"
                 onClick={() => downloadPDF(editedResume, jobTitle, jobCompany)}
-                disabled={qualityRating === "Poor" || qualityRating === "Fair"}
-                title={
-                  qualityRating === "Poor" || qualityRating === "Fair"
-                    ? "Auto-improve or refine until Good or Excellent to unlock download"
-                    : undefined
-                }
               >
-                {qualityRating === "Poor" || qualityRating === "Fair"
-                  ? "Download locked — improve quality first"
-                  : "Download PDF"}
+                Download PDF
               </button>
               <button
                 className="button secondary"

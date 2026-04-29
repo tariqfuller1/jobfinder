@@ -96,15 +96,9 @@ export function JobCard({
         </Link>
         <Link
           className="button secondary"
-          href={userId ? `/resume-feedback/${job.id}` : `/login?next=/resume-feedback/${job.id}`}
+          href={userId ? `/ats-check/${job.id}` : `/login?next=/ats-check/${job.id}`}
         >
-          Resume tips
-        </Link>
-        <Link
-          className="button secondary"
-          href={userId ? `/resume-rewrite/${job.id}` : `/login?next=/resume-rewrite/${job.id}`}
-        >
-          Rewrite
+          ATS resume
         </Link>
       </div>
     </article>

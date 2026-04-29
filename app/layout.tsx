@@ -27,8 +27,6 @@ const primaryNav = [
 
 const creatorNav = [
   { href: "/cover-letters", label: "Cover letters", icon: "✦" },
-  { href: "/resume-feedback", label: "Resume tips", icon: "△" },
-  { href: "/resume-rewrite", label: "Resume rewriter", icon: "✎" },
 ];
 
 const companyNav = [

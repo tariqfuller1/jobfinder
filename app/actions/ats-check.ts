@@ -142,7 +142,7 @@ Return JSON:
   "score": <number 0-100>,
   "matchedKeywords": ["keyword", ...],
   "missingKeywords": ["keyword", ...],
-  "qualityRating": "Excellent" | "Good" | "Fair" | "Poor",
+  "qualityRating": "Excellent or Good or Fair or Poor",
   "qualityFeedback": "<2 sentences on rating and what would strengthen the resume>",
   "optimizedResume": "<complete ATS resume as plain text>"
 }`;
@@ -154,7 +154,7 @@ Return JSON:
         { role: "user", content: prompt },
       ],
       temperature: 0.4,
-      max_tokens: 4000,
+      max_tokens: 6000,
     });
 
     const raw = completion.choices[0]?.message?.content ?? "";
@@ -188,6 +188,6 @@ Return JSON:
     if (message.includes("API key") || message.includes("auth")) {
       return { ok: false, error: "Groq API key is missing or invalid. Add GROQ_API_KEY to your environment variables." };
     }
-    return { ok: false, error: "Something went wrong generating the resume. Try again." };
+    return { ok: false, error: `Resume generation failed: ${message}` };
   }
 }

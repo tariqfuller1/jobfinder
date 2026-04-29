@@ -119,8 +119,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
             <div className="actions">
               <Link className="button secondary" href={`/jobs/${job.id}`}>View job</Link>
               <Link className="button secondary" href={user ? `/cover-letters/${job.id}` : `/login?next=/cover-letters/${job.id}`}>Cover letter</Link>
-              <Link className="button secondary" href={user ? `/resume-feedback/${job.id}` : `/login?next=/resume-feedback/${job.id}`}>Resume tips</Link>
-              <Link className="button secondary" href={user ? `/resume-rewrite/${job.id}` : `/login?next=/resume-rewrite/${job.id}`}>Rewrite resume</Link>
+              <Link className="button secondary" href={user ? `/ats-check/${job.id}` : `/login?next=/ats-check/${job.id}`}>ATS resume</Link>
               {job.primaryApplyUrl ? <a className="button secondary" href={job.primaryApplyUrl} target="_blank" rel="noreferrer">{job.primaryApplyLabel}</a> : null}
               {job.companyWebsiteUrl ? <a className="button secondary" href={job.companyWebsiteUrl} target="_blank" rel="noreferrer">Company home</a> : null}
             </div>

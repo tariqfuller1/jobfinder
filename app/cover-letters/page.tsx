@@ -32,9 +32,6 @@ export default async function CoverLettersPage() {
               These are your strongest current matches. You can also open any job detail page and create a cover letter from there.
             </p>
           </div>
-          <Link className="button secondary" href="/resume-rewrite">
-            Resume rewriter
-          </Link>
         </div>
 
         {jobs.jobs.length ? (
@@ -52,8 +49,7 @@ export default async function CoverLettersPage() {
 
               <div className="actions">
                 <Link className="button" href={`/cover-letters/${job.id}`}>Make cover letter</Link>
-                <Link className="button secondary" href={`/resume-feedback/${job.id}`}>Resume tips</Link>
-                <Link className="button secondary" href={`/resume-rewrite/${job.id}`}>Rewrite resume</Link>
+                <Link className="button secondary" href={`/ats-check/${job.id}`}>ATS resume</Link>
                 <Link className="button secondary" href={`/jobs/${job.id}`}>View job</Link>
               </div>
             </div>

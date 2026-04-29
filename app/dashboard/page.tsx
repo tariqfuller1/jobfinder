@@ -59,15 +59,9 @@ export default async function DashboardPage() {
       <section className="grid-3">
         <article className="card stack compact-stack feature-card">
           <div className="feature-icon">✎</div>
-          <h2 className="section-title">Resume rewriter</h2>
-          <p className="muted">Rewrite your resume for a specific role using your saved profile.</p>
-          <Link className="button secondary" href="/resume-rewrite">Rewrite resume</Link>
-        </article>
-        <article className="card stack compact-stack feature-card">
-          <div className="feature-icon">△</div>
-          <h2 className="section-title">Resume tips</h2>
-          <p className="muted">See keyword gaps and get suggestions tailored to the role.</p>
-          <Link className="button secondary" href="/resume-feedback">Get tips</Link>
+          <h2 className="section-title">ATS resume</h2>
+          <p className="muted">Score your resume against a job, auto-improve it, and download a tailored PDF.</p>
+          <Link className="button secondary" href="/jobs">Pick a job</Link>
         </article>
         <article className="card stack compact-stack feature-card">
           <div className="feature-icon">✦</div>
@@ -125,8 +119,7 @@ export default async function DashboardPage() {
               </div>
               <div className="actions">
                 <Link className="button secondary" href={`/cover-letters/${job.id}`}>Cover letter</Link>
-                <Link className="button secondary" href={`/resume-feedback/${job.id}`}>Resume tips</Link>
-                <Link className="button secondary" href={`/resume-rewrite/${job.id}`}>Rewrite resume</Link>
+                <Link className="button secondary" href={`/ats-check/${job.id}`}>ATS resume</Link>
               </div>
             </div>
           ))}
