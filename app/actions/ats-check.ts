@@ -3,6 +3,8 @@
 import { getGroqClient } from "@/lib/groq";
 import type { WorkExperienceEntry, ProjectEntry } from "@/lib/profile";
 
+export type QualityRating = "Excellent" | "Good" | "Fair" | "Poor";
+
 export type ATSCheckResult =
   | {
       ok: true;
@@ -10,6 +12,8 @@ export type ATSCheckResult =
       matchedKeywords: string[];
       missingKeywords: string[];
       optimizedResume: string;
+      qualityRating: QualityRating;
+      qualityFeedback: string;
     }
   | { ok: false; error: string };
 
@@ -94,7 +98,13 @@ YOUR TASKS:
 2. Identify which keywords the candidate already covers (matchedKeywords)
 3. Identify which are missing (missingKeywords)
 4. Calculate score 0-100 based on keyword coverage
-5. Generate a complete, ATS-optimized resume using this format:
+5. Evaluate the overall quality of the candidate's fit for this specific role:
+   - "Excellent": Experience strongly aligns — candidate is highly competitive
+   - "Good": Candidate meets most key requirements with minor gaps
+   - "Fair": Some relevant experience but notable gaps in required skills or seniority
+   - "Poor": Experience does not sufficiently match this role's core requirements
+6. Write qualityFeedback: 2 sentences — state the rating reason and one specific thing that would strengthen the resume for this role
+7. Generate a complete, ATS-optimized resume using this format:
 
 --- RESUME FORMAT (plain text, NO tables, NO columns, NO special characters) ---
 [FULL NAME]
@@ -132,6 +142,8 @@ Return JSON:
   "score": <number 0-100>,
   "matchedKeywords": ["keyword", ...],
   "missingKeywords": ["keyword", ...],
+  "qualityRating": "Excellent" | "Good" | "Fair" | "Poor",
+  "qualityFeedback": "<2 sentences on rating and what would strengthen the resume>",
   "optimizedResume": "<complete ATS resume as plain text>"
 }`;
 
@@ -153,11 +165,19 @@ Return JSON:
     }
     const parsed = JSON.parse(raw.slice(start, end + 1));
 
+    const validRatings: QualityRating[] = ["Excellent", "Good", "Fair", "Poor"];
+    const rawRating = typeof parsed.qualityRating === "string" ? parsed.qualityRating.trim() : "";
+    const qualityRating: QualityRating = validRatings.includes(rawRating as QualityRating)
+      ? (rawRating as QualityRating)
+      : "Fair";
+
     return {
       ok: true,
       score: typeof parsed.score === "number" ? Math.min(100, Math.max(0, Math.round(parsed.score))) : 0,
       matchedKeywords: Array.isArray(parsed.matchedKeywords) ? parsed.matchedKeywords.map(String) : [],
       missingKeywords: Array.isArray(parsed.missingKeywords) ? parsed.missingKeywords.map(String) : [],
+      qualityRating,
+      qualityFeedback: typeof parsed.qualityFeedback === "string" ? parsed.qualityFeedback.trim() : "",
       optimizedResume: typeof parsed.optimizedResume === "string" ? parsed.optimizedResume.trim() : "",
     };
   } catch (err) {

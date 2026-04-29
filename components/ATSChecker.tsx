@@ -1,9 +1,33 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { runATSCheck, type ATSCheckResult } from "@/app/actions/ats-check";
+import { runATSCheck, type ATSCheckResult, type QualityRating } from "@/app/actions/ats-check";
+import { autoImproveResume } from "@/app/actions/auto-improve-resume";
 import { regenerateWithSuggestion } from "@/app/actions/ai-rewrite";
 import type { WorkExperienceEntry, ProjectEntry } from "@/lib/profile";
+
+function QualityBadge({ rating }: { rating: QualityRating }) {
+  const config = {
+    Excellent: { color: "#4ade80", bg: "rgba(74,222,128,0.12)", label: "Excellent fit" },
+    Good:      { color: "#60a5fa", bg: "rgba(96,165,250,0.12)", label: "Good fit" },
+    Fair:      { color: "#fbbf24", bg: "rgba(251,191,36,0.12)", label: "Fair fit" },
+    Poor:      { color: "#f87171", bg: "rgba(248,113,113,0.12)", label: "Poor fit" },
+  }[rating];
+  return (
+    <span style={{
+      display: "inline-block",
+      padding: "3px 10px",
+      borderRadius: 99,
+      fontSize: 12,
+      fontWeight: 700,
+      color: config.color,
+      background: config.bg,
+      border: `1px solid ${config.color}40`,
+    }}>
+      {config.label}
+    </span>
+  );
+}
 
 function ScoreRing({ score }: { score: number }) {
   const color = score >= 75 ? "#4ade80" : score >= 50 ? "#fbbf24" : "#f87171";
@@ -32,23 +56,15 @@ function isSectionHead(line: string) {
   return /^[A-Z][A-Z\s&/,()-]{2,}$/.test(line) && !line.includes("|");
 }
 
-function hasDatePattern(s: string) {
-  return /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Present|\d{4})\b/.test(s);
-}
-
 function renderBodyLine(line: string): string {
+  // Bullet point — simple indented paragraph, no flex, so parsers read it naturally
   if (line.startsWith("•") || line.startsWith("·")) {
     const text = line.replace(/^[•·]\s*/, "");
-    return `<div class="bullet"><span class="dot">•</span><span>${esc(text)}</span></div>`;
+    return `<p class="bullet">&#8226; ${esc(text)}</p>`;
   }
+  // Entry header (job or project) — everything inline on one line so ATS reads left→right
   if (line.includes(" | ")) {
-    const parts = line.split(/\s*\|\s*/);
-    const last = parts[parts.length - 1];
-    if (parts.length >= 2 && hasDatePattern(last)) {
-      const left = parts.slice(0, -1).join(" | ");
-      return `<div class="entry"><span class="entry-left">${esc(left)}</span><span class="entry-date">${esc(last)}</span></div>`;
-    }
-    return `<div class="entry-flat">${parts.map(esc).join('<span class="pipe"> | </span>')}</div>`;
+    return `<p class="entry">${esc(line)}</p>`;
   }
   return `<p class="body-text">${esc(line)}</p>`;
 }
@@ -60,6 +76,7 @@ function buildResumeHTML(text: string, jobTitle: string, company: string): strin
 
   while (i < lines.length && !lines[i].trim()) i++;
 
+  // Name — first non-blank line
   if (i < lines.length) {
     body += `<h1 class="name">${esc(lines[i].trim())}</h1>`;
     i++;
@@ -67,9 +84,9 @@ function buildResumeHTML(text: string, jobTitle: string, company: string): strin
 
   while (i < lines.length && !lines[i].trim()) i++;
 
-  if (i < lines.length && !isSectionHead(lines[i].trim()) && !lines[i].startsWith("•")) {
-    const parts = lines[i].trim().split(/\s*\|\s*/);
-    body += `<div class="contact">${parts.map(esc).join(" &nbsp;|&nbsp; ")}</div>`;
+  // Contact line — second non-blank line if not a section header
+  if (i < lines.length && !isSectionHead(lines[i].trim()) && !lines[i].trim().startsWith("•")) {
+    body += `<p class="contact">${esc(lines[i].trim())}</p>`;
     body += `<hr class="name-rule">`;
     i++;
   }
@@ -79,25 +96,26 @@ function buildResumeHTML(text: string, jobTitle: string, company: string): strin
     i++;
     if (!line) continue;
     if (isSectionHead(line)) {
-      body += `<div class="section-head">${esc(line)}</div>`;
+      body += `<p class="section-head">${esc(line)}</p>`;
     } else {
       body += renderBodyLine(line);
     }
   }
 
   return `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>${esc(jobTitle)} — ${esc(company)}</title>
   <style>
+    /* ATS-safe: single column, no flexbox, no tables, no columns, linear DOM order */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: Arial, Helvetica, sans-serif;
       font-size: 10.5pt;
-      line-height: 1.45;
-      color: #111;
-      padding: 0.65in 0.8in;
+      line-height: 1.5;
+      color: #000;
+      padding: 0.7in 0.85in;
       max-width: 8.5in;
       margin: 0 auto;
     }
@@ -105,52 +123,47 @@ function buildResumeHTML(text: string, jobTitle: string, company: string): strin
       font-size: 20pt;
       font-weight: 700;
       text-align: center;
-      letter-spacing: 0.02em;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
     .contact {
       font-size: 9.5pt;
       text-align: center;
-      color: #555;
-      margin-bottom: 7px;
+      margin-bottom: 6px;
     }
     .name-rule {
       border: none;
-      border-top: 2px solid #111;
-      margin: 6px 0 10px;
+      border-top: 1.5px solid #000;
+      margin: 5px 0 9px;
     }
     .section-head {
       font-size: 10.5pt;
       font-weight: 700;
-      letter-spacing: 0.07em;
-      border-bottom: 1px solid #666;
-      padding-bottom: 2px;
-      margin: 13px 0 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid #555;
+      padding-bottom: 1px;
+      margin: 12px 0 4px;
     }
+    /* Entry: company | title | location | dates — all inline, no positioning tricks */
     .entry {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 10.5pt;
-      margin: 7px 0 2px;
+      margin: 6px 0 1px;
     }
-    .entry-left { flex: 1; margin-right: 8px; }
-    .entry-date { font-weight: normal; font-size: 9.5pt; color: #333; white-space: nowrap; }
-    .entry-flat { font-weight: 600; font-size: 10.5pt; margin: 7px 0 2px; }
-    .pipe { color: #888; font-weight: normal; }
+    /* Bullet: text-indent hanging indent — no flex, guaranteed linear parse */
     .bullet {
-      display: flex;
-      gap: 5px;
-      margin: 2px 0;
-      padding-left: 10px;
       font-size: 10pt;
+      margin: 1px 0;
+      padding-left: 1.1em;
+      text-indent: -1.1em;
     }
-    .dot { flex-shrink: 0; }
-    .body-text { font-size: 10.5pt; margin: 3px 0; }
+    .body-text {
+      font-size: 10.5pt;
+      margin: 2px 0;
+    }
     @media print {
       html, body { padding: 0; margin: 0; }
-      @page { size: letter; margin: 0.6in 0.75in; }
+      @page { size: letter; margin: 0.65in 0.85in; }
     }
   </style>
 </head>
@@ -197,6 +210,9 @@ export function ATSChecker({
 }) {
   const [result, setResult] = useState<Extract<ATSCheckResult, { ok: true }> | null>(null);
   const [editedResume, setEditedResume] = useState("");
+  const [qualityRating, setQualityRating] = useState<QualityRating | null>(null);
+  const [qualityFeedback, setQualityFeedback] = useState("");
+  const [improveAttempts, setImproveAttempts] = useState(0);
   const [suggestion, setSuggestion] = useState("");
   const [error, setError] = useState("");
   const [aiError, setAiError] = useState("");
@@ -208,14 +224,35 @@ export function ATSChecker({
 
   function handleCheck() {
     setError("");
+    setImproveAttempts(0);
     startCheck(async () => {
       const res = await runATSCheck(jobTitle, jobCompany, jobDescriptionText, workExperience, projects, skills, stacks, educationEntries, name, resumeText);
-      if (res.ok) {
-        setResult(res);
-        setEditedResume(res.optimizedResume);
-      } else {
-        setError(res.error);
+      if (!res.ok) { setError(res.error); return; }
+
+      setResult(res);
+      setEditedResume(res.optimizedResume);
+
+      // Automatically improve if quality isn't Good or Excellent
+      if (res.qualityRating === "Fair" || res.qualityRating === "Poor") {
+        const improved = await autoImproveResume(
+          res.optimizedResume,
+          res.qualityRating,
+          res.qualityFeedback,
+          jobTitle,
+          jobCompany,
+          jobDescriptionText,
+        );
+        if (improved.ok) {
+          setEditedResume(improved.optimizedResume);
+          setQualityRating(improved.qualityRating);
+          setQualityFeedback(improved.qualityFeedback);
+          setImproveAttempts(improved.attempts);
+          return;
+        }
       }
+
+      setQualityRating(res.qualityRating);
+      setQualityFeedback(res.qualityFeedback);
     });
   }
 
@@ -251,7 +288,7 @@ export function ATSChecker({
       {!result && (
         <div className="card" style={{ padding: "20px", display: "grid", gap: 12, textAlign: "center" }}>
           <div style={{ fontSize: 13, color: "#a1a1aa" }}>
-            Groq AI will extract ATS keywords from the job description, score your resume, and rewrite it with the missing terms integrated.
+            Groq AI scores your resume against the job description, rewrites it with missing keywords, and automatically improves it until it reaches Good or Excellent quality.
           </div>
           {error && <p style={{ margin: 0, fontSize: 13, color: "#f87171" }}>{error}</p>}
           <button
@@ -260,28 +297,38 @@ export function ATSChecker({
             disabled={isChecking}
             style={{ justifyContent: "center", fontSize: 14 }}
           >
-            {isChecking ? "Analyzing resume…" : "Run ATS Check"}
+            {isChecking ? "Analyzing & improving resume…" : "Run ATS Check"}
           </button>
         </div>
       )}
 
       {result && (
         <div style={{ display: "grid", gap: 14 }}>
-          {/* Score + keywords */}
+          {/* Score + quality + keywords */}
           <div className="grid-2" style={{ gap: 14, alignItems: "start" }}>
             <div className="card" style={{ padding: "16px 18px", display: "grid", gap: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
                 <ScoreRing score={result.score} />
-                <div style={{ display: "grid", gap: 4, flex: 1, minWidth: 140 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#d4d4d8" }}>ATS Score</div>
-                  <p className="muted" style={{ margin: 0, fontSize: 12 }}>
-                    Based on keyword coverage between your resume and the job description.
-                  </p>
+                <div style={{ display: "grid", gap: 6, flex: 1, minWidth: 140 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#d4d4d8" }}>ATS Score</span>
+                    {qualityRating && <QualityBadge rating={qualityRating} />}
+                    {improveAttempts > 0 && (
+                      <span style={{ fontSize: 11, color: "#a1a1aa" }}>
+                        ({improveAttempts} improvement{improveAttempts !== 1 ? "s" : ""} applied)
+                      </span>
+                    )}
+                  </div>
+                  {qualityFeedback && (
+                    <p className="muted" style={{ margin: 0, fontSize: 12, lineHeight: 1.5 }}>
+                      {qualityFeedback}
+                    </p>
+                  )}
                   <button
                     className="button secondary"
                     onClick={handleCheck}
                     disabled={isChecking}
-                    style={{ fontSize: 12, marginTop: 4 }}
+                    style={{ fontSize: 12, marginTop: 2 }}
                   >
                     {isChecking ? "Re-analyzing…" : "Re-run check"}
                   </button>
@@ -313,6 +360,20 @@ export function ATSChecker({
             </div>
           </div>
 
+          {/* Quality gate — shown only when loop couldn't reach Good/Excellent */}
+          {(qualityRating === "Fair" || qualityRating === "Poor") && !isChecking && (
+            <div className="inset-card" style={{ padding: "14px 16px", borderColor: "rgba(251,191,36,0.3)", display: "grid", gap: 6 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#fbbf24" }}>
+                Resume rated {qualityRating} after {improveAttempts > 0 ? `${improveAttempts} auto-improvements` : "analysis"}
+              </div>
+              <p className="muted" style={{ margin: 0, fontSize: 12 }}>
+                Your profile may not have enough experience to fully match this role. Try adding more relevant work history on your
+                profile, use the refinement box below to strengthen specific areas, then re-run the check.
+              </p>
+              {aiError && <p style={{ margin: 0, fontSize: 12, color: "#f87171" }}>{aiError}</p>}
+            </div>
+          )}
+
           {/* Optimized resume */}
           <div className="card" style={{ padding: "16px 18px", display: "grid", gap: 10 }}>
             <div className="space-between">
@@ -333,8 +394,16 @@ export function ATSChecker({
               <button
                 className="button"
                 onClick={() => downloadPDF(editedResume, jobTitle, jobCompany)}
+                disabled={qualityRating === "Poor" || qualityRating === "Fair"}
+                title={
+                  qualityRating === "Poor" || qualityRating === "Fair"
+                    ? "Auto-improve or refine until Good or Excellent to unlock download"
+                    : undefined
+                }
               >
-                Download PDF
+                {qualityRating === "Poor" || qualityRating === "Fair"
+                  ? "Download locked — improve quality first"
+                  : "Download PDF"}
               </button>
               <button
                 className="button secondary"
