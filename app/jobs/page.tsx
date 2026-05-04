@@ -66,6 +66,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
               <Link className="button" href={user ? "/dashboard" : "/register?next=/dashboard"}>{user ? "Dashboard" : "Create account"}</Link>
               <Link className="button secondary" href={user ? "/recommended" : "/login?next=/recommended"}>Best fit</Link>
               <Link className="button secondary" href="/companies?state=NC">Companies</Link>
+              {user && <Link className="button secondary" href="/jobs/add">+ Add job</Link>}
             </div>
           </div>
 
