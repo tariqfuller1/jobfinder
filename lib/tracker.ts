@@ -1,6 +1,42 @@
 import { ApplicationStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
+export async function createManualApplication(
+  userId: string,
+  data: { company: string; roleTitle: string; applyUrl: string; status: string },
+) {
+  const externalId = `manual-${userId}-${Date.now()}`;
+  const url = data.applyUrl.trim() || "https://example.com";
+
+  const job = await prisma.job.create({
+    data: {
+      source: "manual",
+      externalId,
+      sourceUrl: url,
+      applyUrl: url,
+      title: data.roleTitle,
+      company: data.company,
+    },
+  });
+
+  const status = Object.values(ApplicationStatus).includes(data.status as ApplicationStatus)
+    ? (data.status as ApplicationStatus)
+    : ApplicationStatus.SAVED;
+
+  return prisma.application.create({
+    data: {
+      userId,
+      jobId: job.id,
+      company: data.company,
+      roleTitle: data.roleTitle,
+      sourceUrl: url,
+      applyUrl: url,
+      status,
+      dateApplied: status === ApplicationStatus.APPLIED ? new Date() : null,
+    },
+  });
+}
+
 export async function listApplications(userId: string) {
   return prisma.application.findMany({
     where: { userId },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useMemo, useTransition } from "react";
 import { runATSCheck, type ATSCheckResult, type QualityRating } from "@/app/actions/ats-check";
 import { autoImproveResume } from "@/app/actions/auto-improve-resume";
 import { regenerateWithSuggestion } from "@/app/actions/ai-rewrite";
@@ -91,14 +91,83 @@ function renderBodyLine(line: string): string {
   return `<p class="body-text">${linkifyEsc(line)}</p>`;
 }
 
-function buildResumeHTML(text: string, jobTitle: string, company: string): string {
+const RESUME_TEMPLATES = [
+  {
+    id: "classic",
+    name: "Classic",
+    description: "Centered name, all-caps sections, clean Arial",
+    css: `
+      body { font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.5; color: #000; padding: 0.7in 0.85in; max-width: 8.5in; margin: 0 auto; }
+      .name { font-size: 20pt; font-weight: 700; text-align: center; margin-bottom: 4px; }
+      .contact { font-size: 9.5pt; text-align: center; margin-bottom: 6px; }
+      .name-rule { border: none; border-top: 1.5px solid #000; margin: 5px 0 9px; }
+      .section-head { font-size: 10.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #555; padding-bottom: 1px; margin: 12px 0 4px; }
+      .entry { font-weight: 700; font-size: 10.5pt; margin: 6px 0 1px; }
+      .bullet { font-size: 10pt; margin: 1px 0; padding-left: 1.1em; text-indent: -1.1em; }
+      .body-text { font-size: 10.5pt; margin: 2px 0; }
+      @media print { html, body { padding: 0; margin: 0; } @page { size: letter; margin: 0.65in 0.85in; } }
+    `,
+  },
+  {
+    id: "modern",
+    name: "Modern",
+    description: "Left-aligned, navy blue accents, Calibri",
+    css: `
+      body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #1a1a1a; padding: 0.7in 0.9in; max-width: 8.5in; margin: 0 auto; }
+      .name { font-size: 22pt; font-weight: 700; text-align: left; color: #1e3a5f; margin-bottom: 3px; }
+      .contact { font-size: 9.5pt; text-align: left; color: #444; margin-bottom: 6px; }
+      .name-rule { border: none; border-top: 2px solid #1e3a5f; margin: 4px 0 10px; }
+      .section-head { font-size: 10pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #1e3a5f; border-bottom: 1.5px solid #1e3a5f; padding-bottom: 2px; margin: 14px 0 5px; }
+      .entry { font-weight: 700; font-size: 10.5pt; margin: 6px 0 1px; }
+      .bullet { font-size: 10pt; margin: 2px 0; padding-left: 1.1em; text-indent: -1.1em; }
+      .body-text { font-size: 11pt; margin: 2px 0; }
+      @media print { html, body { padding: 0; margin: 0; } @page { size: letter; margin: 0.65in 0.9in; } }
+    `,
+  },
+  {
+    id: "compact",
+    name: "Compact",
+    description: "Tighter spacing — fits more on one page",
+    css: `
+      body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.35; color: #000; padding: 0.5in 0.7in; max-width: 8.5in; margin: 0 auto; }
+      .name { font-size: 16pt; font-weight: 700; text-align: center; margin-bottom: 2px; }
+      .contact { font-size: 9pt; text-align: center; margin-bottom: 4px; }
+      .name-rule { border: none; border-top: 1px solid #000; margin: 3px 0 6px; }
+      .section-head { font-size: 10pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #777; padding-bottom: 1px; margin: 8px 0 2px; }
+      .entry { font-weight: 700; font-size: 10pt; margin: 4px 0 0; }
+      .bullet { font-size: 9.5pt; margin: 0; padding-left: 1em; text-indent: -1em; }
+      .body-text { font-size: 10pt; margin: 1px 0; }
+      @media print { html, body { padding: 0; margin: 0; } @page { size: letter; margin: 0.45in 0.7in; } }
+    `,
+  },
+  {
+    id: "executive",
+    name: "Executive",
+    description: "Serif font, letter-spaced name, formal look",
+    css: `
+      body { font-family: Georgia, 'Times New Roman', serif; font-size: 11pt; line-height: 1.55; color: #000; padding: 0.8in 1in; max-width: 8.5in; margin: 0 auto; }
+      .name { font-size: 22pt; font-weight: 400; text-align: center; letter-spacing: 0.08em; margin-bottom: 4px; }
+      .contact { font-size: 9.5pt; text-align: center; font-style: italic; margin-bottom: 8px; }
+      .name-rule { border: none; border-top: 0.5px solid #000; margin: 5px 0 10px; }
+      .section-head { font-size: 11pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 14px 0 5px; }
+      .entry { font-weight: 700; font-size: 11pt; margin: 7px 0 1px; }
+      .bullet { font-size: 10.5pt; margin: 2px 0; padding-left: 1.1em; text-indent: -1.1em; }
+      .body-text { font-size: 11pt; margin: 3px 0; }
+      @media print { html, body { padding: 0; margin: 0; } @page { size: letter; margin: 0.75in 1in; } }
+    `,
+  },
+] as const;
+
+type TemplateId = typeof RESUME_TEMPLATES[number]["id"];
+
+function buildResumeHTML(text: string, jobTitle: string, company: string, templateId: TemplateId = "classic", forPrint = true): string {
+  const template = RESUME_TEMPLATES.find((t) => t.id === templateId) ?? RESUME_TEMPLATES[0];
   const lines = text.split("\n").map((l) => l.trimEnd());
   let body = "";
   let i = 0;
 
   while (i < lines.length && !lines[i].trim()) i++;
 
-  // Name — first non-blank line
   if (i < lines.length) {
     body += `<h1 class="name">${esc(lines[i].trim())}</h1>`;
     i++;
@@ -106,7 +175,6 @@ function buildResumeHTML(text: string, jobTitle: string, company: string): strin
 
   while (i < lines.length && !lines[i].trim()) i++;
 
-  // Contact line — second non-blank line if not a section header
   if (i < lines.length && !isSectionHead(lines[i].trim()) && !lines[i].trim().startsWith("•")) {
     body += `<p class="contact">${linkifyEsc(lines[i].trim())}</p>`;
     body += `<hr class="name-rule">`;
@@ -130,74 +198,20 @@ function buildResumeHTML(text: string, jobTitle: string, company: string): strin
   <meta charset="UTF-8">
   <title>${esc(jobTitle)} — ${esc(company)}</title>
   <style>
-    /* ATS-safe: single column, no flexbox, no tables, no columns, linear DOM order */
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 10.5pt;
-      line-height: 1.5;
-      color: #000;
-      padding: 0.7in 0.85in;
-      max-width: 8.5in;
-      margin: 0 auto;
-    }
-    .name {
-      font-size: 20pt;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 4px;
-    }
-    .contact {
-      font-size: 9.5pt;
-      text-align: center;
-      margin-bottom: 6px;
-    }
-    .name-rule {
-      border: none;
-      border-top: 1.5px solid #000;
-      margin: 5px 0 9px;
-    }
-    .section-head {
-      font-size: 10.5pt;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      border-bottom: 1px solid #555;
-      padding-bottom: 1px;
-      margin: 12px 0 4px;
-    }
-    /* Entry: company | title | location | dates — all inline, no positioning tricks */
-    .entry {
-      font-weight: 700;
-      font-size: 10.5pt;
-      margin: 6px 0 1px;
-    }
-    /* Bullet: text-indent hanging indent — no flex, guaranteed linear parse */
-    .bullet {
-      font-size: 10pt;
-      margin: 1px 0;
-      padding-left: 1.1em;
-      text-indent: -1.1em;
-    }
-    .body-text {
-      font-size: 10.5pt;
-      margin: 2px 0;
-    }
-    @media print {
-      html, body { padding: 0; margin: 0; }
-      @page { size: letter; margin: 0.65in 0.85in; }
-    }
+    ${template.css}
+    a { color: #1a56db; text-decoration: underline; }
   </style>
 </head>
 <body>
 ${body}
-<script>window.onload = function() { setTimeout(function() { window.print(); }, 150); }<\/script>
+${forPrint ? `<script>window.onload = function() { setTimeout(function() { window.print(); }, 150); }<\/script>` : ""}
 </body>
 </html>`;
 }
 
-function downloadPDF(resumeText: string, jobTitle: string, company: string) {
-  const html = buildResumeHTML(resumeText, jobTitle, company);
+function downloadPDF(resumeText: string, jobTitle: string, company: string, templateId: TemplateId) {
+  const html = buildResumeHTML(resumeText, jobTitle, company, templateId);
   const win = window.open("", "_blank");
   if (win) {
     win.document.write(html);
@@ -241,8 +255,15 @@ export function ATSChecker({
   const [error, setError] = useState("");
   const [aiError, setAiError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("classic");
+  const [showPreview, setShowPreview] = useState(false);
   const [isChecking, startCheck] = useTransition();
   const [isRefining, startRefine] = useTransition();
+
+  const previewHtml = useMemo(
+    () => editedResume ? buildResumeHTML(editedResume, jobTitle, jobCompany, selectedTemplate, false) : "",
+    [editedResume, jobTitle, jobCompany, selectedTemplate],
+  );
   const resumeLinks = profileLinks.filter((l) => l.includeInResume !== false);
 
   const hasData = resumeText.trim().length > 0 || workExperience.length > 0 || projects.length > 0;
@@ -421,12 +442,43 @@ export function ATSChecker({
               disabled={isRefining}
             />
 
+            {/* Template picker */}
+            <div style={{ display: "grid", gap: 6 }}>
+              <div style={{ fontSize: 12, color: "#9ca3af", fontWeight: 600 }}>Resume format</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {RESUME_TEMPLATES.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setSelectedTemplate(t.id)}
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: 6,
+                      border: selectedTemplate === t.id ? "1px solid #6366f1" : "1px solid rgba(255,255,255,0.1)",
+                      background: selectedTemplate === t.id ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.04)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 600, color: selectedTemplate === t.id ? "#a5b4fc" : "#d4d4d8" }}>{t.name}</div>
+                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{t.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="actions">
               <button
                 className="button"
-                onClick={() => downloadPDF(editedResume, jobTitle, jobCompany)}
+                onClick={() => downloadPDF(editedResume, jobTitle, jobCompany, selectedTemplate)}
               >
                 Download PDF
+              </button>
+              <button
+                className="button secondary"
+                onClick={() => setShowPreview((v) => !v)}
+              >
+                {showPreview ? "Hide preview" : "Preview"}
               </button>
               <button
                 className="button secondary"
@@ -445,6 +497,22 @@ export function ATSChecker({
                 Reset
               </button>
             </div>
+
+            {showPreview && (
+              <div style={{ display: "grid", gap: 8 }}>
+                <div style={{ fontSize: 12, color: "#9ca3af" }}>
+                  Live preview — reflects the current template and any edits you make above.
+                </div>
+                <div style={{ position: "relative", borderRadius: 6, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)", background: "#fff" }}>
+                  <iframe
+                    srcDoc={previewHtml}
+                    title="Resume preview"
+                    style={{ width: "100%", height: 900, border: "none", display: "block" }}
+                    sandbox="allow-same-origin"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* AI refinement box */}
             <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 8 }}>
