@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContactTable } from "@/components/ContactTable";
 import { MatchReasons } from "@/components/MatchReasons";
+import { OutreachEditor } from "@/components/OutreachEditor";
 import { SuggestedSearches } from "@/components/SuggestedSearches";
 import { getCurrentUser } from "@/lib/auth";
 import { getCompanyBySlug } from "@/lib/companies";
@@ -95,8 +96,22 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
 
       <div className="grid-2">
         <section className="card stack">
-          <h2 className="section-title">Outreach message draft</h2>
-          <textarea readOnly value={company.outreachMessage} rows={13} />
+          <h2 className="section-title">Outreach messages</h2>
+          <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+            Generate LinkedIn DMs, cold emails, informational asks, and follow-ups tailored to your profile and this company.
+          </p>
+          <OutreachEditor
+            companyName={company.name}
+            companyNotes={company.outreachTips ?? ""}
+            companyFocus={[...company.stackTags, ...company.gameTags, ...company.roleFocusTags]}
+            relatedRoles={company.relatedJobs.map((j: { title: string }) => j.title).slice(0, 8)}
+            initialMessage={company.outreachMessage}
+            name={profile?.name ?? ""}
+            summary={profile?.summary ?? ""}
+            skills={profile?.skills ?? []}
+            stacks={profile?.stacks ?? []}
+            workExperience={profile?.workExperience ?? []}
+          />
         </section>
 
         <section className="card stack">
