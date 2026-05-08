@@ -3,42 +3,71 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+const US_STATES: [string, string][] = [
+  ["AL","Alabama"],["AK","Alaska"],["AZ","Arizona"],["AR","Arkansas"],["CA","California"],
+  ["CO","Colorado"],["CT","Connecticut"],["DE","Delaware"],["FL","Florida"],["GA","Georgia"],
+  ["HI","Hawaii"],["ID","Idaho"],["IL","Illinois"],["IN","Indiana"],["IA","Iowa"],
+  ["KS","Kansas"],["KY","Kentucky"],["LA","Louisiana"],["ME","Maine"],["MD","Maryland"],
+  ["MA","Massachusetts"],["MI","Michigan"],["MN","Minnesota"],["MS","Mississippi"],["MO","Missouri"],
+  ["MT","Montana"],["NE","Nebraska"],["NV","Nevada"],["NH","New Hampshire"],["NJ","New Jersey"],
+  ["NM","New Mexico"],["NY","New York"],["NC","North Carolina"],["ND","North Dakota"],["OH","Ohio"],
+  ["OK","Oklahoma"],["OR","Oregon"],["PA","Pennsylvania"],["RI","Rhode Island"],["SC","South Carolina"],
+  ["SD","South Dakota"],["TN","Tennessee"],["TX","Texas"],["UT","Utah"],["VT","Vermont"],
+  ["VA","Virginia"],["WA","Washington"],["WV","West Virginia"],["WI","Wisconsin"],["WY","Wyoming"],
+];
+
+// States that show as quick-access pills before the full grid
+const QUICK_STATES = ["NC", "CA", "WA", "TX", "NY", "MA", "GA", "FL", "IL", "CO"];
+
+const COUNTRIES = [
+  "United States", "United Kingdom", "Canada", "Australia", "Germany", "France",
+  "Netherlands", "Sweden", "Denmark", "Finland", "Norway", "Poland", "Spain",
+  "Ireland", "Singapore", "Japan", "South Korea", "Brazil", "India", "New Zealand",
+];
+
 export function CompanyFilters() {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
   const [open, setOpen] = useState(false);
+  const [showAllStates, setShowAllStates] = useState(false);
 
   const [category, setCategory] = useState(sp.get("category") ?? "");
   const [remotePolicy, setRemotePolicy] = useState(sp.get("remotePolicy") ?? "");
   const [skill, setSkill] = useState(sp.get("skill") ?? "");
   const [state, setState] = useState(sp.get("state") ?? "");
-  const [location, setLocation] = useState(sp.get("location") ?? "");
+  const [country, setCountry] = useState(sp.get("country") ?? "");
   const [ats, setAts] = useState(sp.get("ats") ?? "");
   const [size, setSize] = useState(sp.get("size") ?? "");
   const [activeHiring, setActiveHiring] = useState(sp.get("activeHiring") ?? "");
   const [sort, setSort] = useState(sp.get("sort") ?? "");
 
-  const activeCount = [category, remotePolicy, skill, state, location, ats, size, activeHiring, sort].filter(Boolean).length;
+  const activeCount = [category, remotePolicy, skill, state, country, ats, size, activeHiring, sort].filter(Boolean).length;
 
-  function apply() {
+  function push(overrides: Record<string, string>) {
     const params = new URLSearchParams(sp.toString());
-    const set = (k: string, v: string) => v ? params.set(k, v) : params.delete(k);
-    set("category", category); set("remotePolicy", remotePolicy); set("skill", skill);
-    set("state", state); set("location", location); set("ats", ats);
-    set("size", size); set("activeHiring", activeHiring); set("sort", sort);
+    const vals = { category, remotePolicy, skill, state, country, ats, size, activeHiring, sort, ...overrides };
+    const keys = ["category","remotePolicy","skill","state","country","ats","size","activeHiring","sort"];
+    keys.forEach((k) => vals[k] ? params.set(k, vals[k]) : params.delete(k));
     params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
     setOpen(false);
   }
 
+  function apply() { push({}); }
+
   function clear() {
-    setCategory(""); setRemotePolicy(""); setSkill(""); setState(""); setLocation("");
+    setCategory(""); setRemotePolicy(""); setSkill(""); setState(""); setCountry("");
     setAts(""); setSize(""); setActiveHiring(""); setSort("");
     const params = new URLSearchParams(sp.toString());
-    ["category","remotePolicy","skill","state","location","ats","size","activeHiring","sort","page"].forEach((k) => params.delete(k));
+    ["category","remotePolicy","skill","state","country","ats","size","activeHiring","sort","page"].forEach((k) => params.delete(k));
     router.push(`${pathname}?${params.toString()}`);
     setOpen(false);
+  }
+
+  function toggleState(abbr: string) {
+    const next = state === abbr ? "" : abbr;
+    setState(next);
   }
 
   const activeStyle = { borderColor: "rgba(225,29,72,0.55)", boxShadow: "0 0 0 3px rgba(225,29,72,0.13)" };
@@ -48,7 +77,7 @@ export function CompanyFilters() {
       <button
         className="button secondary"
         onClick={() => setOpen((o) => !o)}
-        style={{ whiteSpace: "nowrap", gap: 6 }}
+        style={{ whiteSpace: "nowrap" }}
       >
         ⊞ Filters{activeCount > 0 ? ` (${activeCount})` : ""}
       </button>
@@ -58,80 +87,141 @@ export function CompanyFilters() {
           position: "absolute",
           top: "calc(100% + 8px)",
           right: 0,
-          zIndex: 50,
-          width: 320,
+          zIndex: 150,
+          width: "min(380px, calc(100vw - 20px))",
           background: "linear-gradient(180deg, rgba(20,20,22,0.99), rgba(12,12,14,1))",
           border: "1px solid var(--border)",
           borderRadius: "var(--radius-xl)",
           boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
           padding: 20,
           display: "grid",
-          gap: 14,
+          gap: 16,
+          maxHeight: "calc(100vh - 160px)",
+          overflowY: "auto",
         }}>
+
+          {/* ── Company type ── */}
+          <div>
+            <div style={sectionLabel(!!category)}>Company type</div>
+            <div style={pillRow}>
+              {[["", "All"], ["SOFTWARE", "Software"], ["GAMING", "Gaming"], ["BOTH", "Both"]].map(([v, l]) => (
+                <Pill key={v} active={category === v} onClick={() => setCategory(v)}>{l}</Pill>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Remote policy ── */}
+          <div>
+            <div style={sectionLabel(!!remotePolicy)}>Remote policy</div>
+            <div style={pillRow}>
+              {[["", "Any"], ["REMOTE_FRIENDLY", "Remote-friendly"], ["FLEXIBLE", "Flexible"], ["HYBRID", "Hybrid"], ["ONSITE", "On-site"]].map(([v, l]) => (
+                <Pill key={v} active={remotePolicy === v} onClick={() => setRemotePolicy(v)}>{l}</Pill>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Hiring ── */}
+          <div>
+            <div style={sectionLabel(!!activeHiring)}>Status</div>
+            <div style={pillRow}>
+              <Pill active={activeHiring === ""} onClick={() => setActiveHiring("")}>All</Pill>
+              <Pill active={activeHiring === "true"} onClick={() => setActiveHiring("true")}>Hiring now</Pill>
+            </div>
+          </div>
+
+          {/* ── US State ── */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={sectionLabel(!!state)}>US state{state ? ` — ${state}` : ""}</div>
+              <button
+                type="button"
+                onClick={() => setShowAllStates((v) => !v)}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#6b7280", padding: 0 }}
+              >
+                {showAllStates ? "Hide" : "All states"}
+              </button>
+            </div>
+            {/* Quick states */}
+            <div style={pillRow}>
+              {QUICK_STATES.map((abbr) => (
+                <Pill key={abbr} active={state === abbr} onClick={() => toggleState(abbr)}>
+                  {abbr}
+                </Pill>
+              ))}
+              {state && !QUICK_STATES.includes(state) && (
+                <Pill active onClick={() => setState("")}>{state} ×</Pill>
+              )}
+            </div>
+            {/* Full state grid */}
+            {showAllStates && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 4, marginTop: 8, maxHeight: 200, overflowY: "auto" }}>
+                {US_STATES.map(([abbr, name]) => (
+                  <button
+                    key={abbr}
+                    type="button"
+                    title={name}
+                    onClick={() => toggleState(abbr)}
+                    style={{
+                      fontSize: 11, fontWeight: 700, padding: "5px 0", textAlign: "center",
+                      borderRadius: 6, cursor: "pointer",
+                      border: state === abbr ? "1px solid rgba(225,29,72,0.55)" : "1px solid rgba(255,255,255,0.08)",
+                      background: state === abbr ? "rgba(225,29,72,0.18)" : "rgba(255,255,255,0.04)",
+                      color: state === abbr ? "#f87171" : "#9ca3af",
+                    }}
+                  >
+                    {abbr}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Country ── */}
           <label>
-            Company type
-            <select value={category} onChange={(e) => setCategory(e.target.value)} style={category ? activeStyle : {}}>
-              <option value="">All</option>
-              <option value="SOFTWARE">Software</option>
-              <option value="GAMING">Gaming</option>
-              <option value="BOTH">Both</option>
+            <div style={sectionLabel(!!country)}>Country</div>
+            <select value={country} onChange={(e) => setCountry(e.target.value)} style={country ? activeStyle : {}}>
+              <option value="">All countries</option>
+              {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </label>
 
+          {/* ── Skill / stack ── */}
           <label>
-            Remote policy
-            <select value={remotePolicy} onChange={(e) => setRemotePolicy(e.target.value)} style={remotePolicy ? activeStyle : {}}>
-              <option value="">All</option>
-              <option value="REMOTE_FRIENDLY">Remote-friendly</option>
-              <option value="FLEXIBLE">Flexible</option>
-              <option value="HYBRID">Hybrid</option>
-              <option value="ONSITE">On site</option>
-            </select>
+            <div style={sectionLabel(!!skill)}>Skill / engine / stack</div>
+            <input
+              value={skill}
+              onChange={(e) => setSkill(e.target.value)}
+              placeholder="Unity, React, C++, Python…"
+              style={skill ? activeStyle : {}}
+            />
           </label>
 
-          <label>
-            Skill / engine / stack
-            <input value={skill} onChange={(e) => setSkill(e.target.value)} placeholder="Unity, React, C++, gameplay" style={skill ? activeStyle : {}} />
-          </label>
+          {/* ── Sort ── */}
+          <div>
+            <div style={sectionLabel(!!sort)}>Sort by</div>
+            <div style={pillRow}>
+              {[["", "Hiring status"], ["fit", "Best fit"], ["jobs", "Most jobs"], ["name", "A – Z"]].map(([v, l]) => (
+                <Pill key={v} active={sort === v} onClick={() => setSort(v)}>{l}</Pill>
+              ))}
+            </div>
+          </div>
 
-          <label>
-            State / region
-            <input value={state} onChange={(e) => setState(e.target.value)} placeholder="NC, North Carolina" style={state ? activeStyle : {}} />
-          </label>
+          {/* ── Advanced: ATS + size ── */}
+          <details>
+            <summary style={{ fontSize: 12, color: "#6b7280", cursor: "pointer", marginBottom: 10 }}>Advanced filters</summary>
+            <div style={{ display: "grid", gap: 12, marginTop: 10 }}>
+              <label>
+                <div style={sectionLabel(!!ats)}>ATS / source</div>
+                <input value={ats} onChange={(e) => setAts(e.target.value)} placeholder="Greenhouse, Lever, Ashby" style={ats ? activeStyle : {}} />
+              </label>
+              <label>
+                <div style={sectionLabel(!!size)}>Company size</div>
+                <input value={size} onChange={(e) => setSize(e.target.value)} placeholder="1–50, 51–200, 1000+" style={size ? activeStyle : {}} />
+              </label>
+            </div>
+          </details>
 
-          <label>
-            Location
-            <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Raleigh, Charlotte, Remote" style={location ? activeStyle : {}} />
-          </label>
-
-          <label>
-            ATS / source
-            <input value={ats} onChange={(e) => setAts(e.target.value)} placeholder="Greenhouse, Lever, Ashby" style={ats ? activeStyle : {}} />
-          </label>
-
-          <label>
-            Company size
-            <input value={size} onChange={(e) => setSize(e.target.value)} placeholder="1-50, 51-200, 1000+" style={size ? activeStyle : {}} />
-          </label>
-
-          <label>
-            Hiring now
-            <select value={activeHiring} onChange={(e) => setActiveHiring(e.target.value)} style={activeHiring ? activeStyle : {}}>
-              <option value="">All</option>
-              <option value="true">Active hiring only</option>
-            </select>
-          </label>
-
-          <label>
-            Sort by
-            <select value={sort} onChange={(e) => setSort(e.target.value)} style={sort ? activeStyle : {}}>
-              <option value="">Hiring status</option>
-              <option value="fit">Best fit score</option>
-              <option value="jobs">Most open jobs</option>
-              <option value="name">Company name (A–Z)</option>
-            </select>
-          </label>
-
+          {/* ── Actions ── */}
           <div style={{ display: "grid", gap: 8 }}>
             <button className="button" onClick={apply} style={{ width: "100%", justifyContent: "center" }}>
               Apply{activeCount > 0 ? ` (${activeCount} active)` : ""}
@@ -145,5 +235,28 @@ export function CompanyFilters() {
         </div>
       )}
     </div>
+  );
+}
+
+function sectionLabel(active: boolean) {
+  return { fontSize: 12, fontWeight: 600, color: active ? "#f87171" : "#9ca3af", marginBottom: 8, letterSpacing: "0.04em", textTransform: "uppercase" as const };
+}
+const pillRow = { display: "flex", flexWrap: "wrap" as const, gap: 5 };
+
+function Pill({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        fontSize: 12, fontWeight: 600, padding: "4px 11px", borderRadius: 999, cursor: "pointer",
+        border: active ? "1px solid rgba(225,29,72,0.55)" : "1px solid rgba(255,255,255,0.1)",
+        background: active ? "rgba(225,29,72,0.18)" : "rgba(255,255,255,0.04)",
+        color: active ? "#f87171" : "#9ca3af",
+        transition: "all 0.1s",
+      }}
+    >
+      {children}
+    </button>
   );
 }

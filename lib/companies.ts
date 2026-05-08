@@ -9,6 +9,7 @@ export type CompanyFilters = {
   category?: string;
   remotePolicy?: string;
   location?: string;
+  country?: string;
   size?: string;
   skill?: string;
   state?: string;
@@ -97,6 +98,7 @@ export async function listCompanies(filters: CompanyFilters, profile: UserProfil
       filters.remotePolicy ? { remotePolicy: filters.remotePolicy as never } : {},
       filters.location ? { OR: [{ headquarters: { contains: filters.location } }, { locations: { contains: filters.location } }] } : {},
       filters.state ? { OR: [{ headquarters: { contains: filters.state } }, { locations: { contains: filters.state } }] } : {},
+      filters.country ? { OR: [{ headquarters: { contains: filters.country } }, { locations: { contains: filters.country } }] } : {},
       filters.size ? { companySize: { contains: filters.size } } : {},
       filters.ats ? { atsProviders: { contains: filters.ats } } : {},
       filters.activeHiring === "true" ? { activeHiring: true } : {},

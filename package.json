@@ -16,6 +16,7 @@
     "prisma:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "prisma:seed": "tsx prisma/seed.ts",
+    "seed:companies": "tsx prisma/seed-extra-companies.ts",
     "discover:sources": "tsx scripts/discoverSources.ts",
     "sync:jobs": "tsx scripts/sync.ts",
     "backfill:inference": "tsx scripts/backfillInference.ts",
