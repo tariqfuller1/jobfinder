@@ -141,16 +141,49 @@ export async function listCompanies(filters: CompanyFilters, profile: UserProfil
     return { ...normalized, openJobCount, fitScore: fit.score, fitReasons: fit.reasons };
   });
 
-  let companies;
+  let paged;
   if (sort === "fit") {
     const sorted = [...enriched].sort((a, b) => b.fitScore - a.fitScore);
-    companies = sorted.slice((page - 1) * limit, page * limit);
+    paged = sorted.slice((page - 1) * limit, page * limit);
   } else if (sort === "jobs") {
     const sorted = [...enriched].sort((a, b) => b.openJobCount - a.openJobCount);
-    companies = sorted.slice((page - 1) * limit, page * limit);
+    paged = sorted.slice((page - 1) * limit, page * limit);
   } else {
-    companies = enriched;
+    paged = enriched;
   }
+
+  // Batch-fetch most recent active job for each company on this page
+  const nameVariantToIdx = new Map<string, number>();
+  paged.forEach((c, i) => {
+    for (const v of companyNameVariants(c.name)) nameVariantToIdx.set(v, i);
+  });
+
+  const recentJobs: Array<{ id: string; title: string; postedAt: Date | null; workplaceType: string; location: string | null } | null> =
+    new Array(paged.length).fill(null);
+
+  if (paged.length > 0) {
+    const nameList = paged.map((c) => c.name);
+    const recentJobRows = await prisma.job.findMany({
+      where: {
+        isActive: true,
+        OR: nameList.map((n) => ({ company: { contains: n } })),
+      },
+      select: { id: true, title: true, company: true, postedAt: true, workplaceType: true, location: true },
+      orderBy: { postedAt: "desc" },
+      take: limit * 4,
+    });
+    for (const job of recentJobRows) {
+      for (const v of companyNameVariants(job.company)) {
+        const idx = nameVariantToIdx.get(v);
+        if (idx !== undefined && recentJobs[idx] === null) {
+          recentJobs[idx] = { id: job.id, title: job.title, postedAt: job.postedAt, workplaceType: job.workplaceType, location: job.location };
+          break;
+        }
+      }
+    }
+  }
+
+  const companies = paged.map((c, i) => ({ ...c, recentJob: recentJobs[i] }));
 
   return {
     companies,

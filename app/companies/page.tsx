@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
 import { CompanyFilters } from "@/components/CompanyFilters";
 import { FitScorePrompt, MatchReasons } from "@/components/MatchReasons";
 import { Pagination } from "@/components/Pagination";
@@ -120,6 +121,46 @@ export default async function CompaniesPage({
             </div>
 
             <p className="muted">{company.notes ?? "Add research notes, interview prep bullets, alumni, and outreach hooks here."}</p>
+
+            {company.recentJob ? (
+              <Link
+                href={`/jobs/${company.recentJob.id}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  padding: "10px 14px",
+                  borderRadius: "var(--radius)",
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  textDecoration: "none",
+                  transition: "border-color 0.15s",
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 3 }}>
+                    Latest posting
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#e4e4e7", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {company.recentJob.title}
+                  </div>
+                </div>
+                <div style={{ flexShrink: 0, textAlign: "right" }}>
+                  {company.recentJob.workplaceType === "REMOTE" && (
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#4ade80", marginBottom: 2 }}>Remote</div>
+                  )}
+                  {company.recentJob.workplaceType === "HYBRID" && (
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#60a5fa", marginBottom: 2 }}>Hybrid</div>
+                  )}
+                  {company.recentJob.postedAt && (
+                    <div style={{ fontSize: 11, color: "#6b7280" }}>
+                      {formatDistanceToNow(new Date(company.recentJob.postedAt), { addSuffix: true })}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ) : null}
 
             <div className="actions">
               <Link href={`/companies/${company.slug}`} className="button">View company</Link>
