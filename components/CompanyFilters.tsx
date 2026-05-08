@@ -46,7 +46,7 @@ export function CompanyFilters() {
 
   function push(overrides: Record<string, string>) {
     const params = new URLSearchParams(sp.toString());
-    const vals = { category, remotePolicy, skill, state, country, ats, size, activeHiring, sort, ...overrides };
+    const vals: Record<string, string> = { category, remotePolicy, skill, state, country, ats, size, activeHiring, sort, ...overrides };
     const keys = ["category","remotePolicy","skill","state","country","ats","size","activeHiring","sort"];
     keys.forEach((k) => vals[k] ? params.set(k, vals[k]) : params.delete(k));
     params.delete("page");
