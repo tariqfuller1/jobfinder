@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { MatchReasons } from "@/components/MatchReasons";
 import { SaveToTracker } from "@/components/SaveToTracker";
+import { getRoleCategory } from "@/lib/classify";
 
 export type JobCardData = {
   id: string;
@@ -13,94 +13,166 @@ export type JobCardData = {
   employmentType: string;
   experienceLevel: string;
   companyCategory?: string | null;
+  roleCategory?: string | null;
   fitScore: number;
   fitReasons: string[];
+  tags?: string[];
   salary?: { label: string; basis: string } | null;
   descriptionText?: string | null;
   postedAt?: string | Date | null;
   hasReliableApplyLink?: boolean;
 };
 
-export function JobCard({
-  job,
-  userId,
-}: {
-  job: JobCardData;
-  userId?: string | null;
-}) {
+function fmtWorkplace(v: string) {
+  if (v === "REMOTE") return "Remote";
+  if (v === "HYBRID") return "Hybrid";
+  if (v === "ONSITE") return "On-site";
+  return null;
+}
+function fmtEmployment(v: string) {
+  if (v === "FULL_TIME") return "Full-time";
+  if (v === "PART_TIME") return "Part-time";
+  if (v === "INTERNSHIP") return "Internship";
+  if (v === "CONTRACT") return "Contract";
+  if (v === "TEMPORARY") return "Temporary";
+  return null;
+}
+function fmtExperience(v: string) {
+  if (v === "INTERN") return "Intern";
+  if (v === "ENTRY") return "Entry";
+  if (v === "MID") return "Mid-level";
+  if (v === "SENIOR") return "Senior";
+  if (v === "LEAD") return "Lead";
+  return null;
+}
+
+export function JobCard({ job, userId }: { job: JobCardData; userId?: string | null }) {
   const postedLabel = job.postedAt
     ? formatDistanceToNow(new Date(job.postedAt), { addSuffix: true })
     : null;
 
+  const rolecat = getRoleCategory(job.roleCategory ?? "software");
+
+  const fitHigh = job.fitScore >= 60;
+  const fitMid  = job.fitScore >= 30;
+  const fitColor = fitHigh ? "#4ade80" : fitMid ? "#fbbf24" : "#94a3b8";
+  const fitBg    = fitHigh ? "rgba(74,222,128,0.12)" : fitMid ? "rgba(251,191,36,0.10)" : "rgba(255,255,255,0.04)";
+  const fitBorder= fitHigh ? "rgba(74,222,128,0.28)" : fitMid ? "rgba(251,191,36,0.22)" : "rgba(255,255,255,0.08)";
+
+  const workplace  = fmtWorkplace(job.workplaceType);
+  const employment = fmtEmployment(job.employmentType);
+  const experience = fmtExperience(job.experienceLevel);
+
   return (
-    <article className="inset-card stack compact-stack job-card">
-      <div className="space-between">
-        <div className="stack compact-stack" style={{ gap: 10 }}>
-          <div>
-            <h3 style={{ marginBottom: 4 }}>
-              <Link href={`/jobs/${job.id}`}>{job.title}</Link>
-            </h3>
-            <div className="muted">
-              {job.companySlug
-                ? <Link href={`/companies/${job.companySlug}`}>{job.company}</Link>
-                : job.company}
-              {" "}•{" "}{job.location ?? "Location not listed"}
-              {postedLabel ? (
-                <>
-                  {" "}•{" "}
-                  <span title={job.postedAt ? new Date(job.postedAt).toLocaleDateString() : ""}>
-                    {postedLabel}
-                  </span>
-                </>
-              ) : null}
-            </div>
-          </div>
-          <div className="badges">
-            {job.workplaceType !== "UNKNOWN" && (
-              <span className="badge">{job.workplaceType.replaceAll("_", " ")}</span>
-            )}
-            {job.employmentType !== "UNKNOWN" && (
-              <span className="badge">{job.employmentType.replaceAll("_", " ")}</span>
-            )}
-            {job.experienceLevel !== "UNKNOWN" && (
-              <span className="badge">{job.experienceLevel.replaceAll("_", " ")}</span>
-            )}
-            {job.companyCategory ? (
-              <span className="badge badge-accent">{job.companyCategory}</span>
-            ) : null}
-          </div>
-        </div>
-        <MatchReasons score={job.fitScore} reasons={job.fitReasons} userId={userId} />
+    <article className="inset-card" style={{ display: "grid", gap: 11, padding: "14px 16px" }}>
+
+      {/* ── Row 1: category chip + fit score ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        <span style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.05em",
+          padding: "3px 10px",
+          borderRadius: 999,
+          color: rolecat.color,
+          background: rolecat.bg,
+          border: `1px solid ${rolecat.border}`,
+        }}>
+          {rolecat.label}
+        </span>
+
+        {job.fitScore > 0 && (
+          <span style={{
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: "0.04em",
+            padding: "3px 11px",
+            borderRadius: 999,
+            color: fitColor,
+            background: fitBg,
+            border: `1px solid ${fitBorder}`,
+          }}>
+            Fit {job.fitScore}
+          </span>
+        )}
       </div>
 
-      {job.salary && (
-        <div style={{ fontSize: 13, color: "#a1a1aa" }}>
-          Est. <strong style={{ color: "#d4d4d8" }}>{job.salary.label}</strong>
-          <span style={{ marginLeft: 6, color: "#6b7280" }}>· {job.salary.basis}</span>
+      {/* ── Row 2: title + save ── */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, lineHeight: 1.3 }}>
+          <Link href={`/jobs/${job.id}`} style={{ color: "#f5f5f5" }}>{job.title}</Link>
+        </h3>
+        <div style={{ flexShrink: 0, marginTop: 1 }}>
+          <SaveToTracker jobId={job.id} userId={userId} />
+        </div>
+      </div>
+
+      {/* ── Row 3: company · location · time ── */}
+      <div style={{ fontSize: 13, color: "#9ca3af", display: "flex", flexWrap: "wrap", gap: "2px 6px" }}>
+        {job.companySlug
+          ? <Link href={`/companies/${job.companySlug}`} style={{ color: "#d4d4d8", fontWeight: 600 }}>{job.company}</Link>
+          : <span style={{ color: "#d4d4d8", fontWeight: 600 }}>{job.company}</span>}
+        {job.location && <><span>·</span><span>{job.location}</span></>}
+        {postedLabel && <><span>·</span><span title={job.postedAt ? new Date(job.postedAt).toLocaleDateString() : ""}>{postedLabel}</span></>}
+      </div>
+
+      {/* ── Row 4: workplace / type / level badges ── */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {workplace && <Chip>{workplace}</Chip>}
+        {employment && <Chip>{employment}</Chip>}
+        {experience && <Chip>{experience}</Chip>}
+        {job.salary && <Chip accent>{job.salary.label}</Chip>}
+      </div>
+
+      {/* ── Row 5: fit reasons (skill matches) ── */}
+      {job.fitReasons.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+          {job.fitReasons.map((r) => (
+            <span key={r} style={{ fontSize: 11, color: "#a1a1aa", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 6, padding: "2px 8px" }}>
+              {r}
+            </span>
+          ))}
         </div>
       )}
 
-      <p className="muted" style={{ margin: 0 }}>
-        {(job.descriptionText ?? "No description was provided by the source. Open the job page or apply link for the latest details.").slice(0, 220)}
-        {(job.descriptionText ?? "").length > 220 ? "…" : ""}
-      </p>
+      {/* ── Row 6: description snippet ── */}
+      {job.descriptionText && (
+        <p style={{ margin: 0, fontSize: 13, color: "#8b8b95", lineHeight: 1.55,
+          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" } as React.CSSProperties}>
+          {job.descriptionText.slice(0, 280)}
+        </p>
+      )}
 
-      <div className="actions">
-        <Link className="button" href={`/jobs/${job.id}`}>Open job</Link>
-        <SaveToTracker jobId={job.id} userId={userId} />
-        <Link
-          className="button secondary"
-          href={userId ? `/cover-letters/${job.id}` : `/login?next=/cover-letters/${job.id}`}
-        >
+      {/* ── Row 7: actions ── */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 2 }}>
+        <Link className="button" href={`/jobs/${job.id}`} style={{ fontSize: 13, minHeight: 36, padding: "8px 14px" }}>
+          Open job
+        </Link>
+        <Link className="button secondary" href={userId ? `/cover-letters/${job.id}` : `/login?next=/cover-letters/${job.id}`}
+          style={{ fontSize: 13, minHeight: 36, padding: "8px 14px" }}>
           Cover letter
         </Link>
-        <Link
-          className="button secondary"
-          href={userId ? `/ats-check/${job.id}` : `/login?next=/ats-check/${job.id}`}
-        >
+        <Link className="button secondary" href={userId ? `/ats-check/${job.id}` : `/login?next=/ats-check/${job.id}`}
+          style={{ fontSize: 13, minHeight: 36, padding: "8px 14px" }}>
           ATS resume
         </Link>
       </div>
     </article>
+  );
+}
+
+function Chip({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
+  return (
+    <span style={{
+      fontSize: 11,
+      fontWeight: 600,
+      padding: "3px 9px",
+      borderRadius: 6,
+      border: accent ? "1px solid rgba(251,191,36,0.25)" : "1px solid rgba(255,255,255,0.09)",
+      background: accent ? "rgba(251,191,36,0.09)" : "rgba(255,255,255,0.04)",
+      color: accent ? "#fbbf24" : "#a1a1aa",
+    }}>
+      {children}
+    </span>
   );
 }

@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getJobById } from "@/lib/jobs";
 import { getProfileForUserOrDefault } from "@/lib/profile";
 import { suggestConnectionSearches } from "@/lib/recommendations";
+import { getRoleCategory } from "@/lib/classify";
 import { notFound } from "next/navigation";
 
 function fmtWorkplace(v: string) {
@@ -56,6 +57,7 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
   const experience = fmtExperience(job.experienceLevel);
   const source = fmtSource(job.source);
   const isGaming = job.companyCategory === "GAMING" || job.companyCategory === "BOTH";
+  const rolecat = getRoleCategory(job.roleCategory ?? "software");
 
   const fitHigh = job.fitScore >= 60;
   const fitMid = job.fitScore >= 30;
@@ -90,40 +92,38 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
           {/* Header card */}
           <div className="card hero-card" style={{ padding: "20px 22px 18px" }}>
 
-            {/* Company + location */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+            {/* Role category + company row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+              {/* Role category chip */}
+              <span style={{
+                fontSize: 11, fontWeight: 700, letterSpacing: "0.05em",
+                padding: "3px 11px", borderRadius: 999,
+                color: rolecat.color, background: rolecat.bg, border: `1px solid ${rolecat.border}`,
+              }}>
+                {rolecat.label}
+              </span>
+              {/* Company */}
               {job.companySlug ? (
-                <Link
-                  href={`/companies/${job.companySlug}`}
-                  style={{ color: "#ff3368", fontWeight: 700, fontSize: 14, letterSpacing: "0.01em" }}
-                >
+                <Link href={`/companies/${job.companySlug}`} style={{ color: "#ff3368", fontWeight: 700, fontSize: 14 }}>
                   {job.company}
                 </Link>
               ) : (
                 <span style={{ color: "#d4d4d8", fontWeight: 700, fontSize: 14 }}>{job.company}</span>
               )}
-              {job.location && (
-                <>
-                  <span style={{ color: "#2e2e34" }}>·</span>
-                  <span style={{ color: "#8b8b95", fontSize: 13 }}>{job.location}</span>
-                </>
-              )}
+              {job.location && <span style={{ color: "#6b7280", fontSize: 13 }}>· {job.location}</span>}
             </div>
 
             {/* Title */}
             <h1 style={{
               fontSize: "clamp(1.55rem, 2.5vw, 2.2rem)",
-              fontWeight: 800,
-              letterSpacing: "-0.035em",
-              lineHeight: 1.1,
-              margin: "0 0 12px",
-              color: "#f5f5f5",
+              fontWeight: 800, letterSpacing: "-0.035em",
+              lineHeight: 1.1, margin: "0 0 14px", color: "#f5f5f5",
             }}>
               {job.title}
             </h1>
 
             {/* Meta badges */}
-            <div className="badges" style={{ marginBottom: job.fitScore > 0 ? 18 : 0 }}>
+            <div className="badges" style={{ marginBottom: 14 }}>
               {workplace && <span className="badge">{workplace}</span>}
               {employment && <span className="badge">{employment}</span>}
               {experience && <span className="badge">{experience}</span>}
@@ -131,38 +131,43 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
               {isGaming && <span className="badge badge-accent">Gaming</span>}
               {job.primaryApplyUrl && (
                 <span className="badge" style={{ color: "#4ade80", borderColor: "rgba(74,222,128,0.22)", background: "rgba(74,222,128,0.06)" }}>
-                  Direct apply link
+                  Direct apply
                 </span>
               )}
             </div>
 
+            {/* Tech tags */}
+            {job.tags && job.tags.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 14 }}>
+                {job.tags.slice(0, 12).map((tag) => (
+                  <span key={tag} style={{
+                    fontSize: 11, fontWeight: 600, padding: "3px 9px",
+                    borderRadius: 6, border: "1px solid rgba(255,255,255,0.09)",
+                    background: "rgba(255,255,255,0.04)", color: "#a1a1aa",
+                  }}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {/* Fit score + reasons */}
             {job.fitScore > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", paddingTop: 4, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                 <span style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 7,
-                  padding: "5px 13px",
-                  borderRadius: 999,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  letterSpacing: "0.04em",
-                  background: fitBg,
-                  border: fitBorder,
-                  color: fitColor,
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "5px 13px", borderRadius: 999,
+                  fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
+                  background: fitBg, border: fitBorder, color: fitColor,
                 }}>
                   <span style={{ fontSize: 8 }}>●</span>
                   Fit {job.fitScore}
                 </span>
                 {job.fitReasons.map((reason) => (
                   <span key={reason} style={{
-                    fontSize: 12,
-                    color: "#a1a1aa",
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    borderRadius: 999,
-                    padding: "4px 11px",
+                    fontSize: 12, color: "#a1a1aa",
+                    background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)",
+                    borderRadius: 999, padding: "4px 11px",
                   }}>
                     {reason}
                   </span>

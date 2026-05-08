@@ -55,11 +55,16 @@ const JOB_TYPE = [
 ];
 
 const DEPARTMENTS = [
-  { value: "software_engineering", label: "Software Eng" },
-  { value: "game_programming", label: "Game Dev" },
-  { value: "game_design", label: "Design & Art" },
-  { value: "mobile_development", label: "Mobile" },
-  { value: "data_and_ml", label: "Data / AI" },
+  { value: "frontend",       label: "Frontend"     },
+  { value: "backend",        label: "Backend"      },
+  { value: "full_stack",     label: "Full Stack"   },
+  { value: "mobile",         label: "Mobile"       },
+  { value: "game_programming", label: "Game Dev"   },
+  { value: "game_design",    label: "Design & Art" },
+  { value: "data_and_ml",    label: "Data / AI"    },
+  { value: "devops",         label: "DevOps"       },
+  { value: "qa",             label: "QA / Testing" },
+  { value: "embedded",       label: "Embedded"     },
 ];
 
 function parseSet(raw: string | null) {

@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUserFromRequest } from "@/lib/auth";
-import { saveUserProfileForUser } from "@/lib/profile";
+import { getUserProfileByUserId, saveUserProfileForUser } from "@/lib/profile";
+
+export async function GET(request: Request) {
+  const user = await getCurrentUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+  const profile = await getUserProfileByUserId(user.id);
+  return NextResponse.json({ id: user.id, email: user.email, displayName: user.displayName, ...profile });
+}
 
 const profileSchema = z.object({
   name: z.string().trim().min(1).optional(),

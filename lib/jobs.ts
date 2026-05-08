@@ -9,7 +9,8 @@ import { fetchRemotiveJobs } from "@/lib/adapters/remotive";
 import { fetchRecruiteeJobs } from "@/lib/adapters/recruitee";
 import { fetchArbeitnowJobs } from "@/lib/adapters/arbeitnow";
 import { fetchUsaJobs } from "@/lib/adapters/usajobs";
-import { filterSoftwareJobs, parseCsvEnv } from "@/lib/filtering";
+import { filterSoftwareJobs, parseCsvEnv, TECH_JOB_TITLE_KEYWORDS } from "@/lib/filtering";
+import { classifyJobRole } from "@/lib/classify";
 import { inferJobFields } from "@/lib/infer";
 import { estimateSalary } from "@/lib/salary";
 import { resolveJobLinks } from "@/lib/job-links";
@@ -43,34 +44,55 @@ export type JobFilters = {
   country?: string;
 };
 
-// Keywords matched against job title to define each department bucket.
+// Keywords matched against job title to define each department bucket for filtering.
 // SQLite LIKE (used by Prisma contains) is case-insensitive for ASCII.
 export const DEPARTMENT_KEYWORDS: Record<string, string[]> = {
-  software_engineering: [
-    "software engineer", "software developer", "backend engineer", "frontend engineer",
-    "full stack", "fullstack", "web developer", "application engineer", "platform engineer",
-    "site reliability", "sre", "devops", "cloud engineer", "infrastructure engineer",
-    "embedded software", "firmware engineer", "build engineer", "test engineer",
+  frontend: [
+    "frontend engineer", "frontend developer", "front-end engineer", "front-end developer",
+    "ui engineer", "ui developer", "react developer", "react engineer",
+    "angular developer", "vue developer", "next.js developer", "web developer",
+  ],
+  backend: [
+    "backend engineer", "backend developer", "back-end engineer", "back-end developer",
+    "api engineer", "api developer", "python developer", "python engineer",
+    "java developer", "java engineer", "golang developer", "go developer",
+    "rust developer", "rust engineer", "node developer", "c++ developer",
+    "c++ engineer", "c++ programmer", "c# developer", ".net developer",
+    "software engineer", "software developer", "application engineer",
+  ],
+  full_stack: [
+    "full stack", "fullstack", "full-stack",
+  ],
+  mobile: [
+    "ios engineer", "ios developer", "android engineer", "android developer",
+    "mobile engineer", "mobile developer", "react native", "flutter developer",
   ],
   game_programming: [
     "gameplay programmer", "game programmer", "engine programmer", "graphics programmer",
     "tools engineer", "tools programmer", "game engineer", "rendering engineer",
-    "physics programmer", "technical programmer", "network programmer",
-    "unreal", "unity developer", "unity engineer",
+    "physics programmer", "network programmer", "unity developer", "unity engineer",
+    "unreal developer", "unreal engineer", "game developer",
   ],
   game_design: [
     "game designer", "level designer", "narrative designer", "systems designer",
     "environment artist", "technical designer", "content designer",
-    "game artist", "concept artist", "3d artist", "vfx artist", "animator",
-  ],
-  mobile_development: [
-    "ios engineer", "ios developer", "android engineer", "android developer",
-    "mobile engineer", "mobile developer", "react native", "flutter developer",
+    "game artist", "concept artist", "3d artist", "vfx artist", "animator", "technical artist",
   ],
   data_and_ml: [
     "data engineer", "machine learning", "ml engineer", "data scientist",
     "data analyst", "ai engineer", "research engineer", "applied scientist",
-    "analytics engineer", "bi engineer",
+    "analytics engineer", "bi engineer", "data science",
+  ],
+  devops: [
+    "devops", "site reliability", "sre", "cloud engineer", "platform engineer",
+    "infrastructure engineer", "build engineer", "release engineer",
+  ],
+  qa: [
+    "qa engineer", "quality assurance", "test engineer", "test automation",
+    "sdet", "automation engineer",
+  ],
+  embedded: [
+    "embedded software", "embedded engineer", "firmware engineer", "firmware developer",
   ],
 };
 
@@ -166,9 +188,20 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
 
   const deptKeywords = (filters.departments ?? []).flatMap((d) => DEPARTMENT_KEYWORDS[d] ?? []);
 
+  // Standing filter: only surface tech/gaming jobs. Manual jobs bypass this so
+  // a user-added entry (any title) always shows. This catches bad data already
+  // in the DB from over-broad description-text matching during earlier syncs.
+  const techTitleFilter: Prisma.JobWhereInput = {
+    OR: [
+      { source: "manual" },
+      ...TECH_JOB_TITLE_KEYWORDS.map((kw) => ({ title: { contains: kw } })),
+    ],
+  };
+
   const where: Prisma.JobWhereInput = {
     isActive: true,
     AND: [
+      techTitleFilter,
       filters.q
         ? { OR: [{ title: { contains: filters.q } }, { company: { contains: filters.q } }, { location: { contains: filters.q } }] }
         : {},
@@ -177,7 +210,11 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
         : {},
       filters.workplaceTypes?.length ? { workplaceType: { in: filters.workplaceTypes as never[] } } : {},
       filters.employmentTypes?.length ? { employmentType: { in: filters.employmentTypes as never[] } } : {},
-      filters.experienceLevels?.length ? { experienceLevel: { in: filters.experienceLevels as never[] } } : {},
+      // When experience levels are filtered, always include UNKNOWN so jobs that
+      // didn't specify a level (but could be entry or mid) are never silently dropped.
+      filters.experienceLevels?.length
+        ? { experienceLevel: { in: [...new Set([...filters.experienceLevels, "UNKNOWN"])] as never[] } }
+        : {},
       filters.location ? { location: { contains: filters.location } } : {},
       filters.source ? { source: { contains: filters.source } } : {},
       filters.company ? { company: { contains: filters.company } } : {},
@@ -322,6 +359,7 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
     return {
       ...job,
       tags,
+      roleCategory: classifyJobRole(job.title, tags),
       companySlug: companyMatch?.slug,
       companyCategory: companyMatch?.category ?? null,
       _companyMatch: companyMatch,
@@ -445,6 +483,7 @@ export async function getJobById(id: string, profile: UserProfile | null = null)
     employmentType,
     experienceLevel,
     tags,
+    roleCategory: classifyJobRole(job.title, tags),
     companySlug: companyMatch?.slug,
     companyCategory: companyMatch?.category ?? null,
     fitScore: fit.score,
