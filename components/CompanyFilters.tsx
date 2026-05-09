@@ -16,8 +16,9 @@ const US_STATES: [string, string][] = [
   ["VA","Virginia"],["WA","Washington"],["WV","West Virginia"],["WI","Wisconsin"],["WY","Wyoming"],
 ];
 
-// States that show as quick-access pills before the full grid
 const QUICK_STATES = ["NC", "CA", "WA", "TX", "NY", "MA", "GA", "FL", "IL", "CO"];
+
+const STATE_NAMES: Record<string, string> = Object.fromEntries(US_STATES);
 
 const COUNTRIES = [
   "United States", "United Kingdom", "Canada", "Australia", "Germany", "France",
@@ -68,6 +69,7 @@ export function CompanyFilters() {
   function toggleState(abbr: string) {
     const next = state === abbr ? "" : abbr;
     setState(next);
+    if (next) setCountry(""); // state and country are mutually exclusive
   }
 
   const activeStyle = { borderColor: "rgba(225,29,72,0.55)", boxShadow: "0 0 0 3px rgba(225,29,72,0.13)" };
@@ -132,7 +134,7 @@ export function CompanyFilters() {
           {/* ── US State ── */}
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <div style={sectionLabel(!!state)}>US state{state ? ` — ${state}` : ""}</div>
+              <div style={sectionLabel(!!state)}>US state{state ? ` — ${STATE_NAMES[state] ?? state}` : ""}</div>
               <button
                 type="button"
                 onClick={() => setShowAllStates((v) => !v)}
@@ -179,7 +181,7 @@ export function CompanyFilters() {
           {/* ── Country ── */}
           <label>
             <div style={sectionLabel(!!country)}>Country</div>
-            <select value={country} onChange={(e) => setCountry(e.target.value)} style={country ? activeStyle : {}}>
+            <select value={country} onChange={(e) => { setCountry(e.target.value); if (e.target.value) setState(""); }} style={country ? activeStyle : {}}>
               <option value="">All countries</option>
               {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
