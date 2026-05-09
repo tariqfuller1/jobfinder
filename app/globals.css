@@ -906,6 +906,56 @@ select optgroup {
   font-size: 0.94rem;
 }
 
+/*
+ * External job HTML (Greenhouse, Lever, Indeed, etc.) frequently ships with
+ * inline style="color: black" or style="color: #000000" on its elements.
+ * Inline styles beat all class rules, so those strings go invisible on a dark
+ * background.  The fix: force every descendant to inherit its color (ignoring
+ * the inline value) via !important, then re-assert each element's intended
+ * light color at higher specificity so it wins over the blanket inherit.
+ */
+.job-body * {
+  color: inherit !important;
+  /* Also kill white/light backgrounds that make text unreadable on dark bg */
+  background-color: transparent !important;
+}
+
+/* ── Re-assert intended colours per element (higher specificity than * ) ── */
+.job-body h1,
+.job-body h2,
+.job-body h3 {
+  color: #f0f0f2 !important;
+}
+
+.job-body h4,
+.job-body h5,
+.job-body h6 {
+  color: var(--muted) !important;
+}
+
+.job-body p {
+  color: #c8c8d0 !important;
+}
+
+.job-body li {
+  color: #b5b5bc !important;
+}
+
+.job-body strong,
+.job-body b {
+  color: #e4e4ec !important;
+}
+
+.job-body em,
+.job-body i {
+  color: #c8c8d0 !important;
+}
+
+.job-body a {
+  color: #ff3368 !important;
+}
+
+/* ── Layout / structural rules ── */
 .job-body > *:first-child { margin-top: 0 !important; }
 .job-body > *:last-child  { margin-bottom: 0 !important; }
 
@@ -916,19 +966,15 @@ select optgroup {
 .job-body h5 {
   margin: 1.6em 0 0.5em;
   letter-spacing: -0.02em;
-  color: #f0f0f2;
   font-weight: 700;
 }
 .job-body h1 { font-size: 1.35rem; }
 .job-body h2 { font-size: 1.15rem; }
 .job-body h3 { font-size: 1rem; }
 .job-body h4,
-.job-body h5 { font-size: 0.92rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.job-body h5 { font-size: 0.92rem; text-transform: uppercase; letter-spacing: 0.06em; }
 
-.job-body p {
-  margin: 0 0 0.9em;
-  color: #c8c8d0;
-}
+.job-body p { margin: 0 0 0.9em; }
 
 .job-body ul,
 .job-body ol {
@@ -938,24 +984,13 @@ select optgroup {
   gap: 5px;
 }
 
-.job-body li {
-  color: #b5b5bc;
-}
-
-.job-body li::marker { color: #4b4b56; }
-
-.job-body strong,
-.job-body b { color: #e4e4ec; font-weight: 600; }
-
-.job-body em,
-.job-body i { color: #c8c8d0; }
+.job-body li::marker { color: #4b4b56 !important; }
 
 .job-body a {
-  color: #ff3368;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.job-body a:hover { color: #ff6690; }
+.job-body a:hover { color: #ff6690 !important; }
 
 .job-body hr {
   border: none;
@@ -963,13 +998,30 @@ select optgroup {
   margin: 1.4em 0;
 }
 
+/* Keep code blocks legible — re-apply explicit backgrounds here */
+.job-body code {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: 0.1em 0.35em;
+  font-size: 0.88em;
+}
+
+.job-body pre {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 14px 16px;
+  overflow-x: auto;
+}
+
 .job-body blockquote {
   margin: 0 0 1em;
   padding: 10px 16px;
   border-left: 3px solid rgba(225,29,72,0.4);
-  background: rgba(255,255,255,0.025);
+  background: rgba(255,255,255,0.025) !important;
   border-radius: 0 8px 8px 0;
-  color: var(--muted);
+  color: var(--muted) !important;
 }
 
 @media (max-width: 700px) {
