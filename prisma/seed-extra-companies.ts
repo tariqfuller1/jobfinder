@@ -2,6 +2,7 @@
  * Non-destructive company seeder — uses upsert so it never wipes existing data.
  * Run: npm run seed:companies
  */
+import { CompanyCategory, CompanyRemotePolicy } from "@prisma/client";
 import { prisma } from "../lib/db";
 
 type SeedCompany = {
@@ -12,8 +13,8 @@ type SeedCompany = {
   headquarters?: string;
   hiringRegions: string[];
   locations: string[];
-  remotePolicy: "REMOTE_FRIENDLY" | "FLEXIBLE" | "HYBRID" | "ONSITE" | "REMOTE_FIRST";
-  companyCategory: "SOFTWARE" | "GAMING" | "BOTH";
+  remotePolicy: CompanyRemotePolicy;
+  companyCategory: CompanyCategory;
   companySize?: string;
   stackTags: string[];
   gameTags: string[];
@@ -342,7 +343,7 @@ const companies: SeedCompany[] = [
     headquarters: "Ottawa, Canada",
     hiringRegions: ["US", "Canada", "Europe", "Remote"],
     locations: ["Ottawa, Canada", "Toronto, Canada", "New York, NY", "Remote"],
-    remotePolicy: "REMOTE_FIRST",
+    remotePolicy: "REMOTE_FRIENDLY",
     companyCategory: "SOFTWARE",
     companySize: "10,000+",
     stackTags: ["Ruby on Rails", "React", "TypeScript", "Go", "GraphQL", "Kubernetes"],
@@ -437,7 +438,7 @@ const companies: SeedCompany[] = [
     headquarters: "San Francisco, CA",
     hiringRegions: ["US", "Remote"],
     locations: ["San Francisco, CA", "Remote"],
-    remotePolicy: "REMOTE_FIRST",
+    remotePolicy: "REMOTE_FRIENDLY",
     companyCategory: "SOFTWARE",
     companySize: "5,001–10,000",
     stackTags: ["Java", "Python", "Go", "Node.js", "TypeScript", "Kubernetes", "AWS"],
@@ -456,7 +457,7 @@ const companies: SeedCompany[] = [
     headquarters: "San Francisco, CA",
     hiringRegions: ["US", "Remote"],
     locations: ["Remote"],
-    remotePolicy: "REMOTE_FIRST",
+    remotePolicy: "REMOTE_FRIENDLY",
     companyCategory: "SOFTWARE",
     companySize: "1,001–2,000",
     stackTags: ["Go", "HCL", "Terraform", "Vault", "Consul", "Kubernetes"],
@@ -475,7 +476,7 @@ const companies: SeedCompany[] = [
     headquarters: "San Francisco, CA",
     hiringRegions: ["US", "Europe", "Remote"],
     locations: ["Remote"],
-    remotePolicy: "REMOTE_FIRST",
+    remotePolicy: "REMOTE_FRIENDLY",
     companyCategory: "SOFTWARE",
     companySize: "201–500",
     stackTags: ["TypeScript", "React", "Next.js", "Node.js", "Rust", "Go"],
@@ -494,7 +495,7 @@ const companies: SeedCompany[] = [
     headquarters: "San Francisco, CA",
     hiringRegions: ["US", "Europe", "Remote"],
     locations: ["Remote"],
-    remotePolicy: "REMOTE_FIRST",
+    remotePolicy: "REMOTE_FRIENDLY",
     companyCategory: "SOFTWARE",
     companySize: "1–50",
     stackTags: ["TypeScript", "React", "Node.js", "GraphQL", "Electron"],
@@ -764,7 +765,7 @@ const companies: SeedCompany[] = [
     headquarters: "San Francisco, CA",
     hiringRegions: ["Global", "Remote"],
     locations: ["Remote"],
-    remotePolicy: "REMOTE_FIRST",
+    remotePolicy: "REMOTE_FRIENDLY",
     companyCategory: "SOFTWARE",
     companySize: "2,001–5,000",
     stackTags: ["Ruby on Rails", "Go", "Vue.js", "TypeScript", "Python", "Kubernetes"],
@@ -783,7 +784,7 @@ const companies: SeedCompany[] = [
     headquarters: "San Francisco, CA",
     hiringRegions: ["US", "Remote"],
     locations: ["Remote"],
-    remotePolicy: "REMOTE_FIRST",
+    remotePolicy: "REMOTE_FRIENDLY",
     companyCategory: "SOFTWARE",
     companySize: "1,001–5,000",
     stackTags: ["Ruby", "Go", "TypeScript", "React", "C#", "Kubernetes"],
@@ -802,7 +803,7 @@ const companies: SeedCompany[] = [
     headquarters: "San Francisco, CA",
     hiringRegions: ["Global", "Remote"],
     locations: ["Remote"],
-    remotePolicy: "REMOTE_FIRST",
+    remotePolicy: "REMOTE_FRIENDLY",
     companyCategory: "SOFTWARE",
     companySize: "2,001–5,000",
     stackTags: ["PHP", "JavaScript", "TypeScript", "React", "Node.js", "WordPress"],
@@ -821,7 +822,7 @@ const companies: SeedCompany[] = [
     headquarters: "Chicago, IL",
     hiringRegions: ["US", "Remote"],
     locations: ["Remote"],
-    remotePolicy: "REMOTE_FIRST",
+    remotePolicy: "REMOTE_FRIENDLY",
     companyCategory: "SOFTWARE",
     companySize: "51–200",
     stackTags: ["Ruby on Rails", "TypeScript", "React", "Hotwire", "iOS"],
@@ -840,7 +841,7 @@ const companies: SeedCompany[] = [
     headquarters: "San Francisco, CA",
     hiringRegions: ["Global", "Remote"],
     locations: ["Remote"],
-    remotePolicy: "REMOTE_FIRST",
+    remotePolicy: "REMOTE_FRIENDLY",
     companyCategory: "SOFTWARE",
     companySize: "51–200",
     stackTags: ["Node.js", "React", "TypeScript", "GraphQL", "Python"],
@@ -1032,7 +1033,7 @@ const companies: SeedCompany[] = [
     headquarters: "Sydney, Australia",
     hiringRegions: ["US", "Europe", "Australia", "Remote"],
     locations: ["Sydney, Australia", "San Francisco, CA", "New York, NY", "Austin, TX", "Remote"],
-    remotePolicy: "REMOTE_FIRST",
+    remotePolicy: "REMOTE_FRIENDLY",
     companyCategory: "SOFTWARE",
     companySize: "10,000+",
     stackTags: ["Java", "Python", "TypeScript", "React", "Kotlin", "AWS"],
@@ -1076,8 +1077,8 @@ async function main() {
       headquarters: company.headquarters ?? null,
       hiringRegions: s(company.hiringRegions),
       locations: s(company.locations),
-      remotePolicy: company.remotePolicy as any,
-      companyCategory: company.companyCategory as any,
+      remotePolicy: company.remotePolicy,
+      companyCategory: company.companyCategory,
       companySize: company.companySize ?? null,
       stackTags: s(company.stackTags),
       gameTags: s(company.gameTags),

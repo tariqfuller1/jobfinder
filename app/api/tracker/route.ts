@@ -28,15 +28,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Sign in to track applications." }, { status: 401 });
   }
 
-  const body = await request.json();
-
-  if ("jobId" in body) {
-    const { jobId } = jobIdSchema.parse(body);
-    const application = await createApplication(user.id, jobId);
-    return NextResponse.json(application, { status: 201 });
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const data = manualSchema.parse(body);
-  const application = await createManualApplication(user.id, data);
-  return NextResponse.json(application, { status: 201 });
+  try {
+    if (typeof body === "object" && body !== null && "jobId" in body) {
+      const { jobId } = jobIdSchema.parse(body);
+      const application = await createApplication(user.id, jobId);
+      return NextResponse.json(application, { status: 201 });
+    }
+    const data = manualSchema.parse(body);
+    const application = await createManualApplication(user.id, data);
+    return NextResponse.json(application, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
 }

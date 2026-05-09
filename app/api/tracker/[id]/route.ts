@@ -18,7 +18,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const { id } = await params;
-  const body = updateSchema.parse(await request.json());
+  let body: z.infer<typeof updateSchema>;
+  try {
+    body = updateSchema.parse(await request.json());
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
 
   try {
     const updated = await updateApplication(user.id, id, {

@@ -11,8 +11,10 @@ export async function GET(request: NextRequest) {
     size: searchParams.get("size") ?? undefined,
     skill: searchParams.get("skill") ?? undefined,
     state: searchParams.get("state") ?? undefined,
+    country: searchParams.get("country") ?? undefined,
     ats: searchParams.get("ats") ?? undefined,
     activeHiring: searchParams.get("activeHiring") ?? undefined,
+    sort: searchParams.get("sort") ?? undefined,
     page: Number(searchParams.get("page") ?? "1"),
     limit: Number(searchParams.get("limit") ?? "24"),
   });

@@ -9,6 +9,7 @@ import { fetchRemotiveJobs } from "@/lib/adapters/remotive";
 import { fetchRecruiteeJobs } from "@/lib/adapters/recruitee";
 import { fetchArbeitnowJobs } from "@/lib/adapters/arbeitnow";
 import { fetchUsaJobs } from "@/lib/adapters/usajobs";
+import { fetchIndeedJobs } from "@/lib/adapters/indeed";
 import { filterSoftwareJobs, parseCsvEnv, TECH_JOB_TITLE_KEYWORDS } from "@/lib/filtering";
 import { classifyJobRole } from "@/lib/classify";
 import { inferJobFields } from "@/lib/infer";
@@ -672,6 +673,7 @@ export async function syncAllJobs(
   const useArbeitnow = (process.env.ENABLE_ARBEITNOW ?? "true").toLowerCase() === "true";
   const useUsaJobs = (process.env.ENABLE_USAJOBS ?? "false").toLowerCase() === "true";
   const useGamesWorkbook = (process.env.ENABLE_GAMES_WORKBOOK ?? "true").toLowerCase() === "true";
+  const useIndeed = (process.env.ENABLE_INDEED ?? "false").toLowerCase() === "true";
   const softwareOnly = (process.env.SOFTWARE_ONLY ?? "true").toLowerCase() === "true";
 
   const maybeFilter = async (fetcher: () => Promise<NormalizedJob[]>) => {
@@ -722,6 +724,11 @@ export async function syncAllJobs(
   }
   if (useGamesWorkbook) {
     sourceDefs.push({ source: "games-workbook", fetcher: () => maybeFilter(() => fetchGamesWorkbookJobs()) });
+  }
+  if (useIndeed) {
+    sourceDefs.push({ source: "indeed", fetcher: () => maybeFilter(() => fetchIndeedJobs()) });
+  } else {
+    console.log("[sync] indeed — skipped (set ENABLE_INDEED=true to enable)");
   }
 
   if (!sourceDefs.length) return [];

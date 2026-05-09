@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     location: searchParams.get("location") ?? undefined,
     states: parseList("states"),
     country: searchParams.get("country") ?? undefined,
+    sort: (searchParams.get("sort") as "recent" | "oldest" | "fit" | "salary") || undefined,
     source: searchParams.get("source") ?? undefined,
     company: searchParams.get("company") ?? undefined,
     recommendedOnly: searchParams.get("recommendedOnly") === "true",
@@ -49,7 +50,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Sign in to add a job." }, { status: 401 });
   }
 
-  const body = createSchema.parse(await request.json());
+  let body: z.infer<typeof createSchema>;
+  try {
+    body = createSchema.parse(await request.json());
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
   const externalId = `manual-${user.id}-${Date.now()}`;
 
   const job = await prisma.job.create({
@@ -65,6 +72,7 @@ export async function POST(request: NextRequest) {
       employmentType: body.employmentType,
       experienceLevel: body.experienceLevel,
       descriptionText: body.descriptionText || null,
+      tags: "[]",
     },
   });
 

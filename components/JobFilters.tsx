@@ -285,6 +285,7 @@ export function JobFilters() {
             Source
             <select value={source} onChange={(e) => setSource(e.target.value)} style={source ? activeStyle : {}}>
               <option value="">All sources</option>
+              <option value="indeed">Indeed</option>
               <option value="games-workbook">Games Workbook</option>
               <option value="greenhouse">Greenhouse</option>
               <option value="lever">Lever</option>
