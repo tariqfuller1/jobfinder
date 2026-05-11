@@ -37,6 +37,15 @@ export async function createManualApplication(
   });
 }
 
+/** Returns a map of jobId → ApplicationStatus for all jobs the user has tracked. */
+export async function getTrackedJobStatuses(userId: string): Promise<Map<string, string>> {
+  const rows = await prisma.application.findMany({
+    where: { userId },
+    select: { jobId: true, status: true },
+  });
+  return new Map(rows.filter((r) => r.jobId).map((r) => [r.jobId!, r.status as string]));
+}
+
 export async function listApplications(userId: string) {
   return prisma.application.findMany({
     where: { userId },

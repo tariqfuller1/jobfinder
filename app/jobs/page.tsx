@@ -7,11 +7,15 @@ import { SearchBar } from "@/components/SearchBar";
 import { getCurrentUser } from "@/lib/auth";
 import { listJobs } from "@/lib/jobs";
 import { getProfileForUserOrDefault } from "@/lib/profile";
+import { getTrackedJobStatuses } from "@/lib/tracker";
 
 export default async function JobsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
   const user = await getCurrentUser();
-  const profile = user ? await getProfileForUserOrDefault(user.id) : null;
+  const [profile, trackedStatuses] = await Promise.all([
+    user ? getProfileForUserOrDefault(user.id) : Promise.resolve(null),
+    user ? getTrackedJobStatuses(user.id) : Promise.resolve(new Map<string, string>()),
+  ]);
   const page = typeof params.page === "string" ? Number(params.page) : 1;
   const sortParam = typeof params.sort === "string" ? params.sort : "";
   const sort = (["oldest", "fit", "salary"].includes(sortParam) ? sortParam : "recent") as "recent" | "oldest" | "fit" | "salary";
@@ -143,7 +147,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
           ) : null}
 
           {data.jobs.map((job) => (
-            <JobCard key={job.id} job={job} userId={user?.id} />
+            <JobCard key={job.id} job={job} userId={user?.id} trackerStatus={trackedStatuses.get(job.id)} />
           ))}
 
           <Pagination page={data.page} totalPages={data.totalPages} pathname="/jobs" searchParams={serializableParams} />

@@ -46,7 +46,17 @@ function fmtExperience(v: string) {
   return null;
 }
 
-export function JobCard({ job, userId }: { job: JobCardData; userId?: string | null }) {
+const TRACKER_LABELS: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  SAVED:         { label: "Saved",        color: "#94a3b8", bg: "rgba(148,163,184,0.10)", border: "rgba(148,163,184,0.22)" },
+  REACHING_OUT:  { label: "Reaching out", color: "#60a5fa", bg: "rgba(96,165,250,0.10)",  border: "rgba(96,165,250,0.22)"  },
+  APPLIED:       { label: "Applied ✓",    color: "#4ade80", bg: "rgba(74,222,128,0.12)",  border: "rgba(74,222,128,0.28)"  },
+  INTERVIEW:     { label: "Interview",    color: "#fbbf24", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.28)"  },
+  OFFER:         { label: "Offer!",       color: "#4ade80", bg: "rgba(74,222,128,0.18)",  border: "rgba(74,222,128,0.40)"  },
+  REJECTED:      { label: "Rejected",     color: "#f87171", bg: "rgba(248,113,113,0.10)", border: "rgba(248,113,113,0.22)" },
+  GHOSTED:       { label: "Ghosted",      color: "#6b7280", bg: "rgba(107,114,128,0.08)", border: "rgba(107,114,128,0.18)" },
+};
+
+export function JobCard({ job, userId, trackerStatus }: { job: JobCardData; userId?: string | null; trackerStatus?: string }) {
   const postedLabel = job.postedAt
     ? formatDistanceToNow(new Date(job.postedAt), { addSuffix: true })
     : null;
@@ -66,7 +76,7 @@ export function JobCard({ job, userId }: { job: JobCardData; userId?: string | n
   return (
     <article className="inset-card" style={{ display: "grid", gap: 11, padding: "14px 16px" }}>
 
-      {/* ── Row 1: category chip + fit score ── */}
+      {/* ── Row 1: category chip + tracker status + fit score ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
         <span style={{
           fontSize: 11,
@@ -81,20 +91,36 @@ export function JobCard({ job, userId }: { job: JobCardData; userId?: string | n
           {rolecat.label}
         </span>
 
-        {job.fitScore > 0 && (
-          <span style={{
-            fontSize: 11,
-            fontWeight: 800,
-            letterSpacing: "0.04em",
-            padding: "3px 11px",
-            borderRadius: 999,
-            color: fitColor,
-            background: fitBg,
-            border: `1px solid ${fitBorder}`,
-          }}>
-            Fit {job.fitScore}
-          </span>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {trackerStatus && TRACKER_LABELS[trackerStatus] && (
+            <span style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+              padding: "3px 10px",
+              borderRadius: 999,
+              color: TRACKER_LABELS[trackerStatus].color,
+              background: TRACKER_LABELS[trackerStatus].bg,
+              border: `1px solid ${TRACKER_LABELS[trackerStatus].border}`,
+            }}>
+              {TRACKER_LABELS[trackerStatus].label}
+            </span>
+          )}
+          {job.fitScore > 0 && (
+            <span style={{
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: "0.04em",
+              padding: "3px 11px",
+              borderRadius: 999,
+              color: fitColor,
+              background: fitBg,
+              border: `1px solid ${fitBorder}`,
+            }}>
+              Fit {job.fitScore}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* ── Row 2: title + save ── */}
