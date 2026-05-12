@@ -1,25 +1,33 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
+import { sendPasswordResetEmail } from "@/lib/email";
 
 function hashValue(value: string) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
 export async function POST(request: Request) {
-  const { email } = await request.json();
-  if (!email || typeof email !== "string") {
+  let email: string;
+  try {
+    const body = await request.json();
+    email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  } catch {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+
+  if (!email) {
     return NextResponse.json({ error: "Email required." }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+  const user = await prisma.user.findUnique({ where: { email } });
 
-  // Always return success to avoid leaking which emails exist
+  // Always return success — never reveal whether the email exists
   if (!user) {
     return NextResponse.json({ ok: true });
   }
 
-  // Expire old tokens for this user
+  // Expire any existing tokens for this user
   await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
 
   const token = crypto.randomBytes(32).toString("hex");
@@ -29,5 +37,16 @@ export async function POST(request: Request) {
     data: { userId: user.id, tokenHash: hashValue(token), expiresAt },
   });
 
-  return NextResponse.json({ ok: true, token });
+  try {
+    await sendPasswordResetEmail(email, token);
+  } catch (err) {
+    console.error("[forgot-password] Failed to send email:", err);
+    // Don't expose internal errors to the client
+    return NextResponse.json(
+      { error: "Could not send reset email. Please try again or contact support." },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({ ok: true });
 }
