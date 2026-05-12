@@ -73,10 +73,10 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {/* ── Main section: outreach editor (primary) + sidebar ── */}
-      <div id="outreach" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.9fr) minmax(260px,1fr)", gap: 16, alignItems: "start" }}>
+      <div id="outreach" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.9fr) minmax(260px,1fr)", gap: 16, alignItems: "stretch" }}>
 
         {/* Outreach editor — the main feature */}
-        <div className="card" style={{ padding: "20px 22px", display: "grid", gap: 14 }}>
+        <div className="card" style={{ padding: "20px 22px", display: "grid", gap: 14, alignContent: "start" }}>
           <div>
             <div className="eyebrow" style={{ marginBottom: 4 }}>Company outreach</div>
             <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
@@ -98,18 +98,20 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         </div>
 
         {/* Sidebar: who to contact + connection angles */}
-        <div style={{ display: "grid", gap: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-          {/* People to find */}
+          {/* People to find — fills all remaining sidebar height, content scrolls */}
           {company.suggestedSearches.length > 0 && (
-            <div className="inset-card" style={{ padding: "16px 18px", display: "grid", gap: 10 }}>
-              <div>
+            <div className="inset-card" style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 10, flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <div style={{ flexShrink: 0 }}>
                 <div className="eyebrow" style={{ marginBottom: 2 }}>Who to contact</div>
                 <p className="muted" style={{ margin: 0, fontSize: 12 }}>
                   Recruiters, hiring managers, and engineering leads at {company.name}.
                 </p>
               </div>
-              <SuggestedSearches searches={company.suggestedSearches} />
+              <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
+                <SuggestedSearches searches={company.suggestedSearches} />
+              </div>
             </div>
           )}
 
