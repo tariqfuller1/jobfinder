@@ -6,15 +6,19 @@ function getTransporter() {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
 
-  if (!host || !user || !pass) {
-    throw new Error("Email not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS in your environment.");
-  }
+  if (!host) throw new Error("SMTP_HOST is not set.");
+  if (!user) throw new Error("SMTP_USER is not set.");
+  if (!pass) throw new Error("SMTP_PASS is not set.");
 
   return nodemailer.createTransport({
     host,
     port,
-    secure: port === 465,   // true for 465 (SSL), false for 587 (STARTTLS)
+    secure: port === 465,      // true for SSL (465), false for STARTTLS (587)
+    requireTLS: port === 587,  // force STARTTLS upgrade on port 587
     auth: { user, pass },
+    tls: {
+      rejectUnauthorized: true,
+    },
   });
 }
 

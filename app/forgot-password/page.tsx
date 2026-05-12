@@ -5,7 +5,7 @@ import { useState } from "react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [resetLink, setResetLink] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -22,45 +22,42 @@ export default function ForgotPasswordPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Something went wrong.");
-      } else if (data.token) {
-        setResetLink(`${window.location.origin}/reset-password/${data.token}`);
       } else {
-        // Email not found — still show the same state so we don't leak user existence
-        setResetLink("not-found");
+        setSent(true);
       }
     } catch {
-      setError("Something went wrong.");
+      setError("Network error — please check your connection and try again.");
     } finally {
       setLoading(false);
     }
   }
 
-  if (resetLink && resetLink !== "not-found") {
+  if (sent) {
     return (
       <div className="auth-shell">
-        <section className="card stack auth-card">
+        <section className="card stack auth-card" style={{ padding: "32px 28px" }}>
+          <div style={{ fontSize: 36, textAlign: "center" }}>✉️</div>
           <div>
-            <h1 className="section-title">Reset your password</h1>
-            <p className="muted">Copy this link to reset your password. It expires in 1 hour.</p>
+            <h1 className="section-title">Check your email</h1>
+            <p className="muted">
+              If <strong style={{ color: "#f5f5f5" }}>{email}</strong> has an account, we sent a
+              password reset link to that address. It expires in 1 hour.
+            </p>
+            <p className="muted" style={{ marginTop: 8, fontSize: 13 }}>
+              Don't see it? Check your spam folder, or{" "}
+              <button
+                type="button"
+                onClick={() => setSent(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#ff3368", padding: 0, fontSize: 13 }}
+              >
+                try again
+              </button>
+              .
+            </p>
           </div>
-          <div className="inset-card" style={{ wordBreak: "break-all", fontSize: 13 }}>
-            <a href={resetLink}>{resetLink}</a>
-          </div>
-          <Link href="/login" className="button" style={{ textAlign: "center" }}>Back to sign in</Link>
-        </section>
-      </div>
-    );
-  }
-
-  if (resetLink === "not-found") {
-    return (
-      <div className="auth-shell">
-        <section className="card stack auth-card">
-          <div>
-            <h1 className="section-title">No account found</h1>
-            <p className="muted">No account is registered with that email address.</p>
-          </div>
-          <Link href="/login" className="button" style={{ textAlign: "center" }}>Back to sign in</Link>
+          <Link href="/login" className="button secondary" style={{ textAlign: "center", justifyContent: "center" }}>
+            Back to sign in
+          </Link>
         </section>
       </div>
     );
@@ -71,10 +68,22 @@ export default function ForgotPasswordPage() {
       <section className="card stack auth-card">
         <div>
           <h1 className="section-title">Forgot password</h1>
-          <p className="muted">Enter your email and we'll generate a reset link.</p>
+          <p className="muted">Enter your email and we'll send you a reset link.</p>
         </div>
         <form onSubmit={submit} className="stack compact-stack">
-          {error && <p style={{ color: "#f87171", margin: 0, fontSize: 14 }}>{error}</p>}
+          {error && (
+            <div style={{
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: "rgba(248,113,113,0.08)",
+              border: "1px solid rgba(248,113,113,0.25)",
+              color: "#f87171",
+              fontSize: 13,
+              lineHeight: 1.5,
+            }}>
+              {error}
+            </div>
+          )}
           <label>
             Email
             <input
@@ -87,7 +96,7 @@ export default function ForgotPasswordPage() {
             />
           </label>
           <button type="submit" className="button" disabled={loading}>
-            {loading ? "Generating…" : "Get reset link"}
+            {loading ? "Sending…" : "Send reset link"}
           </button>
         </form>
         <p className="muted" style={{ margin: 0 }}>
