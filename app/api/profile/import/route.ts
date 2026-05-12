@@ -7,6 +7,9 @@ import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
 
+const MAX_RESUME_BYTES = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_EXTENSIONS = [".pdf", ".docx", ".txt"];
+
 async function extractResumeText(file: File) {
   const fileName = file.name.toLowerCase();
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -41,6 +44,13 @@ export async function POST(request: Request) {
     let fileName: string | undefined;
 
     if (!extractedText && file instanceof File && file.size > 0) {
+      if (file.size > MAX_RESUME_BYTES) {
+        return NextResponse.json({ error: "File too large. Maximum size is 5 MB." }, { status: 413 });
+      }
+      const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+      if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        return NextResponse.json({ error: "Only PDF, DOCX, and TXT files are accepted." }, { status: 415 });
+      }
       extractedText = await extractResumeText(file);
       fileName = file.name;
     }

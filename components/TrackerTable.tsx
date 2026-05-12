@@ -67,12 +67,14 @@ export function TrackerTable({ initialRows }: { initialRows: any[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
+    if (!res.ok) return; // keep current state on error
     const updated = await res.json();
-    setRows((cur) => cur.map((r) => (r.id === id ? updated : r)));
+    setRows((cur) => cur.map((r) => (r.id === id ? { ...r, ...updated } : r)));
   }
 
   async function removeRow(id: string) {
-    await fetch(`/api/tracker/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/tracker/${id}`, { method: "DELETE" });
+    if (!res.ok) return; // keep row in UI on failure
     setRows((cur) => cur.filter((r) => r.id !== id));
   }
 

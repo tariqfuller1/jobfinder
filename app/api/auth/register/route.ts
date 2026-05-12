@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession, hashPassword, setSessionCookie } from "@/lib/auth";
 import { createDefaultProfileInputForUser, saveUserProfileForUser } from "@/lib/profile";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimitWithRetry } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
 
 const registerSchema = z.object({
@@ -11,17 +11,27 @@ const registerSchema = z.object({
   email: z.string().trim().email("Enter a valid email."),
   password: z.string().min(8, "Password must be at least 8 characters."),
   turnstileToken: z.string().optional(),
+  _hp: z.string().optional(),
 });
 
 export async function POST(request: Request) {
   // 5 registrations per hour per IP
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  if (!rateLimit(`register:${ip}`, 5, 60 * 60 * 1000)) {
-    return NextResponse.json({ error: "Too many registration attempts. Try again later." }, { status: 429 });
+  const { allowed: registerAllowed, retryAfterSec } = rateLimitWithRetry(`register:${ip}`, 5, 60 * 60 * 1000);
+  if (!registerAllowed) {
+    return NextResponse.json(
+      { error: "Too many registration attempts. Try again later." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
+    );
   }
 
   try {
     const body = registerSchema.parse(await request.json());
+
+    // Honeypot — real browsers leave this empty
+    if (body._hp) {
+      return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+    }
 
     if (!await verifyTurnstile(body.turnstileToken, ip)) {
       return NextResponse.json({ error: "CAPTCHA verification failed. Please try again." }, { status: 400 });

@@ -15,6 +15,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState("");
 
   const handleVerify = useCallback((token: string) => setTurnstileToken(token), []);
   const handleExpire = useCallback(() => setTurnstileToken(null), []);
@@ -40,7 +41,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       const response = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName, email, password, turnstileToken }),
+        body: JSON.stringify({ displayName, email, password, turnstileToken, _hp: honeypot }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -58,6 +59,17 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   return (
     <form className="stack compact-stack" onSubmit={handleSubmit}>
+      {/* Honeypot: hidden from real users, filled by bots */}
+      <input
+        type="text"
+        name="website"
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+      />
       {mode === "register" ? (
         <label>
           Name

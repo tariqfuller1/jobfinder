@@ -22,16 +22,29 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const allowed = ["workplaceType", "employmentType", "experienceLevel", "location"];
+  const VALID_VALUES: Record<string, Set<string>> = {
+    workplaceType: new Set(["REMOTE", "HYBRID", "ONSITE", "UNKNOWN"]),
+    employmentType: new Set(["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "TEMPORARY", "UNKNOWN"]),
+    experienceLevel: new Set(["ENTRY", "MID", "SENIOR", "LEAD", "INTERN", "UNKNOWN"]),
+  };
+
   const data: Record<string, string> = {};
   if (typeof body === "object" && body !== null) {
-    for (const key of allowed) {
-      if (typeof (body as Record<string, unknown>)[key] === "string") {
-        data[key] = (body as Record<string, string>)[key];
+    const b = body as Record<string, unknown>;
+    for (const key of ["workplaceType", "employmentType", "experienceLevel"]) {
+      if (typeof b[key] === "string" && VALID_VALUES[key].has(b[key] as string)) {
+        data[key] = b[key] as string;
       }
+    }
+    if (typeof b.location === "string") {
+      data.location = b.location.trim().slice(0, 200);
     }
   }
 
-  const job = await updateJob(id, data);
-  return NextResponse.json(job);
+  try {
+    const job = await updateJob(id, data);
+    return NextResponse.json(job);
+  } catch {
+    return NextResponse.json({ error: "Could not update job." }, { status: 400 });
+  }
 }

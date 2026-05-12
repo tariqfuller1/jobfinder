@@ -8,7 +8,12 @@ function hashValue(value: string) {
 }
 
 export async function POST(request: Request) {
-  const { token, password } = await request.json();
+  let token: unknown, password: unknown;
+  try {
+    ({ token, password } = await request.json());
+  } catch {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
   if (!token || !password || typeof token !== "string" || typeof password !== "string") {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }

@@ -7,6 +7,7 @@ import { getJobById } from "@/lib/jobs";
 import { getProfileForUserOrDefault } from "@/lib/profile";
 import { suggestConnectionSearches } from "@/lib/recommendations";
 import { getRoleCategory } from "@/lib/classify";
+import { sanitizeJobHtml } from "@/lib/sanitize";
 import { notFound } from "next/navigation";
 
 function fmtWorkplace(v: string) {
@@ -179,7 +180,7 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
           {/* Description card */}
           <div className="card" style={{ padding: "18px 22px" }}>
             {job.descriptionHtml ? (
-              <div className="job-body" dangerouslySetInnerHTML={{ __html: job.descriptionHtml }} />
+              <div className="job-body" dangerouslySetInnerHTML={{ __html: sanitizeJobHtml(job.descriptionHtml) }} />
             ) : job.descriptionText ? (
               <div className="job-body">
                 {job.descriptionText.split(/\n{2,}/).map((para, i) => (

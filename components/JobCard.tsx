@@ -57,8 +57,9 @@ const TRACKER_LABELS: Record<string, { label: string; color: string; bg: string;
 };
 
 export function JobCard({ job, userId, trackerStatus }: { job: JobCardData; userId?: string | null; trackerStatus?: string }) {
-  const postedLabel = job.postedAt
-    ? formatDistanceToNow(new Date(job.postedAt), { addSuffix: true })
+  const postedDate = job.postedAt ? new Date(job.postedAt) : null;
+  const postedLabel = postedDate && !isNaN(postedDate.getTime())
+    ? formatDistanceToNow(postedDate, { addSuffix: true })
     : null;
 
   const rolecat = getRoleCategory(job.roleCategory ?? "software");
@@ -139,7 +140,7 @@ export function JobCard({ job, userId, trackerStatus }: { job: JobCardData; user
           ? <Link href={`/companies/${job.companySlug}`} style={{ color: "#d4d4d8", fontWeight: 600 }}>{job.company}</Link>
           : <span style={{ color: "#d4d4d8", fontWeight: 600 }}>{job.company}</span>}
         {job.location && <><span>·</span><span>{job.location}</span></>}
-        {postedLabel && <><span>·</span><span title={job.postedAt ? new Date(job.postedAt).toLocaleDateString() : ""}>{postedLabel}</span></>}
+        {postedLabel && <><span>·</span><span title={postedDate?.toLocaleDateString() ?? ""}>{postedLabel}</span></>}
       </div>
 
       {/* ── Row 4: workplace / type / level badges ── */}

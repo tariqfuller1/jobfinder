@@ -234,7 +234,16 @@ export function buildOutreachMessage(
   input: { companyName: string; role?: string | null; focusTags?: string[]; notes?: string | null },
   profile: UserProfile = defaultUserProfile,
 ) {
-  const focus = input.focusTags?.slice(0, 3).join(", ") || "software and gameplay systems";
+  const focus = input.focusTags?.slice(0, 3).join(", ") || "engineering";
   const role = input.role ? ` for ${input.role}` : "";
-  return `Hi [Name],\n\nI’m reaching out because I’m very interested in ${input.companyName}${role}. I recently built a Unity precision platformer focused on responsive movement, dash, grappling, and combat systems, and I also have experience building user-focused React interfaces from my HCI and web work. ${input.notes ? `${input.notes} ` : ""}The work your team does around ${focus} feels especially aligned with my background.\n\nI’d love to connect and learn more about the team and where someone with my mix of gameplay, frontend, and product-minded engineering experience could contribute.\n\nThank you,\n${profile.name}`;
+  const skillLine = profile.skills.slice(0, 3).join(", ");
+
+  // Use the user’s own summary if they’ve filled it in; fall back to a generic line.
+  const hasCustomSummary =
+    profile.summary && profile.summary !== defaultUserProfile.summary && profile.summary.trim().length > 10;
+  const bodyLine = hasCustomSummary
+    ? profile.summary.trim()
+    : `I have experience in ${skillLine || "software engineering"} and I’m actively looking for new opportunities.`;
+
+  return `Hi [Name],\n\nI’m reaching out because I’m very interested in ${input.companyName}${role}. ${bodyLine} ${input.notes ? `${input.notes.trim()} ` : ""}The work your team does around ${focus} feels especially aligned with my background.\n\nI’d love to connect and learn more about the team and where my experience could contribute.\n\nThank you,\n${profile.name}`;
 }

@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { rateLimitWithRetry } from "@/lib/rate-limit";
 
 function hashValue(value: string) {
   return crypto.createHash("sha256").update(value).digest("hex");
@@ -10,6 +11,16 @@ function hashValue(value: string) {
 
 export async function POST(request: Request) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+
+  // 5 reset emails per hour per IP
+  const { allowed, retryAfterSec } = rateLimitWithRetry(`forgot-password:${ip}`, 5, 60 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many reset requests. Try again later." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
+    );
+  }
+
   let email: string;
   let turnstileToken: string | undefined;
   try {

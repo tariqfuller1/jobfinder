@@ -229,16 +229,14 @@ export async function listCompanies(filters: CompanyFilters, profile: UserProfil
 }
 
 export async function getCompanyBySlug(slug: string, profile: UserProfile | null = null) {
-  const [company] = await Promise.all([
-    prisma.company.findUnique({
-      where: { slug },
-      include: {
-        contacts: {
-          orderBy: [{ updatedAt: "desc" }, { name: "asc" }],
-        },
+  const company = await prisma.company.findUnique({
+    where: { slug },
+    include: {
+      contacts: {
+        orderBy: [{ updatedAt: "desc" }, { name: "asc" }],
       },
-    }),
-  ]);
+    },
+  });
 
   if (!company) return null;
 
