@@ -69,18 +69,25 @@ export async function createApplication(userId: string, jobId: string) {
     return existing;
   }
 
-  return prisma.application.create({
-    data: {
-      userId,
-      jobId: job.id,
-      company: job.company,
-      roleTitle: job.title,
-      sourceUrl: job.sourceUrl,
-      applyUrl: job.applyUrl,
-      status: ApplicationStatus.APPLIED,
-      dateApplied: new Date(),
-    },
-  });
+  try {
+    return await prisma.application.create({
+      data: {
+        userId,
+        jobId: job.id,
+        company: job.company,
+        roleTitle: job.title,
+        sourceUrl: job.sourceUrl,
+        applyUrl: job.applyUrl,
+        status: ApplicationStatus.APPLIED,
+        dateApplied: new Date(),
+      },
+    });
+  } catch {
+    // Concurrent request already created the row — return it
+    const created = await prisma.application.findFirst({ where: { userId, jobId: job.id } });
+    if (created) return created;
+    throw new Error("Failed to save application.");
+  }
 }
 
 export async function deleteApplication(userId: string, id: string) {

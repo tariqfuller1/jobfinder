@@ -59,10 +59,9 @@ export async function POST(request: Request) {
   try {
     await sendPasswordResetEmail(email, token);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[forgot-password] Failed to send email:", message);
+    console.error("[forgot-password] Failed to send email:", err instanceof Error ? err.message : err);
     return NextResponse.json(
-      { error: `Email delivery failed: ${message}` },
+      { error: "Could not send the reset email. Please try again later." },
       { status: 500 },
     );
   }

@@ -593,9 +593,14 @@ async function runSingleSource(source: string, fetcher: () => Promise<Normalized
       return true;
     });
 
-    // Company upserts also sequential — same single-writer constraint
+    // Company upserts also sequential — same single-writer constraint.
+    // Each is wrapped so a single bad upsert doesn't abort the whole sync.
     for (const job of uniqueJobs) {
-      await ensureCompanyExistsFromJob(job);
+      try {
+        await ensureCompanyExistsFromJob(job);
+      } catch (err) {
+        console.warn(`[sync] company upsert failed for "${job.company}":`, err instanceof Error ? err.message : err);
+      }
     }
 
     await prisma.syncRun.update({

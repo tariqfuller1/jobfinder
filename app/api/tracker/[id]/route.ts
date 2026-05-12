@@ -25,10 +25,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
+  let followUpDate: Date | null | undefined = body.followUpDate;
+  if (typeof body.followUpDate === "string") {
+    const d = new Date(body.followUpDate);
+    if (isNaN(d.getTime())) {
+      return NextResponse.json({ error: "Invalid followUpDate." }, { status: 400 });
+    }
+    followUpDate = d;
+  }
+
   try {
     const updated = await updateApplication(user.id, id, {
       ...body,
-      followUpDate: body.followUpDate ? new Date(body.followUpDate) : body.followUpDate,
+      followUpDate,
     });
     return NextResponse.json(updated);
   } catch (error) {

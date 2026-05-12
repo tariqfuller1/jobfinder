@@ -3,12 +3,18 @@ export async function verifyTurnstile(token: string | undefined, ip?: string): P
   if (!secret) return true; // Not configured — skip (dev / self-hosted without CAPTCHA)
   if (!token) return false;
 
-  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ secret, response: token, remoteip: ip }),
-  });
-
-  const data = (await res.json()) as { success: boolean };
-  return data.success === true;
+  try {
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ secret, response: token, remoteip: ip }),
+    });
+    const data = (await res.json()) as { success: boolean };
+    return data.success === true;
+  } catch {
+    // Network error reaching Cloudflare — fail open so a Cloudflare outage
+    // doesn't lock users out. The rate limiter still protects the route.
+    console.warn("[turnstile] Verification fetch failed — failing open");
+    return true;
+  }
 }
