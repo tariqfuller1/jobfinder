@@ -18,10 +18,19 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
 
   const allTags = [...company.stackTags, ...company.gameTags, ...company.roleFocusTags];
 
+  const hasIntel =
+    company.connectionSearches.length > 0 ||
+    company.atsProviders.length > 0 ||
+    company.hiringSignals.length > 0 ||
+    company.emailPatterns.length > 0 ||
+    company.coldCallPhone ||
+    company.outreachTips ||
+    company.hiringRegions.length > 0;
+
   return (
     <div style={{ padding: "24px 0 48px", display: "grid", gap: 20 }}>
 
-      {/* ── Company header strip ── */}
+      {/* ── Company header ── */}
       <div className="card hero-card" style={{ padding: "20px 24px" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
@@ -47,7 +56,6 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
             )}
           </div>
 
-          {/* Quick links */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", flexShrink: 0 }}>
             {company.websiteUrl && (
               <a className="button secondary" href={company.websiteUrl} target="_blank" rel="noreferrer"
@@ -72,11 +80,11 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         </div>
       </div>
 
-      {/* ── Main section: outreach editor (primary) + sidebar ── */}
-      <div id="outreach" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.9fr) minmax(260px,1fr)", gap: 16, alignItems: "stretch" }}>
+      {/* ── Outreach row: editor + who to contact ── */}
+      <div id="outreach" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.9fr) minmax(260px,1fr)", gap: 16, alignItems: "start" }}>
 
-        {/* Outreach editor — the main feature */}
-        <div className="card" style={{ padding: "20px 22px", display: "grid", gap: 14, alignContent: "start" }}>
+        {/* Outreach editor */}
+        <div className="card" style={{ padding: "20px 22px", display: "grid", gap: 14 }}>
           <div>
             <div className="eyebrow" style={{ marginBottom: 4 }}>Company outreach</div>
             <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
@@ -97,70 +105,26 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           />
         </div>
 
-        {/* Sidebar: who to contact + connection angles */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-
-          {/* People to find — fills all remaining sidebar height, content scrolls */}
-          {company.suggestedSearches.length > 0 && (
-            <div className="inset-card" style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 10, maxHeight: "480px", overflow: "hidden" }}>
-              <div style={{ flexShrink: 0 }}>
-                <div className="eyebrow" style={{ marginBottom: 2 }}>Who to contact</div>
-                <p className="muted" style={{ margin: 0, fontSize: 12 }}>
-                  Recruiters, hiring managers, and engineering leads at {company.name}.
-                </p>
-              </div>
-              <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
-                <SuggestedSearches searches={company.suggestedSearches} />
-              </div>
+        {/* Who to contact — scrollable, never taller than viewport */}
+        {company.suggestedSearches.length > 0 && (
+          <div className="card" style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 10, maxHeight: "min(520px, 80vh)", overflow: "hidden" }}>
+            <div style={{ flexShrink: 0 }}>
+              <div className="eyebrow" style={{ marginBottom: 2 }}>Who to contact</div>
+              <p className="muted" style={{ margin: 0, fontSize: 12 }}>
+                Recruiters, hiring managers, and engineering leads at {company.name}.
+              </p>
             </div>
-          )}
-
-          {/* Connection angles */}
-          {company.connectionSearches.length > 0 && (
-            <div className="inset-card" style={{ padding: "16px 18px", display: "grid", gap: 10 }}>
-              <div>
-                <div className="eyebrow" style={{ marginBottom: 2 }}>Warmer angles</div>
-                <p className="muted" style={{ margin: 0, fontSize: 12 }}>
-                  Alumni and shared-background connections based on your profile.
-                </p>
-              </div>
-              <SuggestedSearches searches={company.connectionSearches} />
+            <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
+              <SuggestedSearches searches={company.suggestedSearches} />
             </div>
-          )}
-
-          {/* ATS + hiring signals */}
-          {(company.atsProviders.length > 0 || company.hiringSignals.length > 0) && (
-            <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 8 }}>
-              <div className="eyebrow">Hiring signals</div>
-              <div className="badges">
-                {company.atsProviders.map((t: string) => <span key={t} className="badge">{t}</span>)}
-                {company.hiringSignals.map((t: string) => <span key={t} className="badge">{t}</span>)}
-              </div>
-            </div>
-          )}
-
-          {/* Email patterns */}
-          {company.emailPatterns.length > 0 && (
-            <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 6 }}>
-              <div className="eyebrow">Email patterns</div>
-              <p className="muted" style={{ margin: 0, fontSize: 12 }}>{company.emailPatterns.join(", ")}</p>
-            </div>
-          )}
-
-          {/* Cold call phone */}
-          {company.coldCallPhone && (
-            <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 6 }}>
-              <div className="eyebrow">Main phone</div>
-              <p className="muted" style={{ margin: 0, fontSize: 12 }}>{company.coldCallPhone}</p>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* ── Bottom row: open jobs + contacts ── */}
+      {/* ── Bottom row: open roles + company intel ── */}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.5fr) minmax(260px,1fr)", gap: 16, alignItems: "start" }}>
 
-        {/* Open jobs */}
+        {/* Open roles */}
         <section className="card" style={{ padding: "18px 20px", display: "grid", gap: 12 }}>
           <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
             Open roles in your feed
@@ -198,24 +162,71 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           )}
         </section>
 
-        {/* Contacts + company notes */}
+        {/* Right: people to track + company intel */}
         <div style={{ display: "grid", gap: 14 }}>
+
+          {/* People to track */}
           <section className="card" style={{ padding: "18px 20px", display: "grid", gap: 10 }}>
             <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, letterSpacing: "-0.02em" }}>People to track</h2>
             <ContactTable contacts={company.contacts} />
           </section>
 
-          {(company.outreachTips || company.hiringRegions.length > 0) && (
-            <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 10 }}>
+          {/* Company intel — all collapsed into one card */}
+          {hasIntel && (
+            <div className="inset-card" style={{ padding: "16px 18px", display: "grid", gap: 14 }}>
+
+              {/* Warmer angles */}
+              {company.connectionSearches.length > 0 && (
+                <div style={{ display: "grid", gap: 8 }}>
+                  <div>
+                    <div className="eyebrow" style={{ marginBottom: 2 }}>Warmer angles</div>
+                    <p className="muted" style={{ margin: 0, fontSize: 12 }}>
+                      Alumni and shared-background connections.
+                    </p>
+                  </div>
+                  <SuggestedSearches searches={company.connectionSearches} />
+                </div>
+              )}
+
+              {/* Hiring signals */}
+              {(company.atsProviders.length > 0 || company.hiringSignals.length > 0) && (
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div className="eyebrow">Hiring signals</div>
+                  <div className="badges">
+                    {company.atsProviders.map((t: string) => <span key={t} className="badge">{t}</span>)}
+                    {company.hiringSignals.map((t: string) => <span key={t} className="badge">{t}</span>)}
+                  </div>
+                </div>
+              )}
+
+              {/* Hiring regions */}
               {company.hiringRegions.length > 0 && (
-                <div>
-                  <div className="eyebrow" style={{ marginBottom: 4 }}>Hiring regions</div>
+                <div style={{ display: "grid", gap: 4 }}>
+                  <div className="eyebrow">Hiring regions</div>
                   <p className="muted" style={{ margin: 0, fontSize: 12 }}>{company.hiringRegions.join(", ")}</p>
                 </div>
               )}
+
+              {/* Email patterns */}
+              {company.emailPatterns.length > 0 && (
+                <div style={{ display: "grid", gap: 4 }}>
+                  <div className="eyebrow">Email patterns</div>
+                  <p className="muted" style={{ margin: 0, fontSize: 12 }}>{company.emailPatterns.join(", ")}</p>
+                </div>
+              )}
+
+              {/* Main phone */}
+              {company.coldCallPhone && (
+                <div style={{ display: "grid", gap: 4 }}>
+                  <div className="eyebrow">Main phone</div>
+                  <p className="muted" style={{ margin: 0, fontSize: 12 }}>{company.coldCallPhone}</p>
+                </div>
+              )}
+
+              {/* Outreach notes */}
               {company.outreachTips && (
-                <div>
-                  <div className="eyebrow" style={{ marginBottom: 4 }}>Outreach notes</div>
+                <div style={{ display: "grid", gap: 4 }}>
+                  <div className="eyebrow">Outreach notes</div>
                   <p className="muted" style={{ margin: 0, fontSize: 12 }}>{company.outreachTips}</p>
                 </div>
               )}
