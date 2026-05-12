@@ -10,7 +10,7 @@ export async function sendPasswordResetEmail(toEmail: string, resetToken: string
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const fromName = process.env.SMTP_FROM_NAME ?? "Hyrd";
   const fromEmail = process.env.SMTP_USER ?? "noreply@hyrdjobfinder.com";
-  const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
+  const resetUrl = `${appUrl}/reset-password/${resetToken}`;
 
   const resend = getResend();
 
