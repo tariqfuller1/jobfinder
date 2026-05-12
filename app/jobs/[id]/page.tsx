@@ -267,15 +267,13 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
               >
                 <span style={{ opacity: 0.7 }}>✦</span> ATS score &amp; resume
               </Link>
-              {job.companySlug && (
-                <Link
-                  className="button secondary"
-                  href={`/companies/${job.companySlug}`}
-                  style={{ justifyContent: "flex-start", fontSize: 13, gap: 10 }}
-                >
-                  <span style={{ opacity: 0.7 }}>⬡</span> Company outreach
-                </Link>
-              )}
+              <Link
+                className="button secondary"
+                href={user ? `/outreach/${job.id}` : `/login?next=/outreach/${job.id}`}
+                style={{ justifyContent: "flex-start", fontSize: 13, gap: 10 }}
+              >
+                <span style={{ opacity: 0.7 }}>✦</span> Outreach message
+              </Link>
             </div>
           </div>
 

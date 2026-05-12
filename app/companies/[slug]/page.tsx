@@ -81,7 +81,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {/* ── Outreach row: editor + who to contact ── */}
-      <div id="outreach" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.9fr) minmax(260px,1fr)", gap: 16, alignItems: "start" }}>
+      <div id="outreach" className="main-sidebar-grid">
 
         {/* Outreach editor */}
         <div className="card" style={{ padding: "20px 22px", display: "grid", gap: 14 }}>
@@ -122,7 +122,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {/* ── Bottom row: open roles + company intel ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.5fr) minmax(260px,1fr)", gap: 16, alignItems: "start" }}>
+      <div className="content-sidebar-grid">
 
         {/* Open roles */}
         <section className="card" style={{ padding: "18px 20px", display: "grid", gap: 12 }}>

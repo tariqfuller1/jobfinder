@@ -126,7 +126,7 @@ export function TrackerTable({ initialRows }: { initialRows: any[] }) {
           style={{ display: "grid", gap: 10, padding: "14px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
         >
           <div style={{ fontSize: 13, fontWeight: 600, color: "#d4d4d8" }}>Add job manually</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <div className="form-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div style={{ display: "grid", gap: 4 }}>
               <label style={{ fontSize: 12, color: "#9ca3af" }}>Company *</label>
               <input
@@ -148,7 +148,7 @@ export function TrackerTable({ initialRows }: { initialRows: any[] }) {
               />
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+          <div className="form-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div style={{ display: "grid", gap: 4 }}>
               <label style={{ fontSize: 12, color: "#9ca3af" }}>Apply URL (optional)</label>
               <input

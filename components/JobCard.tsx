@@ -183,12 +183,10 @@ export function JobCard({ job, userId, trackerStatus }: { job: JobCardData; user
           style={{ fontSize: 13, minHeight: 36, padding: "8px 14px" }}>
           ATS resume
         </Link>
-        {job.companySlug && (
-          <Link className="button secondary" href={`/companies/${job.companySlug}#outreach`}
-            style={{ fontSize: 13, minHeight: 36, padding: "8px 14px" }}>
-            Outreach
-          </Link>
-        )}
+        <Link className="button secondary" href={userId ? `/outreach/${job.id}` : `/login?next=/outreach/${job.id}`}
+          style={{ fontSize: 13, minHeight: 36, padding: "8px 14px" }}>
+          Outreach
+        </Link>
       </div>
     </article>
   );

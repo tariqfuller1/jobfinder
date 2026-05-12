@@ -1230,7 +1230,8 @@ select optgroup {
   }
 
   /* ── Prevent horizontal overflow on mobile ── */
-  .app-stage { overflow-x: hidden; }
+  /* clip (not hidden) so child overflow-x:auto scroll containers still work */
+  .app-stage { overflow-x: clip; }
 
   /* ── Tracker: show swipe hint on mobile ── */
   .tracker-scroll-hint { display: block !important; }
@@ -1342,4 +1343,56 @@ select optgroup {
   /* Auth card full-width */
   .auth-card { border-radius: 20px; }
   .auth-shell { padding: 20px 0 40px; }
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE TWO-COLUMN GRIDS
+   Use these classes instead of inline gridTemplateColumns
+   so mobile breakpoints can collapse them.
+═══════════════════════════════════════════════════ */
+
+/* 1.9fr + sidebar — outreach editor, primary content */
+.main-sidebar-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(260px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+/* 1.5fr + sidebar — open roles, secondary content */
+.content-sidebar-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+/* Horizontally-scrollable table wrapper */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .main-sidebar-grid,
+  .content-sidebar-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Reduce outer page padding on phones */
+  .page-outer { padding-top: 14px !important; padding-bottom: 32px !important; }
+
+  /* Card padding tighter on phones */
+  .card { padding: 14px 16px; }
+
+  /* Inline button groups: stack vertically */
+  .btn-row {
+    flex-direction: column;
+  }
+  .btn-row .button { width: 100%; justify-content: center; }
+}
+
+@media (max-width: 480px) {
+  /* Tracker/form grids: single column on very small screens */
+  .form-grid-2 { grid-template-columns: 1fr !important; }
 }

@@ -114,6 +114,7 @@ export default async function DashboardPage() {
               <div className="actions">
                 <Link className="button secondary" href={`/cover-letters/${job.id}`}>Cover letter</Link>
                 <Link className="button secondary" href={`/ats-check/${job.id}`}>ATS resume</Link>
+                <Link className="button secondary" href={`/outreach/${job.id}`}>Outreach</Link>
               </div>
             </div>
           ))}
