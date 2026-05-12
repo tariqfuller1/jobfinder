@@ -1,37 +1,21 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-function getTransporter() {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT ?? "587");
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (!host) throw new Error("SMTP_HOST is not set.");
-  if (!user) throw new Error("SMTP_USER is not set.");
-  if (!pass) throw new Error("SMTP_PASS is not set.");
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,      // true for SSL (465), false for STARTTLS (587)
-    requireTLS: port === 587,  // force STARTTLS upgrade on port 587
-    auth: { user, pass },
-    tls: {
-      rejectUnauthorized: true,
-    },
-  });
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) throw new Error("RESEND_API_KEY is not set.");
+  return new Resend(key);
 }
 
 export async function sendPasswordResetEmail(toEmail: string, resetToken: string) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const fromName = process.env.SMTP_FROM_NAME ?? "Hyrd";
-  const fromEmail = process.env.SMTP_USER!;
+  const fromEmail = process.env.SMTP_USER ?? "noreply@hyrdjobfinder.com";
   const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
 
-  const transporter = getTransporter();
+  const resend = getResend();
 
-  await transporter.sendMail({
-    from: `"${fromName}" <${fromEmail}>`,
+  const { error } = await resend.emails.send({
+    from: `${fromName} <${fromEmail}>`,
     to: toEmail,
     subject: "Reset your Hyrd password",
     text: [
@@ -59,7 +43,6 @@ export async function sendPasswordResetEmail(toEmail: string, resetToken: string
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
 
-          <!-- Header -->
           <tr>
             <td style="padding-bottom:28px;">
               <span style="font-size:18px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#f5f5f5;">
@@ -68,10 +51,8 @@ export async function sendPasswordResetEmail(toEmail: string, resetToken: string
             </td>
           </tr>
 
-          <!-- Card -->
           <tr>
             <td style="background:linear-gradient(180deg,rgba(20,20,22,0.98),rgba(12,12,14,1));border:1px solid rgba(255,255,255,0.09);border-radius:20px;padding:32px 28px;">
-
               <p style="margin:0 0 8px;font-size:22px;font-weight:800;letter-spacing:-0.03em;color:#f5f5f5;">
                 Reset your password
               </p>
@@ -81,7 +62,6 @@ export async function sendPasswordResetEmail(toEmail: string, resetToken: string
                 This link expires in <strong style="color:#f5f5f5;">1 hour</strong>.
               </p>
 
-              <!-- CTA button -->
               <table cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                 <tr>
                   <td style="background:linear-gradient(180deg,#ff3368,#d11a47);border-radius:12px;box-shadow:0 8px 20px rgba(225,29,72,0.3);">
@@ -109,10 +89,9 @@ export async function sendPasswordResetEmail(toEmail: string, resetToken: string
             </td>
           </tr>
 
-          <!-- Footer -->
           <tr>
             <td style="padding-top:20px;text-align:center;font-size:12px;color:#4b4b56;">
-              Hyrd · Job search, ranked by fit
+              Hyrd · hyrdjobfinder.com
             </td>
           </tr>
 
@@ -123,4 +102,8 @@ export async function sendPasswordResetEmail(toEmail: string, resetToken: string
 </body>
 </html>`,
   });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
