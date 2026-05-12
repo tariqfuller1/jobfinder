@@ -102,7 +102,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
 
           {/* People to find — fills all remaining sidebar height, content scrolls */}
           {company.suggestedSearches.length > 0 && (
-            <div className="inset-card" style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 10, flex: 1, minHeight: 0, overflow: "hidden" }}>
+            <div className="inset-card" style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 10, maxHeight: "480px", overflow: "hidden" }}>
               <div style={{ flexShrink: 0 }}>
                 <div className="eyebrow" style={{ marginBottom: 2 }}>Who to contact</div>
                 <p className="muted" style={{ margin: 0, fontSize: 12 }}>
