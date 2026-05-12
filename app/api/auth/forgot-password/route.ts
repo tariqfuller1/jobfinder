@@ -2,22 +2,30 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 function hashValue(value: string) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
 export async function POST(request: Request) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   let email: string;
+  let turnstileToken: string | undefined;
   try {
     const body = await request.json();
     email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    turnstileToken = typeof body.turnstileToken === "string" ? body.turnstileToken : undefined;
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
   if (!email) {
     return NextResponse.json({ error: "Email required." }, { status: 400 });
+  }
+
+  if (!await verifyTurnstile(turnstileToken, ip)) {
+    return NextResponse.json({ error: "CAPTCHA verification failed. Please try again." }, { status: 400 });
   }
 
   const user = await prisma.user.findUnique({ where: { email } });

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
@@ -13,6 +14,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  const handleVerify = useCallback((token: string) => setTurnstileToken(token), []);
+  const handleExpire = useCallback(() => setTurnstileToken(null), []);
+
+  const siteKeySet = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -23,15 +30,21 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       return;
     }
 
+    if (siteKeySet && !turnstileToken) {
+      setError("Please complete the CAPTCHA.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName, email, password }),
+        body: JSON.stringify({ displayName, email, password, turnstileToken }),
       });
       const data = await response.json();
       if (!response.ok) {
+        setTurnstileToken(null);
         throw new Error(data.error || "Could not complete that action.");
       }
       router.push(nextPath);
@@ -93,6 +106,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           />
         </label>
       ) : null}
+
+      <TurnstileWidget onVerify={handleVerify} onExpire={handleExpire} />
 
       {error ? <p className="muted" style={{ margin: 0 }}>{error}</p> : null}
 

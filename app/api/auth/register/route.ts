@@ -4,11 +4,13 @@ import { prisma } from "@/lib/db";
 import { createSession, hashPassword, setSessionCookie } from "@/lib/auth";
 import { createDefaultProfileInputForUser, saveUserProfileForUser } from "@/lib/profile";
 import { rateLimit } from "@/lib/rate-limit";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 const registerSchema = z.object({
   displayName: z.string().trim().min(1, "Enter your name."),
   email: z.string().trim().email("Enter a valid email."),
   password: z.string().min(8, "Password must be at least 8 characters."),
+  turnstileToken: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -20,6 +22,11 @@ export async function POST(request: Request) {
 
   try {
     const body = registerSchema.parse(await request.json());
+
+    if (!await verifyTurnstile(body.turnstileToken, ip)) {
+      return NextResponse.json({ error: "CAPTCHA verification failed. Please try again." }, { status: 400 });
+    }
+
     const email = body.email.toLowerCase();
 
     const existing = await prisma.user.findUnique({ where: { email } });

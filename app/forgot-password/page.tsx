@@ -1,26 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  const handleVerify = useCallback((token: string) => setTurnstileToken(token), []);
+  const handleExpire = useCallback(() => setTurnstileToken(null), []);
+
+  const siteKeySet = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (siteKeySet && !turnstileToken) {
+      setError("Please complete the CAPTCHA.");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, turnstileToken }),
       });
       const data = await res.json();
       if (!res.ok) {
+        setTurnstileToken(null);
         setError(data.error ?? "Something went wrong.");
       } else {
         setSent(true);
@@ -95,6 +109,7 @@ export default function ForgotPasswordPage() {
               autoFocus
             />
           </label>
+          <TurnstileWidget onVerify={handleVerify} onExpire={handleExpire} />
           <button type="submit" className="button" disabled={loading}>
             {loading ? "Sending…" : "Send reset link"}
           </button>

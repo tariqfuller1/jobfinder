@@ -3,10 +3,12 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession, setSessionCookie, verifyPassword } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Enter a valid email."),
   password: z.string().min(8, "Enter your password."),
+  turnstileToken: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -18,6 +20,11 @@ export async function POST(request: Request) {
 
   try {
     const body = loginSchema.parse(await request.json());
+
+    if (!await verifyTurnstile(body.turnstileToken, ip)) {
+      return NextResponse.json({ error: "CAPTCHA verification failed. Please try again." }, { status: 400 });
+    }
+
     const email = body.email.toLowerCase();
 
     const user = await prisma.user.findUnique({ where: { email } });
