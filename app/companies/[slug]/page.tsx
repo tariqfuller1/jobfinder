@@ -16,105 +16,77 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
 
   if (!company) notFound();
 
+  const allTags = [...company.stackTags, ...company.gameTags, ...company.roleFocusTags];
+
   return (
-    <div className="stack" style={{ padding: "24px 0 40px" }}>
-      <div className="grid-2">
-        <article className="card hero-card stack">
-          <div className="space-between">
-            <div>
-              <h1 className="section-title">{company.name}</h1>
-              <p className="muted">{company.headquarters ?? "HQ not listed"} • {company.remotePolicy.replaceAll("_", " ")} • {company.companySize ?? "Size unknown"}</p>
+    <div style={{ padding: "24px 0 48px", display: "grid", gap: 20 }}>
+
+      {/* ── Company header strip ── */}
+      <div className="card hero-card" style={{ padding: "20px 24px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <h1 style={{ margin: 0, fontSize: "clamp(1.35rem,2vw,1.9rem)", fontWeight: 800, letterSpacing: "-0.03em" }}>
+                {company.name}
+              </h1>
+              <MatchReasons score={company.fitScore} reasons={company.fitReasons} />
             </div>
-            <MatchReasons score={company.fitScore} reasons={company.fitReasons} />
-          </div>
-
-          <div className="badges">
-            <span className="badge">{company.companyCategory}</span>
-            <span className="badge">{company.relatedJobs.length} jobs in feed</span>
-            {company.industryTags.map((tag: string) => (<span key={tag} className="badge">{tag}</span>))}
-          </div>
-
-          <div className="stack compact-stack">
-            <div>
-              <h3 className="section-title" style={{ marginBottom: 8 }}>Skill fit</h3>
-              <div className="badges">
-                {[...company.stackTags, ...company.gameTags, ...company.roleFocusTags].map((tag: string) => (<span key={tag} className="badge">{tag}</span>))}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 14px", fontSize: 13, color: "#9ca3af" }}>
+              {company.headquarters && <span>{company.headquarters}</span>}
+              <span>{company.remotePolicy.replaceAll("_", " ")}</span>
+              {company.companySize && <span>{company.companySize}</span>}
+              <span>{company.companyCategory}</span>
+              <span>{company.relatedJobs.length} open jobs in feed</span>
+            </div>
+            {allTags.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                {allTags.slice(0, 10).map((tag: string) => (
+                  <span key={tag} className="badge" style={{ fontSize: 11, minHeight: 24, padding: "3px 9px" }}>{tag}</span>
+                ))}
               </div>
-            </div>
-
-            <div>
-              <h3 className="section-title" style={{ marginBottom: 8 }}>Hiring regions</h3>
-              <p className="muted">{company.hiringRegions.join(", ") || "Not listed"}</p>
-            </div>
-
-            <div>
-              <h3 className="section-title" style={{ marginBottom: 8 }}>Cold outreach notes</h3>
-              <p className="muted">{company.outreachTips ?? "Document outreach hooks here: shipped products, recent funding, growth, engine stack, or teams that match your background."}</p>
-            </div>
-
-            <div>
-              <h3 className="section-title" style={{ marginBottom: 8 }}>Email patterns</h3>
-              <p className="muted">{company.emailPatterns.join(", ") || "Add likely company email patterns as you verify them."}</p>
-            </div>
-
-            <div>
-              <h3 className="section-title" style={{ marginBottom: 8 }}>ATS / hiring signals</h3>
-              <div className="badges">
-                {company.atsProviders.map((tag: string) => (<span key={tag} className="badge">{tag}</span>))}
-                {company.hiringSignals.map((tag: string) => (<span key={tag} className="badge">{tag}</span>))}
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <aside className="card stack">
-          <div>
-            <h2 className="section-title">Outreach shortcuts</h2>
-            <div className="actions">
-              {company.websiteUrl ? <a className="button secondary" href={company.websiteUrl} target="_blank" rel="noreferrer">Website</a> : null}
-              {company.careersUrl ? <a className="button secondary" href={company.careersUrl} target="_blank" rel="noreferrer">Careers</a> : null}
-              <a
-                className="button secondary"
-                href={company.linkedinUrl ?? `https://www.linkedin.com/company/${company.slug}`}
-                target="_blank"
-                rel="noreferrer"
-                style={{ display: "inline-flex", alignItems: "center", gap: 7 }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M20.447 20.452H16.89v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a1.98 1.98 0 0 1-1.983-1.98 1.98 1.98 0 1 1 1.983 1.98zm1.712 13.019H3.623V9h3.426v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                </svg>
-                LinkedIn
-              </a>
-            </div>
-            <p className="muted" style={{ marginTop: 12 }}>
-              {company.coldCallPhone ? `Main phone: ${company.coldCallPhone}` : "Add a verified recruiting or office phone number if you want to keep calling notes here."}
-            </p>
+            )}
           </div>
 
-          <div>
-            <h2 className="section-title">Suggested people to look for</h2>
-            <p className="muted">These are safe, user-driven searches for recruiters, hiring managers, and engineering leaders without scraping LinkedIn profiles.</p>
-            <SuggestedSearches searches={company.suggestedSearches} />
+          {/* Quick links */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", flexShrink: 0 }}>
+            {company.websiteUrl && (
+              <a className="button secondary" href={company.websiteUrl} target="_blank" rel="noreferrer"
+                style={{ fontSize: 12, minHeight: 36, padding: "8px 13px" }}>Website</a>
+            )}
+            {company.careersUrl && (
+              <a className="button secondary" href={company.careersUrl} target="_blank" rel="noreferrer"
+                style={{ fontSize: 12, minHeight: 36, padding: "8px 13px" }}>Careers</a>
+            )}
+            <a
+              className="button secondary"
+              href={company.linkedinUrl ?? `https://www.linkedin.com/company/${company.slug}`}
+              target="_blank" rel="noreferrer"
+              style={{ fontSize: 12, minHeight: 36, padding: "8px 13px", display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M20.447 20.452H16.89v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a1.98 1.98 0 0 1-1.983-1.98 1.98 1.98 0 1 1 1.983 1.98zm1.712 13.019H3.623V9h3.426v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+              </svg>
+              LinkedIn
+            </a>
           </div>
-
-          <div>
-            <h2 className="section-title">Resume-based connection angles</h2>
-            <p className="muted">These searches are generated from your saved account profile to help you find warmer intros.</p>
-            <SuggestedSearches searches={company.connectionSearches} />
-          </div>
-        </aside>
+        </div>
       </div>
 
-      <div className="grid-2">
-        <section className="card stack">
-          <h2 className="section-title">Outreach messages</h2>
-          <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-            Generate LinkedIn DMs, cold emails, informational asks, and follow-ups tailored to your profile and this company.
-          </p>
+      {/* ── Main section: outreach editor (primary) + sidebar ── */}
+      <div id="outreach" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.9fr) minmax(260px,1fr)", gap: 16, alignItems: "start" }}>
+
+        {/* Outreach editor — the main feature */}
+        <div className="card" style={{ padding: "20px 22px", display: "grid", gap: 14 }}>
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 4 }}>Company outreach</div>
+            <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
+              Write to {company.name}
+            </h2>
+          </div>
           <OutreachEditor
             companyName={company.name}
             companyNotes={company.outreachTips ?? ""}
-            companyFocus={[...company.stackTags, ...company.gameTags, ...company.roleFocusTags]}
+            companyFocus={allTags}
             relatedRoles={company.relatedJobs.map((j: { title: string }) => j.title).slice(0, 8)}
             initialMessage={company.outreachMessage}
             name={profile?.name ?? ""}
@@ -123,35 +95,132 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
             stacks={profile?.stacks ?? []}
             workExperience={profile?.workExperience ?? []}
           />
-        </section>
+        </div>
 
-        <section className="card stack">
-          <h2 className="section-title">People to track</h2>
-          <ContactTable contacts={company.contacts} />
-        </section>
+        {/* Sidebar: who to contact + connection angles */}
+        <div style={{ display: "grid", gap: 14 }}>
+
+          {/* People to find */}
+          {company.suggestedSearches.length > 0 && (
+            <div className="inset-card" style={{ padding: "16px 18px", display: "grid", gap: 10 }}>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 2 }}>Who to contact</div>
+                <p className="muted" style={{ margin: 0, fontSize: 12 }}>
+                  Recruiters, hiring managers, and engineering leads at {company.name}.
+                </p>
+              </div>
+              <SuggestedSearches searches={company.suggestedSearches} />
+            </div>
+          )}
+
+          {/* Connection angles */}
+          {company.connectionSearches.length > 0 && (
+            <div className="inset-card" style={{ padding: "16px 18px", display: "grid", gap: 10 }}>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 2 }}>Warmer angles</div>
+                <p className="muted" style={{ margin: 0, fontSize: 12 }}>
+                  Alumni and shared-background connections based on your profile.
+                </p>
+              </div>
+              <SuggestedSearches searches={company.connectionSearches} />
+            </div>
+          )}
+
+          {/* ATS + hiring signals */}
+          {(company.atsProviders.length > 0 || company.hiringSignals.length > 0) && (
+            <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 8 }}>
+              <div className="eyebrow">Hiring signals</div>
+              <div className="badges">
+                {company.atsProviders.map((t: string) => <span key={t} className="badge">{t}</span>)}
+                {company.hiringSignals.map((t: string) => <span key={t} className="badge">{t}</span>)}
+              </div>
+            </div>
+          )}
+
+          {/* Email patterns */}
+          {company.emailPatterns.length > 0 && (
+            <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 6 }}>
+              <div className="eyebrow">Email patterns</div>
+              <p className="muted" style={{ margin: 0, fontSize: 12 }}>{company.emailPatterns.join(", ")}</p>
+            </div>
+          )}
+
+          {/* Cold call phone */}
+          {company.coldCallPhone && (
+            <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 6 }}>
+              <div className="eyebrow">Main phone</div>
+              <p className="muted" style={{ margin: 0, fontSize: 12 }}>{company.coldCallPhone}</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      <section className="card stack">
-        <h2 className="section-title">Open roles from this company in your feed</h2>
-        {company.relatedJobs.length ? company.relatedJobs.map((job: (typeof company.relatedJobs)[number]) => (
-          <div key={job.id} className="inset-card stack compact-stack">
-            <div className="space-between">
-              <div>
-                <strong><Link href={`/jobs/${job.id}`}>{job.title}</Link></strong>
-                <p className="muted" style={{ margin: "6px 0 0" }}>{job.location ?? "Location not listed"} • {job.workplaceType}</p>
+      {/* ── Bottom row: open jobs + contacts ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.5fr) minmax(260px,1fr)", gap: 16, alignItems: "start" }}>
+
+        {/* Open jobs */}
+        <section className="card" style={{ padding: "18px 20px", display: "grid", gap: 12 }}>
+          <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
+            Open roles in your feed
+          </h2>
+          {company.relatedJobs.length ? company.relatedJobs.map((job: (typeof company.relatedJobs)[number]) => (
+            <div key={job.id} className="inset-card" style={{ padding: "12px 14px", display: "grid", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+                <div style={{ minWidth: 0 }}>
+                  <Link href={`/jobs/${job.id}`} style={{ fontWeight: 600, fontSize: 14, color: "#f5f5f5" }}>{job.title}</Link>
+                  <p className="muted" style={{ margin: "3px 0 0", fontSize: 12 }}>
+                    {job.location ?? "Location not listed"} · {job.workplaceType.toLowerCase().replace("_", "-")}
+                  </p>
+                </div>
+                <MatchReasons score={job.fitScore} reasons={job.fitReasons} />
               </div>
-              <MatchReasons score={job.fitScore} reasons={job.fitReasons} />
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                <Link className="button secondary" href={`/jobs/${job.id}`}
+                  style={{ fontSize: 12, minHeight: 32, padding: "6px 12px" }}>View job</Link>
+                <Link className="button secondary"
+                  href={user ? `/cover-letters/${job.id}` : `/login?next=/cover-letters/${job.id}`}
+                  style={{ fontSize: 12, minHeight: 32, padding: "6px 12px" }}>Cover letter</Link>
+                <Link className="button secondary"
+                  href={user ? `/ats-check/${job.id}` : `/login?next=/ats-check/${job.id}`}
+                  style={{ fontSize: 12, minHeight: 32, padding: "6px 12px" }}>ATS resume</Link>
+                {job.primaryApplyUrl && (
+                  <a className="button secondary" href={job.primaryApplyUrl} target="_blank" rel="noreferrer"
+                    style={{ fontSize: 12, minHeight: 32, padding: "6px 12px" }}>{job.primaryApplyLabel}</a>
+                )}
+              </div>
             </div>
-            <div className="actions">
-              <Link className="button secondary" href={`/jobs/${job.id}`}>View job</Link>
-              <Link className="button secondary" href={user ? `/cover-letters/${job.id}` : `/login?next=/cover-letters/${job.id}`}>Cover letter</Link>
-              <Link className="button secondary" href={user ? `/ats-check/${job.id}` : `/login?next=/ats-check/${job.id}`}>ATS resume</Link>
-              {job.primaryApplyUrl ? <a className="button secondary" href={job.primaryApplyUrl} target="_blank" rel="noreferrer">{job.primaryApplyLabel}</a> : null}
-              {job.companyWebsiteUrl ? <a className="button secondary" href={job.companyWebsiteUrl} target="_blank" rel="noreferrer">Company home</a> : null}
+          )) : (
+            <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+              No matching jobs currently in your feed. Re-run the sync to refresh.
+            </p>
+          )}
+        </section>
+
+        {/* Contacts + company notes */}
+        <div style={{ display: "grid", gap: 14 }}>
+          <section className="card" style={{ padding: "18px 20px", display: "grid", gap: 10 }}>
+            <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, letterSpacing: "-0.02em" }}>People to track</h2>
+            <ContactTable contacts={company.contacts} />
+          </section>
+
+          {(company.outreachTips || company.hiringRegions.length > 0) && (
+            <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 10 }}>
+              {company.hiringRegions.length > 0 && (
+                <div>
+                  <div className="eyebrow" style={{ marginBottom: 4 }}>Hiring regions</div>
+                  <p className="muted" style={{ margin: 0, fontSize: 12 }}>{company.hiringRegions.join(", ")}</p>
+                </div>
+              )}
+              {company.outreachTips && (
+                <div>
+                  <div className="eyebrow" style={{ marginBottom: 4 }}>Outreach notes</div>
+                  <p className="muted" style={{ margin: 0, fontSize: 12 }}>{company.outreachTips}</p>
+                </div>
+              )}
             </div>
-          </div>
-        )) : <p className="muted">No matching jobs are currently in your feed for this company. Keep the company on your outreach list and re-run the sync to refresh openings.</p>}
-      </section>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
