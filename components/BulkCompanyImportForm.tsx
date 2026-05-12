@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 const sampleCsv = `name,slug,websiteUrl,careersUrl,headquarters,locations,remotePolicy,companyCategory,companySize,stackTags,gameTags,roleFocusTags,industryTags,atsProviders,emailPatterns,linkedinUrl,sourceType,sourceToken,activeHiring,notes,outreachTips
 Epic Games,epic-games,https://www.epicgames.com,https://www.epicgames.com/site/en-US/careers/jobs,"Cary, NC","Cary, NC|Remote US",FLEXIBLE,GAMING,5000+,"C++|Unreal Engine|Tools","Engine|Gameplay","Gameplay programmer|Tools engineer","Game development|Engine technology",GREENHOUSE,first.last@epicgames.com,https://www.linkedin.com/company/epic-games/,GREENHOUSE,epicgames,true,"NC engine and gameplay target","Mention movement systems, tools, and player feel work."
-Pendo,pendo,https://www.pendo.io,https://www.pendo.io/careers/,"Raleigh, NC","Raleigh, NC|Remote US",HYBRID,SOFTWARE,1000-5000,"React|TypeScript|Backend",,"Frontend engineer|Full stack engineer","Product software|Analytics",GREENHOUSE,,https://www.linkedin.com/company/pendo-io/,GREENHOUSE,pendo,true,"Good NC product engineering target","Lead with HCI and polished frontend work."`;
+Pendo,pendo,https://www.pendo.io,https://www.pendo.io/careers/,"Raleigh, NC","Raleigh, NC|Remote US",HYBRID,SOFTWARE,1000-5000,"React|TypeScript|Backend",,"Frontend engineer|Full stack engineer","Product software|Analytics",GREENHOUSE,,https://www.linkedin.com/company/pendo-io/,GREENHOUSE,pendo,true,"Good NC product engineering target","Lead with polished frontend work and product-focused engineering."`;
 
 const bundledCsvPath = "/imports/us-software-gaming-company-master-2026-04-11.csv";
 

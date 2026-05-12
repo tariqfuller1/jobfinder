@@ -209,7 +209,7 @@ export function OutreachEditor({
           <textarea
             value={suggestion}
             onChange={(e) => setSuggestion(e.target.value)}
-            placeholder="Make it shorter, mention my Unity experience, remove last sentence…"
+            placeholder="Make it shorter, add a line about my background, remove the last sentence…"
             rows={2}
             style={{ resize: "vertical", fontSize: 13, flex: 1 }}
             disabled={isGenerating || isRefining}
