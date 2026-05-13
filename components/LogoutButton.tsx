@@ -16,7 +16,8 @@ export function LogoutButton() {
 
   return (
     <button type="button" className="button secondary" onClick={handleLogout} disabled={isLoading}>
-      {isLoading ? "Signing out..." : "Sign out"}
+      {isLoading && <span className="btn-spinner" aria-hidden="true" />}
+      {isLoading ? "Signing out…" : "Sign out"}
     </button>
   );
 }

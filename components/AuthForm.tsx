@@ -47,13 +47,15 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       const data = await response.json();
       if (!response.ok) {
         setTurnstileToken(null);
-        throw new Error(data.error || "Could not complete that action.");
+        setError(data.error || "Could not complete that action.");
+        setIsLoading(false);
+        return;
       }
+      // Keep isLoading=true — button stays in loading state while page navigates
       router.push(nextPath);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not complete that action.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -126,7 +128,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
       <div className="actions">
         <button className="button" type="submit" disabled={isLoading}>
-          {isLoading ? (mode === "login" ? "Signing in..." : "Creating account...") : mode === "login" ? "Sign in" : "Create account"}
+          {isLoading && <span className="btn-spinner" aria-hidden="true" />}
+          {isLoading ? (mode === "login" ? "Signing in…" : "Creating account…") : mode === "login" ? "Sign in" : "Create account"}
         </button>
       </div>
     </form>

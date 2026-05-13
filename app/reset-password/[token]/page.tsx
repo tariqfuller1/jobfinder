@@ -29,12 +29,13 @@ export default function ResetPasswordPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Something went wrong.");
-      } else {
-        router.push("/login?reset=1");
+        setLoading(false);
+        return;
       }
+      // Keep loading=true while navigating to login
+      router.push("/login?reset=1");
     } catch {
       setError("Something went wrong.");
-    } finally {
       setLoading(false);
     }
   }
@@ -71,6 +72,7 @@ export default function ResetPasswordPage() {
             />
           </label>
           <button type="submit" className="button" disabled={loading}>
+            {loading && <span className="btn-spinner" aria-hidden="true" />}
             {loading ? "Saving…" : "Set password"}
           </button>
         </form>

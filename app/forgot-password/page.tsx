@@ -111,6 +111,7 @@ export default function ForgotPasswordPage() {
           </label>
           <TurnstileWidget onVerify={handleVerify} onExpire={handleExpire} />
           <button type="submit" className="button" disabled={loading}>
+            {loading && <span className="btn-spinner" aria-hidden="true" />}
             {loading ? "Sending…" : "Send reset link"}
           </button>
         </form>
