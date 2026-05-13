@@ -7,7 +7,8 @@ import { TurnstileWidget } from "@/components/TurnstileWidget";
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || "/dashboard";
+  const rawNext = searchParams.get("next") ?? "";
+  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

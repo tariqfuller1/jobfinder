@@ -168,7 +168,7 @@ export default async function CompaniesPage({
               {company.websiteUrl ? <a className="button secondary" href={company.websiteUrl} target="_blank" rel="noreferrer">Website</a> : null}
               <a
                 className="button secondary"
-                href={(company as any).linkedinUrl ?? `https://www.linkedin.com/company/${company.slug}`}
+                href={"linkedinUrl" in company && typeof company.linkedinUrl === "string" ? company.linkedinUrl : `https://www.linkedin.com/company/${company.slug}`}
                 target="_blank"
                 rel="noreferrer"
                 title="LinkedIn company page"

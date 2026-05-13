@@ -25,13 +25,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  let followUpDate: Date | null | undefined = body.followUpDate;
+  let followUpDate: Date | null | undefined;
   if (typeof body.followUpDate === "string") {
     const d = new Date(body.followUpDate);
     if (isNaN(d.getTime())) {
       return NextResponse.json({ error: "Invalid followUpDate." }, { status: 400 });
     }
     followUpDate = d;
+  } else {
+    followUpDate = body.followUpDate; // null or undefined — passes through as-is
   }
 
   try {
