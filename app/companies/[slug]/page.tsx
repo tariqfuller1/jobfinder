@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContactTable } from "@/components/ContactTable";
+import { EmailGuesses } from "@/components/EmailGuesses";
 import { MatchReasons } from "@/components/MatchReasons";
 import { OutreachEditor } from "@/components/OutreachEditor";
 import { SuggestedSearches } from "@/components/SuggestedSearches";
 import { getCurrentUser } from "@/lib/auth";
 import { getCompanyBySlug } from "@/lib/companies";
+import { extractDomainFromUrl, guessOutreachEmails, suggestEmailsWithAI } from "@/lib/email-finder";
 import { getProfileForUserOrDefault } from "@/lib/profile";
 
 export default async function CompanyDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -17,6 +19,17 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   if (!company) notFound();
 
   const allTags = [...company.stackTags, ...company.gameTags, ...company.roleFocusTags];
+
+  const patternGuesses = guessOutreachEmails(company.websiteUrl, company.emailPatterns, company.contacts);
+  const domain = extractDomainFromUrl(company.websiteUrl) ?? (company.emailPatterns.length > 0 ? company.emailPatterns[0].split("@")[1] ?? null : null);
+  const aiGuesses = await suggestEmailsWithAI(company.name, domain, company.emailPatterns, company.companyCategory);
+
+  // Merge: pattern guesses first, then AI suggestions that aren't already covered
+  const patternEmails = new Set(patternGuesses.map((e) => e.email.toLowerCase()));
+  const emailGuesses = [
+    ...patternGuesses,
+    ...aiGuesses.filter((e) => !patternEmails.has(e.email.toLowerCase())),
+  ];
 
   const hasIntel =
     company.connectionSearches.length > 0 ||
@@ -207,11 +220,18 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
                 </div>
               )}
 
-              {/* Email patterns */}
-              {company.emailPatterns.length > 0 && (
-                <div style={{ display: "grid", gap: 4 }}>
-                  <div className="eyebrow">Email patterns</div>
-                  <p className="muted" style={{ margin: 0, fontSize: 12 }}>{company.emailPatterns.join(", ")}</p>
+              {/* Cold outreach emails */}
+              {emailGuesses.length > 0 && (
+                <div style={{ display: "grid", gap: 8 }}>
+                  <div>
+                    <div className="eyebrow" style={{ marginBottom: 2 }}>Cold outreach emails</div>
+                    {company.emailPatterns.length > 0 && (
+                      <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                        Pattern: {company.emailPatterns.join(", ")}
+                      </p>
+                    )}
+                  </div>
+                  <EmailGuesses emails={emailGuesses} />
                 </div>
               )}
 
