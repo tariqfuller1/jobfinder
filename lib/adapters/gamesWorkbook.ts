@@ -157,6 +157,9 @@ function mapJob(record: UnknownRecord, index: number, apiUrl: string): Normalize
       }
     }
   }
+  // Capture flat string categorization fields as tags
+  const overallCategory = asString(record.overallCategory);
+  if (overallCategory) tags.push(overallCategory);
 
   const externalId =
     pickFirstString(record, ["id", "_id", "jobId", "job_id", "slug"]) || `${company}-${title}-${index}`;
@@ -180,27 +183,53 @@ function mapJob(record: UnknownRecord, index: number, apiUrl: string): Normalize
   };
 }
 
+const RETRY_DELAYS_MS = [5_000, 15_000, 30_000]; // 3 retries: 5s, 15s, 30s
+
 export async function fetchGamesWorkbookJobs(apiUrl = process.env.GAMES_WORKBOOK_API_URL || DEFAULT_API_URL) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 120_000); // 2 min — large payload
-
   let data: unknown;
-  try {
-    const response = await fetch(apiUrl, {
-      headers: { Accept: "application/json", "User-Agent": "JobFinder/1.0" },
-      cache: "no-store",
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
+  let lastErr = "";
 
-    if (!response.ok) {
-      throw new Error(`Games Workbook API failed: ${response.status} ${response.statusText}`);
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    if (attempt > 0) {
+      const delay = RETRY_DELAYS_MS[attempt - 1]!;
+      console.log(`[games-workbook] retry ${attempt}/${RETRY_DELAYS_MS.length} in ${delay / 1000}s…`);
+      await new Promise((r) => setTimeout(r, delay));
     }
 
-    data = await response.json();
-  } catch (err) {
-    clearTimeout(timer);
-    throw err;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 120_000); // 2 min — large payload
+
+    try {
+      const response = await fetch(apiUrl, {
+        headers: { Accept: "application/json", "User-Agent": "JobFinder/1.0" },
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      if (response.status === 502 || response.status === 503 || response.status === 504) {
+        lastErr = `${response.status} ${response.statusText}`;
+        console.warn(`[games-workbook] ${lastErr} — Replit app may be waking up, will retry`);
+        continue;
+      }
+
+      if (!response.ok) {
+        console.warn(`[games-workbook] HTTP ${response.status} ${response.statusText} — skipping source`);
+        return [];
+      }
+
+      data = await response.json();
+      break; // success
+    } catch (err) {
+      clearTimeout(timer);
+      lastErr = err instanceof Error ? err.message : String(err);
+      console.warn(`[games-workbook] fetch error (attempt ${attempt + 1}): ${lastErr}`);
+    }
+  }
+
+  if (data === undefined) {
+    console.warn(`[games-workbook] all retries failed (${lastErr}) — returning 0 jobs`);
+    return [];
   }
 
   // Fast path: API returns a flat array with known shape (jobLink field present)

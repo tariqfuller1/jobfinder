@@ -1,4 +1,4 @@
-import { inferEmploymentType, inferExperienceLevel, inferWorkplaceType, parseTags } from "@/lib/normalize";
+import { inferEmploymentType, inferExperienceLevel, inferWorkplaceType, parseTags, stripHtml } from "@/lib/normalize";
 import type { NormalizedJob } from "@/types/jobs";
 
 type RemotiveResponse = {
@@ -41,7 +41,7 @@ export async function fetchRemotiveJobs(): Promise<NormalizedJob[]> {
     employmentType: inferEmploymentType(job.job_type),
     experienceLevel: inferExperienceLevel(`${job.title} ${(job.tags ?? []).join(" ")}`),
     descriptionHtml: job.description ?? null,
-    descriptionText: job.description ?? null,
+    descriptionText: stripHtml(job.description),
     postedAt: job.publication_date ? new Date(job.publication_date) : null,
     tags: parseTags(job.category, job.job_type, ...(job.tags ?? [])),
   } satisfies NormalizedJob));

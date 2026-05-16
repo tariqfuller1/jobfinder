@@ -7,7 +7,7 @@ import { OutreachEditor } from "@/components/OutreachEditor";
 import { SuggestedSearches } from "@/components/SuggestedSearches";
 import { getCurrentUser } from "@/lib/auth";
 import { getCompanyBySlug } from "@/lib/companies";
-import { extractDomainFromUrl, guessOutreachEmails, suggestEmailsWithAI } from "@/lib/email-finder";
+import { extractDomainFromUrl, guessOutreachEmails, scrapeEmailsFromWebsite, suggestEmailsWithAI } from "@/lib/email-finder";
 import { getProfileForUserOrDefault } from "@/lib/profile";
 
 export default async function CompanyDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -21,15 +21,24 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   const allTags = [...company.stackTags, ...company.gameTags, ...company.roleFocusTags];
 
   const patternGuesses = guessOutreachEmails(company.websiteUrl, company.emailPatterns, company.contacts);
-  const domain = extractDomainFromUrl(company.websiteUrl) ?? (company.emailPatterns.length > 0 ? company.emailPatterns[0].split("@")[1] ?? null : null);
-  const aiGuesses = await suggestEmailsWithAI(company.name, domain, company.emailPatterns, company.companyCategory);
+  // Prefer pattern domain (explicitly set for email use) over websiteUrl domain
+  // which can be a dev/staging URL rather than the real company domain.
+  const patternDomain = company.emailPatterns.length > 0 ? (company.emailPatterns[0].split("@")[1] ?? null) : null;
+  const domain = patternDomain ?? extractDomainFromUrl(company.websiteUrl);
 
-  // Merge: pattern guesses first, then AI suggestions that aren't already covered
-  const patternEmails = new Set(patternGuesses.map((e) => e.email.toLowerCase()));
-  const emailGuesses = [
-    ...patternGuesses,
-    ...aiGuesses.filter((e) => !patternEmails.has(e.email.toLowerCase())),
-  ];
+  // Run website scraping and AI suggestions in parallel
+  const [scrapedEmails, aiGuesses] = await Promise.all([
+    scrapeEmailsFromWebsite(company.websiteUrl, domain),
+    suggestEmailsWithAI(company.name, domain, company.emailPatterns, company.companyCategory),
+  ]);
+
+  // Merge: scraped real emails first, then pattern guesses, then AI — deduplicated
+  const seen = new Set<string>();
+  const emailGuesses = [];
+  for (const e of [...scrapedEmails, ...patternGuesses, ...aiGuesses]) {
+    const key = e.email.toLowerCase();
+    if (!seen.has(key)) { seen.add(key); emailGuesses.push(e); }
+  }
 
   const hasIntel =
     company.connectionSearches.length > 0 ||

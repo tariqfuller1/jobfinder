@@ -1,4 +1,4 @@
-import { inferEmploymentType, inferExperienceLevel, inferWorkplaceType, parseTags } from "@/lib/normalize";
+import { inferEmploymentType, inferExperienceLevel, inferWorkplaceType, parseTags, stripHtml } from "@/lib/normalize";
 import type { NormalizedJob } from "@/types/jobs";
 
 type ArbeitnowJob = {
@@ -80,7 +80,7 @@ export async function fetchArbeitnowJobs(
         employmentType: inferEmploymentType((row.job_types ?? []).join(" ")),
         experienceLevel: inferExperienceLevel(searchableText),
         descriptionHtml: row.description ?? null,
-        descriptionText: row.description ?? null,
+        descriptionText: stripHtml(row.description),
         postedAt: normalizePageDate(row.created_at),
         tags: parseTags(...tags),
       } satisfies NormalizedJob);

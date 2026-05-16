@@ -79,10 +79,11 @@ export function guessOutreachEmails(
     }
   }
 
-  // 3. Derive domain: prefer websiteUrl, fall back to pattern domain
+  // 3. Derive domain: prefer the email pattern domain (explicitly set for email use)
+  // over the websiteUrl domain, which can be wrong (e.g. a Replit dev URL).
   const urlDomain = extractDomainFromUrl(websiteUrl);
   const patternDomain = emailPatterns.length > 0 ? extractDomainFromPattern(emailPatterns[0]) : null;
-  const domain = urlDomain ?? patternDomain;
+  const domain = patternDomain ?? urlDomain;
 
   if (domain) {
     // Generic outreach addresses every company usually has
@@ -97,6 +98,95 @@ export function guessOutreachEmails(
   }
 
   return results;
+}
+
+const EMAIL_REGEX = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+
+// Local parts that are not useful for cold outreach
+const JUNK_LOCAL = new Set([
+  "noreply", "no-reply", "donotreply", "do-not-reply", "bounce", "mailer-daemon",
+  "postmaster", "webmaster", "hostmaster", "abuse", "spam", "unsubscribe",
+  "newsletter", "notifications", "alerts", "updates", "info", "contact",
+  "hello", "support", "help", "admin", "security", "legal", "privacy",
+  "billing", "sales", "marketing", "press", "media", "pr",
+]);
+
+// Fake/placeholder domains to ignore
+const JUNK_DOMAIN = new Set(["example.com", "example.org", "test.com", "domain.com", "email.com"]);
+
+async function fetchPage(url: string): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; JobSearch/1.0)" },
+      redirect: "follow",
+    });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  }
+}
+
+function extractEmailsFromHtml(html: string, companyDomain: string | null): GuessedEmail[] {
+  const raw = html.match(EMAIL_REGEX) ?? [];
+  const seen = new Set<string>();
+  const onDomain: GuessedEmail[] = [];
+
+  for (const email of raw) {
+    const lower = email.toLowerCase();
+    // Ignore fake image filenames matched by the regex (e.g. icon@2x.png)
+    if (/\.(png|jpg|jpeg|gif|svg|webp|ico|css|js)$/i.test(lower)) continue;
+    if (seen.has(lower)) continue;
+    seen.add(lower);
+
+    const atIdx = lower.indexOf("@");
+    const local = lower.slice(0, atIdx);
+    const emailDomain = lower.slice(atIdx + 1);
+    if (JUNK_DOMAIN.has(emailDomain)) continue;
+    if (JUNK_LOCAL.has(local)) continue;
+
+    // Only surface emails on the company's own domain
+    if (companyDomain && emailDomain === companyDomain) {
+      onDomain.push({ email: lower, label: "Found on website", isGeneric: false });
+    }
+  }
+
+  return onDomain.slice(0, 8);
+}
+
+/**
+ * Fetches the company website and common contact pages, extracts real email addresses.
+ * Returns [] on any failure — never throws.
+ */
+export async function scrapeEmailsFromWebsite(
+  websiteUrl: string | null | undefined,
+  domain: string | null,
+): Promise<GuessedEmail[]> {
+  if (!websiteUrl) return [];
+
+  let base: URL;
+  try {
+    base = new URL(websiteUrl.startsWith("http") ? websiteUrl : `https://${websiteUrl}`);
+  } catch {
+    return [];
+  }
+
+  const pagesToCheck = [
+    base.href,
+    new URL("/contact", base).href,
+    new URL("/contact-us", base).href,
+    new URL("/careers", base).href,
+    new URL("/about", base).href,
+  ];
+
+  // Fetch all pages in parallel
+  const pages = await Promise.all(pagesToCheck.map(fetchPage));
+  const combined = pages.filter(Boolean).join("\n");
+  return extractEmailsFromHtml(combined, domain);
 }
 
 /**
@@ -146,7 +236,7 @@ export async function suggestEmailsWithAI(
     for (const item of parsed) {
       if (typeof item.email !== "string" || typeof item.label !== "string") continue;
       const email = item.email.toLowerCase().trim();
-      if (!email.includes("@") || !email.endsWith(domain)) continue; // only accept emails on this domain
+      if (!email.includes("@") || email.split("@")[1] !== domain) continue; // only accept emails on this exact domain
       if (seenInAI.has(email)) continue;
       seenInAI.add(email);
       results.push({ email, label: item.label, isGeneric: true, aiSuggested: true });

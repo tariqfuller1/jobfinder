@@ -1,10 +1,25 @@
 import { type NormalizedEmploymentType, type NormalizedExperienceLevel, type NormalizedWorkplaceType } from "@/types/jobs";
 
+export function stripHtml(html: string | null | undefined): string | null {
+  if (!html) return null;
+  const text = html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text || null;
+}
+
 export function inferWorkplaceType(input: string | null | undefined): NormalizedWorkplaceType {
   const value = `${input ?? ""}`.toLowerCase();
   if (value.includes("remote")) return "REMOTE";
   if (value.includes("hybrid")) return "HYBRID";
-  if (value.includes("on-site") || value.includes("onsite") || value.includes("in office")) return "ONSITE";
+  if (value.includes("on-site") || value.includes("onsite") || value.includes("on site") || value.includes("in office")) return "ONSITE";
   return "UNKNOWN";
 }
 

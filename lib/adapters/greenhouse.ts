@@ -48,7 +48,7 @@ export async function fetchGreenhouseJobs(companyToken: string): Promise<Normali
       experienceLevel: experience,
       descriptionHtml: null,
       descriptionText: null,
-      postedAt: null,
+      postedAt: job.updated_at ? new Date(job.updated_at) : null,
       tags: parseTags(job.departments?.map((d) => d.name).join(", "), job.offices?.map((o) => o.name).join(", "), metadataText),
     } satisfies NormalizedJob;
   });
