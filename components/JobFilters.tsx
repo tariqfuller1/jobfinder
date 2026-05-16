@@ -293,6 +293,8 @@ export function JobFilters() {
               <option value="recruitee">Recruitee</option>
               <option value="remotive">Remotive</option>
               <option value="arbeitnow">Arbeitnow</option>
+              <option value="workwithindies">Work With Indies</option>
+              <option value="himalayas">Himalayas</option>
               <option value="usajobs">USA Jobs</option>
             </select>
           </label>
