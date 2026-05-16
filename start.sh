@@ -14,8 +14,9 @@ p.job.count()
 " 2>/dev/null)
 
 if [ "${JOB_COUNT:-0}" -gt "0" ] 2>/dev/null; then
-  # Database already populated — skip bootstrap entirely on re-deploys.
-  echo "Database has $JOB_COUNT jobs — skipping bootstrap."
+  # Re-deploy: database already populated — run a fresh sync in the background.
+  echo "Database has $JOB_COUNT jobs — running sync in background..."
+  npx tsx scripts/sync.ts >> /tmp/sync.log 2>&1 &
 else
   # First-ever run: populate the database.
   echo "Database is empty — running full bootstrap in background..."
