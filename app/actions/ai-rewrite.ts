@@ -1,5 +1,6 @@
 "use server";
 
+import { getCurrentUser } from "@/lib/auth";
 import { getGroqClient } from "@/lib/groq";
 
 type RewriteType = "cover-letter" | "resume";
@@ -12,6 +13,8 @@ export async function regenerateWithSuggestion(
   jobCompany: string,
   jobDescriptionText: string,
 ): Promise<{ ok: true; draft: string } | { ok: false; error: string }> {
+  if (!await getCurrentUser()) return { ok: false, error: "Sign in to use AI features." };
+
   try {
     const groq = getGroqClient();
     const label = type === "cover-letter" ? "cover letter" : "resume";

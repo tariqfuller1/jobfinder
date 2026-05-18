@@ -1,5 +1,6 @@
 "use server";
 
+import { getCurrentUser } from "@/lib/auth";
 import { getGroqClient } from "@/lib/groq";
 import { parseJsonSafe } from "@/lib/safe-json";
 import type { WorkExperienceEntry } from "@/lib/profile";
@@ -18,6 +19,8 @@ export async function generateCoverLetterAI(
   educationEntries: string[],
   profileLinks: { label: string; url: string }[],
 ): Promise<{ ok: true; letter: string } | { ok: false; error: string }> {
+  if (!await getCurrentUser()) return { ok: false, error: "Sign in to generate cover letters." };
+
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey?.trim()) {
     return { ok: false, error: "GROQ_API_KEY is not configured." };

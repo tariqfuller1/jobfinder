@@ -7,7 +7,7 @@ import { verifyTurnstile } from "@/lib/turnstile";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Enter a valid email."),
-  password: z.string().min(8, "Enter your password."),
+  password: z.string().min(8, "Enter your password.").max(1024, "Password too long."),
   turnstileToken: z.string().optional(),
   _hp: z.string().optional(),
 });

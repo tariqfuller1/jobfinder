@@ -1,5 +1,6 @@
 "use server";
 
+import { getCurrentUser } from "@/lib/auth";
 import { getGroqClient } from "@/lib/groq";
 import { parseJsonSafe } from "@/lib/safe-json";
 import type { WorkExperienceEntry, ProjectEntry } from "@/lib/profile";
@@ -67,6 +68,8 @@ export async function runATSCheck(
   resumeText: string,
   profileLinks: { label: string; url: string }[],
 ): Promise<ATSCheckResult> {
+  if (!await getCurrentUser()) return { ok: false, error: "Sign in to use AI features." };
+
   const hasStructuredData = workExperience.length > 0 || projects.length > 0;
   const hasResume = resumeText.trim().length > 0;
 

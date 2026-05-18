@@ -10,13 +10,17 @@ const ALLOWED_TAGS = [
   "hr",
 ];
 
+// Strip raw-text elements that bypass sanitize-html <=2.17.3 (GHSA-rpr9-rxv7-x643)
+function stripRawTextElements(html: string): string {
+  return html.replace(/<(xmp|plaintext|listing)[\s\S]*?<\/\1\s*>/gi, "")
+             .replace(/<(xmp|plaintext|listing)(\s[^>]*)?>[\s\S]*/gi, "");
+}
+
 export function sanitizeJobHtml(html: string): string {
-  return sanitizeHtml(html, {
+  return sanitizeHtml(stripRawTextElements(html), {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: {
       a: ["href", "target", "rel"],
-      // Allow style so job formatting (bold, colors) is preserved; CSS overrides black text anyway
-      "*": ["style"],
     },
     // Strip event handlers and javascript: hrefs regardless of allowedAttributes
     allowedSchemes: ["http", "https", "mailto"],

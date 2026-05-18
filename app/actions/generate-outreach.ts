@@ -1,5 +1,6 @@
 "use server";
 
+import { getCurrentUser } from "@/lib/auth";
 import { getGroqClient } from "@/lib/groq";
 import { parseJsonSafe } from "@/lib/safe-json";
 import type { WorkExperienceEntry } from "@/lib/profile";
@@ -54,6 +55,8 @@ export async function generateOutreachMessage(
   stacks: string[],
   workExperience: WorkExperienceEntry[],
 ): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
+  if (!await getCurrentUser()) return { ok: false, error: "Sign in to use AI features." };
+
   try {
     const groq = getGroqClient();
 
@@ -117,6 +120,8 @@ export async function refineOutreachMessage(
   messageType: MessageType,
   companyName: string,
 ): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
+  if (!await getCurrentUser()) return { ok: false, error: "Sign in to use AI features." };
+
   try {
     const groq = getGroqClient();
 

@@ -28,6 +28,33 @@ const US_STATE_ABBRS = [
   "VA","WA","WV","WI","WY",
 ];
 
+// Full state names for matching location strings that spell out the state (e.g. "North Carolina").
+const US_STATE_FULL_NAMES: Record<string, string> = {
+  AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",
+  CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",
+  HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",
+  KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",
+  MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",
+  MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",
+  NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",
+  OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",
+  SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",
+  VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",
+  DC:"District of Columbia",
+};
+
+function statePatterns(abbr: string): Prisma.JobWhereInput[] {
+  const fullName = US_STATE_FULL_NAMES[abbr];
+  return [
+    { location: { endsWith: `, ${abbr}` } },       // "Charlotte, NC"
+    { location: { contains: `, ${abbr} ` } },       // "Charlotte, NC 27601"
+    { location: { contains: `, ${abbr},` } },       // "Charlotte, NC, United States"
+    ...(fullName ? [
+      { location: { contains: fullName } },          // "Charlotte, North Carolina, United States"
+    ] : []),
+  ];
+}
+
 export type JobFilters = {
   q?: string;
   departments?: string[];
@@ -229,16 +256,16 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
         ? {
             AND: [
               {
-                OR: [
-                  { location: { contains: "United States" } },
-                  { location: { contains: " USA" } },
-                  { location: { contains: ", USA" } },
-                  ...(filters.states && filters.states.length > 0 ? filters.states : US_STATE_ABBRS).flatMap((s) => [
-                    { location: { endsWith: `, ${s}` } },    // "Austin, TX"
-                    { location: { contains: `, ${s} ` } },   // "Austin, TX 78701"
-                    { location: { contains: `, ${s},` } },   // "Austin, TX, United States"
-                  ]),
-                ],
+                OR: filters.states && filters.states.length > 0
+                  // Specific states selected: match only those states (abbreviation AND full name).
+                  // No generic USA patterns — those would let any US job through.
+                  ? filters.states.flatMap((s) => statePatterns(s))
+                  : [
+                      { location: { contains: "United States" } },
+                      { location: { contains: " USA" } },
+                      { location: { contains: ", USA" } },
+                      ...US_STATE_ABBRS.flatMap((s) => statePatterns(s)),
+                    ],
               },
               // Exclude jobs whose location string names a non-US country
               { NOT: { location: { contains: "India" } } },
@@ -260,13 +287,7 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
         : filters.country
           ? { location: { contains: filters.country } }
           : filters.states && filters.states.length > 0
-            ? {
-                OR: filters.states.flatMap((s) => [
-                  { location: { endsWith: `, ${s}` } },
-                  { location: { contains: `, ${s} ` } },
-                  { location: { contains: `, ${s},` } },
-                ]),
-              }
+            ? { OR: filters.states.flatMap((s) => statePatterns(s)) }
             : {},
     ],
   };

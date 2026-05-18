@@ -114,8 +114,27 @@ const JUNK_LOCAL = new Set([
 // Fake/placeholder domains to ignore
 const JUNK_DOMAIN = new Set(["example.com", "example.org", "test.com", "domain.com", "email.com"]);
 
+function isPrivateHost(hostname: string): boolean {
+  // Block localhost and private/link-local IP ranges to prevent SSRF
+  if (hostname === "localhost" || hostname === "::1") return true;
+  const privatePatterns = [
+    /^127\./,
+    /^10\./,
+    /^192\.168\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^169\.254\./,    // link-local (AWS metadata etc.)
+    /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,  // CGNAT
+    /^0\./,
+    /^::ffff:/,
+  ];
+  return privatePatterns.some((p) => p.test(hostname));
+}
+
 async function fetchPage(url: string): Promise<string | null> {
   try {
+    const parsed = new URL(url);
+    if (isPrivateHost(parsed.hostname)) return null;
+
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(url, {

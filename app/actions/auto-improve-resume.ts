@@ -1,5 +1,6 @@
 "use server";
 
+import { getCurrentUser } from "@/lib/auth";
 import { getGroqClient } from "@/lib/groq";
 import { parseJsonSafe } from "@/lib/safe-json";
 import type { QualityRating } from "./ats-check";
@@ -97,6 +98,8 @@ export async function autoImproveResume(
   jobDescriptionText: string,
   profileLinks: { label: string; url: string }[] = [],
 ): Promise<AutoImproveResult> {
+  if (!await getCurrentUser()) return { ok: false, error: "Sign in to use AI features." };
+
   try {
     const groq = getGroqClient();
     let resume = currentResume;

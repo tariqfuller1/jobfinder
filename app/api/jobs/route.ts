@@ -3,6 +3,7 @@ import { z } from "zod";
 import { listJobs } from "@/lib/jobs";
 import { prisma } from "@/lib/db";
 import { getCurrentUserFromRequest } from "@/lib/auth";
+import { rateLimitWithRetry } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -26,18 +27,20 @@ export async function GET(request: NextRequest) {
     company: searchParams.get("company") ?? undefined,
     recommendedOnly: searchParams.get("recommendedOnly") === "true",
     page: Number(searchParams.get("page") ?? "1"),
-    limit: Number(searchParams.get("limit") ?? "20"),
+    limit: Math.min(Number(searchParams.get("limit") ?? "20"), 100),
     since: searchParams.get("since") ?? undefined,
   });
 
   return NextResponse.json(data);
 }
 
+const isHttpUrl = (v: string) => /^https?:\/\//i.test(v);
+
 const createSchema = z.object({
-  title: z.string().min(1),
-  company: z.string().min(1),
-  applyUrl: z.string().min(1),
-  location: z.string().optional().default(""),
+  title: z.string().min(1).max(300),
+  company: z.string().min(1).max(200),
+  applyUrl: z.string().min(1).refine(isHttpUrl, "URL must start with http:// or https://"),
+  location: z.string().max(300).optional().default(""),
   workplaceType: z.enum(["REMOTE", "HYBRID", "ONSITE", "UNKNOWN"]).default("UNKNOWN"),
   employmentType: z.enum(["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "TEMPORARY", "UNKNOWN"]).default("UNKNOWN"),
   experienceLevel: z.enum(["ENTRY", "MID", "SENIOR", "LEAD", "INTERN", "UNKNOWN"]).default("UNKNOWN"),
@@ -45,6 +48,12 @@ const createSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const { allowed } = rateLimitWithRetry(`jobs-create:${ip}`, 20, 60 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
+  }
+
   const user = await getCurrentUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: "Sign in to add a job." }, { status: 401 });

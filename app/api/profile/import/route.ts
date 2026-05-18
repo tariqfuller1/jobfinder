@@ -4,6 +4,7 @@ import { saveUserProfileForUser } from "@/lib/profile";
 import { getCurrentUserFromRequest } from "@/lib/auth";
 import { parseResumeWithAI } from "@/lib/parse-resume-ai";
 import { prisma } from "@/lib/db";
+import { rateLimitWithRetry } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -29,15 +30,26 @@ async function extractResumeText(file: File) {
   return buffer.toString("utf8");
 }
 
+const MAX_PASTE_BYTES = 50_000; // ~12 pages of text
+
 export async function POST(request: Request) {
   const user = await getCurrentUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: "Sign in to import a resume." }, { status: 401 });
   }
 
+  const rl = rateLimitWithRetry(`resume:import:${user.id}`, 10, 60 * 60 * 1000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many resume imports. Try again later." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+    );
+  }
+
   try {
     const formData = await request.formData();
-    const text = String(formData.get("resumeText") ?? "").trim();
+    const rawText = String(formData.get("resumeText") ?? "").trim();
+    const text = rawText.slice(0, MAX_PASTE_BYTES);
     const file = formData.get("resumeFile");
 
     let extractedText = text;

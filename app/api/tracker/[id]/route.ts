@@ -8,7 +8,7 @@ const updateSchema = z.object({
   userReachedOut: z.boolean().optional(),
   companyReachedOut: z.boolean().optional(),
   followUpDate: z.string().nullable().optional(),
-  notes: z.string().nullable().optional(),
+  notes: z.string().max(5000).nullable().optional(),
 });
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {

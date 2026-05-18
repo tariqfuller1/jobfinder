@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     activeHiring: searchParams.get("activeHiring") ?? undefined,
     sort: searchParams.get("sort") ?? undefined,
     page: Number(searchParams.get("page") ?? "1"),
-    limit: Number(searchParams.get("limit") ?? "24"),
+    limit: Math.min(Number(searchParams.get("limit") ?? "24"), 100),
   });
 
   return NextResponse.json(data);

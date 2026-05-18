@@ -9,7 +9,7 @@ import { verifyTurnstile } from "@/lib/turnstile";
 const registerSchema = z.object({
   displayName: z.string().trim().min(1, "Enter your name."),
   email: z.string().trim().email("Enter a valid email."),
-  password: z.string().min(8, "Password must be at least 8 characters."),
+  password: z.string().min(8, "Password must be at least 8 characters.").max(1024, "Password too long."),
   turnstileToken: z.string().optional(),
   _hp: z.string().optional(),
 });
