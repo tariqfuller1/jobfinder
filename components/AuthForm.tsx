@@ -8,7 +8,13 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawNext = searchParams.get("next") ?? "";
-  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
+  // After registration, land on /profile so new users set up their resume first.
+  // After login, honour the ?next= param or fall back to /dashboard.
+  const defaultNext = mode === "register" ? "/profile" : "/dashboard";
+  // Validate that next is a same-origin relative path. Decode first to catch %2f//evil.com tricks,
+  // then require a leading slash with no second slash or backslash.
+  const decodedNext = (() => { try { return decodeURIComponent(rawNext); } catch { return ""; } })();
+  const nextPath = /^\/[^/\\]/.test(decodedNext) || decodedNext === "/" ? decodedNext : defaultNext;
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

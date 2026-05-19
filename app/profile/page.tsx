@@ -21,8 +21,34 @@ export default async function ProfilePage() {
     };
   });
 
+  const isNewUser = !profile.resumeText && profile.skills.length === 0;
+
   return (
     <div className="stack page-stack-lg" style={{ padding: "24px 0 40px" }}>
+
+      {/* Welcome banner for brand-new users with no resume yet */}
+      {isNewUser && (
+        <div style={{
+          background: "linear-gradient(135deg, rgba(255,51,104,0.12), rgba(255,51,104,0.05))",
+          border: "1px solid rgba(255,51,104,0.28)",
+          borderRadius: 12,
+          padding: "16px 20px",
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+        }}>
+          <span style={{ fontSize: 22 }}>👋</span>
+          <div>
+            <strong style={{ color: "#f5f5f5", display: "block", marginBottom: 4 }}>
+              Welcome to Hyrd — let&apos;s set up your profile
+            </strong>
+            <span className="muted" style={{ fontSize: 13 }}>
+              Upload your resume below and we&apos;ll auto-fill your skills, experience, and job preferences.
+              That unlocks personalized job matches, ATS scoring, and AI cover letters.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="hero-grid card hero-card">

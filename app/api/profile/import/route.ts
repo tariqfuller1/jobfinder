@@ -10,6 +10,12 @@ export const runtime = "nodejs";
 
 const MAX_RESUME_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_EXTENSIONS = [".pdf", ".docx", ".txt"];
+const ALLOWED_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "application/octet-stream", // some browsers send this for .txt/.docx
+]);
 
 async function extractResumeText(file: File) {
   const fileName = file.name.toLowerCase();
@@ -61,6 +67,9 @@ export async function POST(request: Request) {
       }
       const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
       if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        return NextResponse.json({ error: "Only PDF, DOCX, and TXT files are accepted." }, { status: 415 });
+      }
+      if (file.type && !ALLOWED_MIME_TYPES.has(file.type)) {
         return NextResponse.json({ error: "Only PDF, DOCX, and TXT files are accepted." }, { status: 415 });
       }
       extractedText = await extractResumeText(file);

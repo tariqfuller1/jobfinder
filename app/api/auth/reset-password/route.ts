@@ -27,6 +27,10 @@ export async function POST(request: Request) {
   if (!token || !password || typeof token !== "string" || typeof password !== "string") {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
+  // Token is 32 random bytes as hex — 64 chars. Reject anything else before hitting the DB.
+  if (!/^[0-9a-f]{64}$/i.test(token)) {
+    return NextResponse.json({ error: "Reset link is invalid or expired." }, { status: 400 });
+  }
   if (password.length < 8 || password.length > 1024) {
     return NextResponse.json({ error: "Password must be 8–1024 characters." }, { status: 400 });
   }

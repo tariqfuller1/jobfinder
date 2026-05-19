@@ -22,12 +22,15 @@ export async function regenerateWithSuggestion(
 
     const prompt = `You are editing a ${label} for a job application.
 
-Job: ${jobTitle} at ${jobCompany}${descSnippet ? `\nJob description excerpt:\n${descSnippet}` : ""}
+Job: ${jobTitle} at ${jobCompany}${descSnippet ? `\n<job_description>\n${descSnippet}\n</job_description>` : ""}
 
-Current ${label}:
+<current_draft>
 ${currentDraft}
+</current_draft>
 
-The user wants this change: ${suggestion}
+<requested_change>
+${suggestion}
+</requested_change>
 
 Rewrite the ${label} incorporating the requested change. Keep the same general structure and tone unless asked to change it. Return only the ${label} text with no extra commentary or markdown formatting.`;
 

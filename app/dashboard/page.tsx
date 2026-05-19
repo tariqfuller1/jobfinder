@@ -99,8 +99,15 @@ export default async function DashboardPage() {
           </div>
           {jobs.jobs.length === 0 ? (
             <div className="inset-card">
-              <p style={{ marginTop: 0 }}>No live jobs are available yet.</p>
-              <p className="muted" style={{ marginBottom: 0 }}>Run <code>npm run bootstrap</code> or <code>npm run sync:jobs</code> to auto-discover more sources and pull in live postings.</p>
+              <p style={{ marginTop: 0, fontWeight: 600 }}>No matches yet.</p>
+              <p className="muted" style={{ marginBottom: 0 }}>
+                Upload your resume on the{" "}
+                <Link href="/profile" style={{ color: "#ff3368" }}>profile page</Link>{" "}
+                so we can score jobs against your skills and preferred locations.
+                You can also{" "}
+                <Link href="/jobs" style={{ color: "#ff3368" }}>browse all live jobs</Link>{" "}
+                directly.
+              </p>
             </div>
           ) : jobs.jobs.map((job) => (
             <div key={job.id} className="inset-card stack compact-stack">
