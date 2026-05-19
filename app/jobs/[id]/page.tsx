@@ -8,6 +8,7 @@ import { getProfileForUserOrDefault } from "@/lib/profile";
 import { suggestConnectionSearches } from "@/lib/recommendations";
 import { getRoleCategory } from "@/lib/classify";
 import { sanitizeJobHtml } from "@/lib/sanitize";
+import { stripHtml } from "@/lib/normalize";
 import { notFound } from "next/navigation";
 
 function fmtWorkplace(v: string) {
@@ -183,7 +184,7 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
               <div className="job-body" dangerouslySetInnerHTML={{ __html: sanitizeJobHtml(job.descriptionHtml) }} />
             ) : job.descriptionText ? (
               <div className="job-body">
-                {job.descriptionText.split(/\n{2,}/).map((para, i) => (
+                {(stripHtml(job.descriptionText) ?? "").split(/\n{2,}/).map((para, i) => (
                   <p key={i}>{para.trim()}</p>
                 ))}
               </div>
