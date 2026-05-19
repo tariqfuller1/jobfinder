@@ -113,10 +113,11 @@ export async function runATSCheck(
 
 JOB TARGET: ${jobTitle} at ${jobCompany}
 
-JOB DESCRIPTION:
+<job_description>
 ${jobDescriptionText.slice(0, 2000)}
+</job_description>
 
-CANDIDATE PROFILE:
+<candidate_profile>
 Name: ${name || "Candidate"}
 ${linksSection}
 ${skillsSection}
@@ -127,6 +128,7 @@ ${projectsSection}
 
 ${educationSection}
 ${fallbackNote}
+</candidate_profile>
 
 YOUR TASKS:
 1. Extract the top 20 ATS keywords/skills from the job description (technical skills, tools, methodologies, certifications, soft skills)

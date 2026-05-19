@@ -130,9 +130,14 @@ export function scoreJobFit(
   // Location matching: ONLY check job.location, never the description.
   // A Serbia job whose description says "remote-friendly" must not match "Remote US".
   const locationText = (job.location ?? "").toLowerCase();
-  const locationHits = profile.preferredLocations.filter((loc) =>
-    locationText.includes(loc.toLowerCase()),
-  );
+  const locationHits = profile.preferredLocations.filter((loc) => {
+    if (loc === "Remote US") return false;
+    const term = loc.toLowerCase();
+    // State abbreviations are 2 chars (e.g. "NC"). Use non-alpha boundaries so
+    // "NC" doesn't match inside "Francisco", "Valencia", etc.
+    if (term.length === 2) return new RegExp(`(?:^|[^a-z])${term}(?:[^a-z]|$)`).test(locationText);
+    return locationText.includes(term);
+  });
   if (locationHits.length) {
     score += 20;
     reasons.push(`Location fit: ${locationHits[0]}`);

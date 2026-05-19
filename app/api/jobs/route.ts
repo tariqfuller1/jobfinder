@@ -6,6 +6,12 @@ import { getCurrentUserFromRequest } from "@/lib/auth";
 import { rateLimitWithRetry, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const { allowed: getAllowed } = rateLimitWithRetry(`jobs-list:${ip}`, 100, 60 * 1000);
+  if (!getAllowed) {
+    return NextResponse.json({ error: "Too many requests. Slow down." }, { status: 429 });
+  }
+
   const { searchParams } = new URL(request.url);
 
   const parseList = (key: string) => {

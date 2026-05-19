@@ -39,28 +39,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "CAPTCHA verification failed. Please try again." }, { status: 400 });
   }
 
+  // Pad to a constant minimum time so response duration doesn't reveal whether the email exists
+  const requestStart = Date.now();
+
   const user = await prisma.user.findUnique({ where: { email } });
 
-  // Always return success — never reveal whether the email exists
-  if (!user) {
-    return NextResponse.json({ ok: true });
+  if (user) {
+    await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await prisma.passwordResetToken.create({
+      data: { userId: user.id, tokenHash: hashValue(token), expiresAt },
+    });
+    sendPasswordResetEmail(email, token).catch((err) => {
+      console.error("[forgot-password] Failed to send email:", err instanceof Error ? err.message : err);
+    });
   }
 
-  // Expire any existing tokens for this user
-  await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
-
-  const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-  await prisma.passwordResetToken.create({
-    data: { userId: user.id, tokenHash: hashValue(token), expiresAt },
-  });
-
-  // Fire and forget — don't block the response on email delivery so that response
-  // timing is identical whether or not the email address has an account.
-  sendPasswordResetEmail(email, token).catch((err) => {
-    console.error("[forgot-password] Failed to send email:", err instanceof Error ? err.message : err);
-  });
+  const elapsed = Date.now() - requestStart;
+  if (elapsed < 500) {
+    await new Promise((resolve) => setTimeout(resolve, 500 - elapsed));
+  }
 
   return NextResponse.json({ ok: true });
 }

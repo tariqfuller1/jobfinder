@@ -320,8 +320,13 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
         // Skill / title hits in structured fields
         ...terms.map((t) => ({ tags: { contains: t } })),
         ...terms.map((t) => ({ title: { contains: t } })),
-        // Location bonus signal
-        ...profile.preferredLocations.map((l) => ({ location: { contains: l } })),
+        // Location bonus signal — use statePatterns for 2-letter abbreviations so
+        // "NC" doesn't match inside "Francisco", "Valencia", etc.
+        ...profile.preferredLocations.flatMap((l) => {
+          if (l === "Remote US") return [];
+          if (/^[A-Z]{2}$/.test(l)) return statePatterns(l);
+          return [{ location: { contains: l } }];
+        }),
         // Workplace / level bonus signals
         { workplaceType: "REMOTE" as never },
         { workplaceType: "HYBRID" as never },
@@ -511,13 +516,20 @@ export async function getJobById(id: string, profile: UserProfile | null = null)
 
   // Normalize description: prefer descriptionHtml; fall back to descriptionText
   // if it looks like HTML (literal tags or entity-encoded). Entity-decode before use.
+  const decodeEntities = (s: string) =>
+    s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+
   const rawHtml = job.descriptionHtml || null;
   const rawText = job.descriptionText || null;
+
+  // If descriptionHtml is entity-encoded (has &lt; but no literal < tags), decode it
+  // so that sanitizeJobHtml sees real HTML tags rather than escaped text.
+  const htmlNeedsDecoding = rawHtml ? /&lt;/.test(rawHtml) && !/<[a-zA-Z]/.test(rawHtml) : false;
+  const fixedHtml = htmlNeedsDecoding ? decodeEntities(rawHtml!) : rawHtml;
+
   const textHasHtml = rawText ? /[<>]|&lt;|&gt;/.test(rawText) : false;
-  const descriptionHtml = rawHtml ?? (textHasHtml
-    ? rawText!.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-    : null);
-  const descriptionText = textHasHtml ? null : rawText;
+  const descriptionHtml = fixedHtml ?? (textHasHtml ? decodeEntities(rawText!) : null);
+  const descriptionText = (fixedHtml || textHasHtml) ? null : rawText;
 
   return {
     ...job,

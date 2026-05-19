@@ -46,11 +46,13 @@ Rules:
 - Make bullets more impactful and keyword-rich for this job
 - Do not change the overall resume structure or format${linksNote}
 
-JOB DESCRIPTION:
+<job_description>
 ${jobDescriptionText.slice(0, 1500)}
+</job_description>
 
-CURRENT RESUME:
+<current_resume>
 ${currentResume}
+</current_resume>
 
 Respond NOW with only this JSON starting with {:
 {

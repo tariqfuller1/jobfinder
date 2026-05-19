@@ -13,29 +13,45 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  // 10 attempts per 15 minutes per IP
   const ip = getClientIp(request);
-  const { allowed: loginAllowed, retryAfterSec } = rateLimitWithRetry(`login:${ip}`, 10, 15 * 60 * 1000);
-  if (!loginAllowed) {
+  // IP-level: block volume attacks from a single IP
+  const { allowed: ipAllowed, retryAfterSec: ipRetry } = rateLimitWithRetry(`login:ip:${ip}`, 10, 15 * 60 * 1000);
+  if (!ipAllowed) {
     return NextResponse.json(
       { error: "Too many login attempts. Try again in 15 minutes." },
-      { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
+      { status: 429, headers: { "Retry-After": String(ipRetry) } },
+    );
+  }
+
+  let body: z.infer<typeof loginSchema>;
+  try {
+    body = loginSchema.parse(await request.json());
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Unable to sign in right now." }, { status: 400 });
+  }
+
+  if (body._hp) {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+
+  const email = body.email.toLowerCase();
+
+  // Per-account: block targeted brute force across multiple IPs
+  const { allowed: emailAllowed, retryAfterSec: emailRetry } = rateLimitWithRetry(`login:email:${email}`, 10, 15 * 60 * 1000);
+  if (!emailAllowed) {
+    return NextResponse.json(
+      { error: "Too many login attempts. Try again in 15 minutes." },
+      { status: 429, headers: { "Retry-After": String(emailRetry) } },
     );
   }
 
   try {
-    const body = loginSchema.parse(await request.json());
-
-    // Honeypot — real browsers leave this empty
-    if (body._hp) {
-      return NextResponse.json({ error: "Invalid request." }, { status: 400 });
-    }
-
     if (!await verifyTurnstile(body.turnstileToken, ip)) {
       return NextResponse.json({ error: "CAPTCHA verification failed. Please try again." }, { status: 400 });
     }
-
-    const email = body.email.toLowerCase();
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !verifyPassword(body.password, user.passwordHash)) {
@@ -46,10 +62,7 @@ export async function POST(request: Request) {
     await setSessionCookie(session.token, session.expiresAt);
 
     return NextResponse.json({ ok: true });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
-    }
+  } catch {
     return NextResponse.json({ error: "Unable to sign in right now." }, { status: 400 });
   }
 }

@@ -151,16 +151,19 @@ function summarize(lines: string[]) {
   return summaryLine?.slice(0, 280);
 }
 
+const STATE_ABBR_RE = /\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)\b/g;
+
 function detectPreferredLocations(location?: string, educationEntries: string[] = []) {
-  const candidates = [location ?? "", ...educationEntries].join(" | ");
   const picks: string[] = [];
-  if (/remote/i.test(candidates)) picks.push("Remote US");
-  if (/north carolina|\bNC\b/i.test(candidates)) picks.push("North Carolina", "NC");
-  if (/raleigh/i.test(candidates)) picks.push("Raleigh");
-  if (/durham/i.test(candidates)) picks.push("Durham");
-  if (/cary/i.test(candidates)) picks.push("Cary");
-  if (/charlotte/i.test(candidates)) picks.push("Charlotte");
-  if (/washington/i.test(candidates)) picks.push("Washington");
+  const allText = [location ?? "", ...educationEntries].join(" | ");
+  if (/remote/i.test(allText)) picks.push("Remote US");
+  if (location) {
+    const city = location.split(",")[0]?.trim();
+    if (city && city.length >= 2) picks.push(city);
+  }
+  // Extract US state abbreviations from location and education entries
+  const stateMatches = [...allText.matchAll(STATE_ABBR_RE)].map((m) => m[0]);
+  picks.push(...stateMatches);
   return unique(picks);
 }
 
@@ -174,7 +177,7 @@ export function parseResumeText(text: string, fileName?: string): UserProfileInp
   const targetTitles = extractTargetTitles(cleanedText);
   const location = extractLocation(lines);
   const preferredLocations = detectPreferredLocations(location, educationEntries);
-  const preferredStates = preferredLocations.filter((value) => /NC|North Carolina/i.test(value));
+  const preferredStates = preferredLocations.filter((value) => /^[A-Z]{2}$/.test(value));
   const stacks = skills.filter((skill) => /Unity|Unreal|React|Next\.js|Node\.js|TypeScript|JavaScript|C#|C\+\+|Python|Prisma/i.test(skill));
   const industries = unique([
     /game/i.test(cleanedText) ? "Game development" : undefined,

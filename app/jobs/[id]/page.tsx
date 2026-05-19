@@ -183,11 +183,15 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
             {job.descriptionHtml ? (
               <div className="job-body" dangerouslySetInnerHTML={{ __html: sanitizeJobHtml(job.descriptionHtml) }} />
             ) : job.descriptionText ? (
-              <div className="job-body">
-                {(stripHtml(job.descriptionText) ?? "").split(/\n{2,}/).map((para, i) => (
-                  <p key={i}>{para.trim()}</p>
-                ))}
-              </div>
+              /[<>]|&lt;|&gt;/.test(job.descriptionText) ? (
+                <div className="job-body" dangerouslySetInnerHTML={{ __html: sanitizeJobHtml(job.descriptionText) }} />
+              ) : (
+                <div className="job-body">
+                  {(stripHtml(job.descriptionText) ?? "").split(/\n{2,}/).map((para, i) => (
+                    <p key={i}>{para.trim()}</p>
+                  ))}
+                </div>
+              )
             ) : (
               <p className="muted">Open the original posting to read the full description.</p>
             )}

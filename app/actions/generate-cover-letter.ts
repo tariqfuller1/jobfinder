@@ -42,10 +42,11 @@ export async function generateCoverLetterAI(
 
 JOB: ${jobTitle} at ${jobCompany}
 
-JOB DESCRIPTION:
+<job_description>
 ${jobDescriptionText.slice(0, 2000)}
+</job_description>
 
-CANDIDATE:
+<candidate>
 Name: ${name || "Candidate"}
 ${email ? `Email: ${email}` : ""}
 ${phone ? `Phone: ${phone}` : ""}
@@ -54,6 +55,7 @@ ${summary ? `Summary: ${summary}` : ""}
 Skills: ${[...skills, ...stacks].slice(0, 15).join(", ")}
 ${expSummary ? `Recent experience:\n${expSummary}` : ""}
 ${educationEntries.length ? `Education: ${educationEntries[0]}` : ""}
+</candidate>
 
 RULES:
 - Write 3-4 strong paragraphs (no headers, no bullet points)

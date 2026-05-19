@@ -127,11 +127,13 @@ export async function refineOutreachMessage(
 
     const prompt = `You are editing an outreach message for ${companyName}. The message type is: ${messageType}.
 
-CURRENT MESSAGE:
+<current_message>
 ${currentMessage}
+</current_message>
 
-REQUESTED CHANGE:
+<requested_change>
 ${suggestion}
+</requested_change>
 
 Rewrite the message applying the requested change. Keep the same message type and length constraints.
 Respond with only a JSON object: {"message": "<rewritten message as plain text with real newlines>"}`;

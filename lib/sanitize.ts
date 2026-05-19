@@ -16,8 +16,22 @@ function stripRawTextElements(html: string): string {
              .replace(/<(xmp|plaintext|listing)(\s[^>]*)?>[\s\S]*/gi, "");
 }
 
+function maybeDecodeEntities(html: string): string {
+  // If the string has entity-encoded angle brackets but no literal HTML tags,
+  // it was double-encoded and needs one round of decoding before sanitization.
+  if (/&lt;/.test(html) && !/<[a-zA-Z]/.test(html)) {
+    return html
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+  }
+  return html;
+}
+
 export function sanitizeJobHtml(html: string): string {
-  return sanitizeHtml(stripRawTextElements(html), {
+  return sanitizeHtml(stripRawTextElements(maybeDecodeEntities(html)), {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: {
       a: ["href", "target", "rel"],
