@@ -3,6 +3,18 @@ import type { Company } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { detectSourceFromUrl } from "@/lib/source-detection";
 
+function isPrivateHost(hostname: string): boolean {
+  if (hostname === "localhost" || hostname === "::1") return true;
+  const privatePatterns = [
+    /^127\./, /^10\./, /^192\.168\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^169\.254\./,
+    /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,
+    /^0\./, /^::ffff:/,
+  ];
+  return privatePatterns.some((p) => p.test(hostname));
+}
+
 type DiscoveredSource = {
   sourceType: string;
   sourceToken: string;
@@ -165,7 +177,14 @@ async function discoverSourceForCompany(company: Company): Promise<DiscoverySumm
   for (const candidate of candidates) {
     checkedUrls.push(candidate);
     try {
+      let parsed: URL;
+      try { parsed = new URL(candidate); } catch { continue; }
+      if (isPrivateHost(parsed.hostname)) continue;
+
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 5000);
       const response = await fetch(candidate, {
+        signal: controller.signal,
         headers: {
           Accept: "text/html,application/xhtml+xml",
           "User-Agent": "JobFinder/1.0",
@@ -173,6 +192,7 @@ async function discoverSourceForCompany(company: Company): Promise<DiscoverySumm
         redirect: "follow",
         cache: "no-store",
       });
+      clearTimeout(t);
 
       if (!response.ok) continue;
       const finalUrl = response.url || candidate;

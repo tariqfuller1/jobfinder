@@ -12,9 +12,7 @@ export async function verifyTurnstile(token: string | undefined, ip?: string): P
     const data = (await res.json()) as { success: boolean };
     return data.success === true;
   } catch {
-    // Network error reaching Cloudflare — fail open so a Cloudflare outage
-    // doesn't lock users out. The rate limiter still protects the route.
-    console.warn("[turnstile] Verification fetch failed — failing open");
-    return true;
+    console.error("[turnstile] Verification fetch failed — failing closed");
+    return false;
   }
 }

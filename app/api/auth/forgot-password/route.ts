@@ -3,14 +3,14 @@ import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { verifyTurnstile } from "@/lib/turnstile";
-import { rateLimitWithRetry } from "@/lib/rate-limit";
+import { rateLimitWithRetry, getClientIp } from "@/lib/rate-limit";
 
 function hashValue(value: string) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
 export async function POST(request: Request) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getClientIp(request);
 
   // 5 reset emails per hour per IP
   const { allowed, retryAfterSec } = rateLimitWithRetry(`forgot-password:${ip}`, 5, 60 * 60 * 1000);
@@ -56,15 +56,11 @@ export async function POST(request: Request) {
     data: { userId: user.id, tokenHash: hashValue(token), expiresAt },
   });
 
-  try {
-    await sendPasswordResetEmail(email, token);
-  } catch (err) {
+  // Fire and forget — don't block the response on email delivery so that response
+  // timing is identical whether or not the email address has an account.
+  sendPasswordResetEmail(email, token).catch((err) => {
     console.error("[forgot-password] Failed to send email:", err instanceof Error ? err.message : err);
-    return NextResponse.json(
-      { error: "Could not send the reset email. Please try again later." },
-      { status: 500 },
-    );
-  }
+  });
 
   return NextResponse.json({ ok: true });
 }

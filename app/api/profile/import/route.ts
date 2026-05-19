@@ -103,10 +103,7 @@ export async function POST(request: Request) {
         connectionKeywords: saved.connectionKeywords,
       },
     });
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to import the resume right now." },
-      { status: 500 },
-    );
+  } catch {
+    return NextResponse.json({ error: "Unable to import the resume right now." }, { status: 500 });
   }
 }

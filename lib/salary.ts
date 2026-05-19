@@ -125,7 +125,7 @@ function locationMultiplier(location: string | null): { mult: number; label: str
 
 const TIER1 = /\b(google|apple|meta|facebook|amazon|microsoft|netflix|openai|nvidia|salesforce|oracle|adobe|intel|qualcomm|broadcom)\b/i;
 const TIER2 = /\b(stripe|airbnb|uber|lyft|doordash|snowflake|databricks|figma|notion|canva|anthropic|vercel|linear|ramp|perplexity|discord|twitch|reddit|pinterest|instacart|coinbase|robinhood|plaid|brex|asana)\b/i;
-const AAA_GAME = /\b(epic games|riot games|bungie|2k|activision|blizzard|rockstar|ea |electronic arts|ubisoft|square enix|sega|capcom|naughty dog|insomniac|crystal dynamics|gearbox|respawn)\b/i;
+const AAA_GAME = /\b(epic games|riot games|bungie|2k|activision|blizzard|rockstar|ea|electronic arts|ubisoft|square enix|sega|capcom|naughty dog|insomniac|crystal dynamics|gearbox|respawn)\b/i;
 
 function companyMultiplier(company: string): { mult: number; label: string } {
   if (TIER1.test(company)) return { mult: 1.28, label: "Tier-1 company" };

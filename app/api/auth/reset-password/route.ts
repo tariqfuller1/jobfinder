@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
-import { rateLimitWithRetry } from "@/lib/rate-limit";
+import { rateLimitWithRetry, getClientIp } from "@/lib/rate-limit";
 
 function hashValue(value: string) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
 export async function POST(request: Request) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getClientIp(request);
   const { allowed, retryAfterSec } = rateLimitWithRetry(`reset-password:${ip}`, 10, 60 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json(

@@ -67,9 +67,9 @@ export async function PATCH(request: Request) {
     });
     return NextResponse.json({ ok: true, profile });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Could not save profile settings." },
-      { status: 400 },
-    );
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Could not save profile settings." }, { status: 400 });
   }
 }

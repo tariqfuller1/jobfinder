@@ -43,10 +43,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     });
     return NextResponse.json(updated);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Could not update the application." },
-      { status: 404 },
-    );
+    const message = error instanceof Error ? error.message : "Could not update the application.";
+    const isNotFound = message.toLowerCase().includes("not found");
+    return NextResponse.json({ error: message }, { status: isNotFound ? 404 : 500 });
   }
 }
 
@@ -58,9 +57,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     await deleteApplication(user.id, id);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Could not remove the application." },
-      { status: 404 },
-    );
+    const message = error instanceof Error ? error.message : "Could not remove the application.";
+    const isNotFound = message.toLowerCase().includes("not found");
+    return NextResponse.json({ error: message }, { status: isNotFound ? 404 : 500 });
   }
 }

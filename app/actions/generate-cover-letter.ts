@@ -31,7 +31,7 @@ export async function generateCoverLetterAI(
 
     const expSummary = workExperience
       .slice(0, 2)
-      .map((e) => `${e.title} at ${e.company} (${e.startDate}–${e.endDate}): ${e.bullets.slice(0, 2).join("; ")}`)
+      .map((e) => `${e.title} at ${e.company} (${e.startDate}–${e.endDate}): ${(e.bullets ?? []).slice(0, 2).join("; ")}`)
       .join("\n");
 
     const linksLine = profileLinks.length > 0

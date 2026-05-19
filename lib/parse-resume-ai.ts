@@ -111,24 +111,28 @@ Respond NOW with only the JSON object starting with { and ending with }:`;
       stacks: Array.isArray(parsed.stacks) ? parsed.stacks.map(String) : [],
       educationEntries: Array.isArray(parsed.educationEntries) ? parsed.educationEntries.map(String) : [],
       workExperience: Array.isArray(parsed.workExperience)
-        ? parsed.workExperience.map((e: any, i: number) => ({
-            id: String(e.id ?? `exp-${i + 1}`),
-            company: String(e.company ?? ""),
-            title: String(e.title ?? ""),
-            location: e.location ? String(e.location) : undefined,
-            startDate: String(e.startDate ?? ""),
-            endDate: String(e.endDate ?? ""),
-            bullets: Array.isArray(e.bullets) ? e.bullets.map(String).filter(Boolean) : [],
-          }))
+        ? parsed.workExperience
+            .filter((e: any) => e && (String(e.company ?? "").trim() || String(e.title ?? "").trim()))
+            .map((e: any, i: number) => ({
+              id: String(e.id ?? `exp-${i + 1}`),
+              company: String(e.company ?? "").trim(),
+              title: String(e.title ?? "").trim(),
+              location: e.location ? String(e.location) : undefined,
+              startDate: String(e.startDate ?? ""),
+              endDate: String(e.endDate ?? ""),
+              bullets: Array.isArray(e.bullets) ? e.bullets.map(String).filter(Boolean) : [],
+            }))
         : [],
       projects: Array.isArray(parsed.projects)
-        ? parsed.projects.map((p: any, i: number) => ({
-            id: String(p.id ?? `proj-${i + 1}`),
-            name: String(p.name ?? ""),
-            url: p.url ? String(p.url) : undefined,
-            technologies: Array.isArray(p.technologies) ? p.technologies.map(String) : [],
-            bullets: Array.isArray(p.bullets) ? p.bullets.map(String).filter(Boolean) : [],
-          }))
+        ? parsed.projects
+            .filter((p: any) => p && String(p.name ?? "").trim())
+            .map((p: any, i: number) => ({
+              id: String(p.id ?? `proj-${i + 1}`),
+              name: String(p.name ?? "").trim(),
+              url: p.url ? String(p.url) : undefined,
+              technologies: Array.isArray(p.technologies) ? p.technologies.map(String).filter(Boolean) : [],
+              bullets: Array.isArray(p.bullets) ? p.bullets.map(String).filter(Boolean) : [],
+            }))
         : [],
     };
 

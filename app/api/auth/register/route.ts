@@ -3,11 +3,11 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession, hashPassword, setSessionCookie } from "@/lib/auth";
 import { createDefaultProfileInputForUser, saveUserProfileForUser } from "@/lib/profile";
-import { rateLimitWithRetry } from "@/lib/rate-limit";
+import { rateLimitWithRetry, getClientIp } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
 
 const registerSchema = z.object({
-  displayName: z.string().trim().min(1, "Enter your name."),
+  displayName: z.string().trim().min(1, "Enter your name.").max(200, "Name must be 200 characters or fewer."),
   email: z.string().trim().email("Enter a valid email."),
   password: z.string().min(8, "Password must be at least 8 characters.").max(1024, "Password too long."),
   turnstileToken: z.string().optional(),
@@ -16,7 +16,7 @@ const registerSchema = z.object({
 
 export async function POST(request: Request) {
   // 5 registrations per hour per IP
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getClientIp(request);
   const { allowed: registerAllowed, retryAfterSec } = rateLimitWithRetry(`register:${ip}`, 5, 60 * 60 * 1000);
   if (!registerAllowed) {
     return NextResponse.json(
@@ -62,9 +62,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to create account right now." },
-      { status: 400 },
-    );
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Unable to create account right now." }, { status: 400 });
   }
 }

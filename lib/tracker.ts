@@ -99,5 +99,9 @@ export async function deleteApplication(userId: string, id: string) {
 export async function updateApplication(userId: string, id: string, data: Record<string, unknown>) {
   const existing = await prisma.application.findFirst({ where: { id, userId } });
   if (!existing) throw new Error("Application not found for this account.");
-  return prisma.application.update({ where: { id }, data });
+  const updateData: Record<string, unknown> = { ...data };
+  if (data.status === "APPLIED" && !existing.dateApplied) {
+    updateData.dateApplied = new Date();
+  }
+  return prisma.application.update({ where: { id }, data: updateData });
 }

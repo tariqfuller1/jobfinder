@@ -127,7 +127,9 @@ export async function getCurrentUserFromRequest(request: Request): Promise<SafeU
       .filter(Boolean)
       .map((part) => {
         const [key, ...rest] = part.split("=");
-        return [key, decodeURIComponent(rest.join("="))] as const;
+        let value = rest.join("=");
+        try { value = decodeURIComponent(value); } catch { /* keep raw value on malformed encoding */ }
+        return [key, value] as const;
       }),
   );
 

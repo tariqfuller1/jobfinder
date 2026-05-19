@@ -129,6 +129,15 @@ function normalizeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+function parseTagsSafe(raw: string | null | undefined): string[] {
+  try {
+    const parsed = JSON.parse(raw || "[]");
+    return Array.isArray(parsed) ? parsed.filter((t): t is string => typeof t === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 type CompanyLookupEntry = { slug: string; category: string; websiteUrl: string | null; careersUrl: string | null };
 let _companyLookupCache: { data: Map<string, CompanyLookupEntry>; expires: number } | null = null;
 const COMPANY_LOOKUP_TTL_MS = 5 * 60_000; // 5 minutes — companies change only during sync
@@ -361,7 +370,7 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
   // Calling inferJobFields again at query time on every job was the single
   // biggest CPU cost per page load.
   const lightEnriched = jobs.map((job: any) => {
-    const tags = JSON.parse(job.tags || "[]") as string[];
+    const tags = parseTagsSafe(job.tags);
     const companyMatch = companyLookup.get(normalizeName(job.company));
 
     const fit = profile
@@ -462,7 +471,7 @@ export async function getJobById(id: string, profile: UserProfile | null = null)
     getCompanyLookup(),
   ]);
   if (!job) return null;
-  const tags = JSON.parse(job.tags || "[]") as string[];
+  const tags = parseTagsSafe(job.tags);
   const companyMatch = companyLookup.get(normalizeName(job.company));
 
   const inferred = inferJobFields(job.title, job.descriptionText);
@@ -680,8 +689,25 @@ export async function syncAllJobs(
       sourceType: { not: null },
       sourceToken: { not: null },
     },
-    select: { sourceType: true, sourceToken: true },
+    select: { sourceType: true, sourceToken: true, name: true },
   });
+
+  // Map "GREENHOUSE:airbnb" → "Airbnb" so adapter tokens don't overwrite
+  // the proper display name set via the company admin or CSV import.
+  const companyNameByToken = new Map<string, string>();
+  for (const c of companySources) {
+    if (c.sourceType && c.sourceToken && c.name) {
+      companyNameByToken.set(`${c.sourceType.toUpperCase()}:${c.sourceToken}`, c.name);
+    }
+  }
+  const withProperName = (sourceType: string, token: string, fetcher: () => Promise<NormalizedJob[]>) => {
+    const properName = companyNameByToken.get(`${sourceType.toUpperCase()}:${token}`);
+    if (!properName) return fetcher;
+    return async () => {
+      const jobs = await fetcher();
+      return jobs.map((j) => ({ ...j, company: properName }));
+    };
+  };
 
   const mergeTokens = (envName: string, sourceType: string) => {
     const values = new Set(parseCsvEnv(envName));
@@ -713,25 +739,25 @@ export async function syncAllJobs(
   const sourceDefs: SourceDef[] = [];
 
   greenhouseTokens.forEach((token) => {
-    sourceDefs.push({ source: `greenhouse:${token}`, fetcher: () => maybeFilter(() => fetchGreenhouseJobs(token)) });
+    sourceDefs.push({ source: `greenhouse:${token}`, fetcher: withProperName("GREENHOUSE", token, () => maybeFilter(() => fetchGreenhouseJobs(token))) });
   });
   leverTokens.forEach((token) => {
-    sourceDefs.push({ source: `lever:${token}`, fetcher: () => maybeFilter(() => fetchLeverJobs(token)) });
+    sourceDefs.push({ source: `lever:${token}`, fetcher: withProperName("LEVER", token, () => maybeFilter(() => fetchLeverJobs(token))) });
   });
   ashbyTokens.forEach((token) => {
-    sourceDefs.push({ source: `ashby:${token}`, fetcher: () => maybeFilter(() => fetchAshbyJobs(token)) });
+    sourceDefs.push({ source: `ashby:${token}`, fetcher: withProperName("ASHBY", token, () => maybeFilter(() => fetchAshbyJobs(token))) });
   });
   if (workableAccounts.length === 0) {
     console.log("[sync] workable — skipped (no WORKABLE_COMPANY_TOKENS configured)");
   }
   workableAccounts.forEach((account) => {
-    sourceDefs.push({ source: `workable:${account}`, fetcher: () => maybeFilter(() => fetchWorkableJobs(account)) });
+    sourceDefs.push({ source: `workable:${account}`, fetcher: withProperName("WORKABLE", account, () => maybeFilter(() => fetchWorkableJobs(account))) });
   });
   if (recruiteeCompanies.length === 0) {
     console.log("[sync] recruitee — skipped (no RECRUITEE_COMPANY_TOKENS configured)");
   }
   recruiteeCompanies.forEach((company) => {
-    sourceDefs.push({ source: `recruitee:${company}`, fetcher: () => maybeFilter(() => fetchRecruiteeJobs(company)) });
+    sourceDefs.push({ source: `recruitee:${company}`, fetcher: withProperName("RECRUITEE", company, () => maybeFilter(() => fetchRecruiteeJobs(company))) });
   });
   if (useRemotive) {
     sourceDefs.push({ source: "remotive", fetcher: () => maybeFilter(() => fetchRemotiveJobs()) });

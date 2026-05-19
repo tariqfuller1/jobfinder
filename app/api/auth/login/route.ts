@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession, setSessionCookie, verifyPassword } from "@/lib/auth";
-import { rateLimitWithRetry } from "@/lib/rate-limit";
+import { rateLimitWithRetry, getClientIp } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
 
 const loginSchema = z.object({
@@ -14,7 +14,7 @@ const loginSchema = z.object({
 
 export async function POST(request: Request) {
   // 10 attempts per 15 minutes per IP
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getClientIp(request);
   const { allowed: loginAllowed, retryAfterSec } = rateLimitWithRetry(`login:${ip}`, 10, 15 * 60 * 1000);
   if (!loginAllowed) {
     return NextResponse.json(
@@ -47,9 +47,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to sign in right now." },
-      { status: 400 },
-    );
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Unable to sign in right now." }, { status: 400 });
   }
 }

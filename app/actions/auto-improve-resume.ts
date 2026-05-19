@@ -78,8 +78,9 @@ Respond NOW with only this JSON starting with {:
   if (start === -1 || end === -1 || end < start) return null;
 
   const parsed = parseJsonSafe(raw.slice(start, end + 1)) as Record<string, unknown>;
-  const newRating = typeof parsed.qualityRating === "string" && VALID_RATINGS.includes(parsed.qualityRating as QualityRating)
-    ? (parsed.qualityRating as QualityRating)
+  const rawRating = typeof parsed.qualityRating === "string" ? parsed.qualityRating.trim() : "";
+  const newRating = VALID_RATINGS.includes(rawRating as QualityRating)
+    ? (rawRating as QualityRating)
     : rating;
 
   return {

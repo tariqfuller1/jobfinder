@@ -26,7 +26,7 @@ function EntryCard({
   onChange: (updated: WorkExperienceEntry) => void;
   onRemove: () => void;
 }) {
-  const bulletsText = entry.bullets.join("\n");
+  const bulletsText = (entry.bullets ?? []).join("\n");
 
   return (
     <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 10 }}>

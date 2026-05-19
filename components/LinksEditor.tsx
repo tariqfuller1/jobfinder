@@ -3,6 +3,10 @@
 import { useState } from "react";
 import type { ProfileLink } from "@/lib/profile";
 
+function safeHref(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : "#";
+}
+
 const PRESETS = [
   { label: "LinkedIn", placeholder: "https://linkedin.com/in/yourname" },
   { label: "GitHub", placeholder: "https://github.com/yourname" },
@@ -124,7 +128,7 @@ export function LinksEditor({ initialLinks }: { initialLinks: ProfileLink[] }) {
                     {inResume ? "✓ In resume" : "In resume"}
                   </button>
                   <a
-                    href={link.url}
+                    href={safeHref(link.url)}
                     target="_blank"
                     rel="noreferrer"
                     className="button secondary"

@@ -154,8 +154,8 @@ export function JobCard({ job, userId, trackerStatus }: { job: JobCardData; user
       {/* ── Row 5: fit reasons (skill matches) ── */}
       {job.fitReasons.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-          {job.fitReasons.map((r) => (
-            <span key={r} style={{ fontSize: 11, color: "#a1a1aa", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 6, padding: "2px 8px" }}>
+          {job.fitReasons.map((r, i) => (
+            <span key={i} style={{ fontSize: 11, color: "#a1a1aa", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 6, padding: "2px 8px" }}>
               {r}
             </span>
           ))}

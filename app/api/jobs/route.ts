@@ -3,7 +3,7 @@ import { z } from "zod";
 import { listJobs } from "@/lib/jobs";
 import { prisma } from "@/lib/db";
 import { getCurrentUserFromRequest } from "@/lib/auth";
-import { rateLimitWithRetry } from "@/lib/rate-limit";
+import { rateLimitWithRetry, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -13,25 +13,31 @@ export async function GET(request: NextRequest) {
     return v ? v.split(",").filter(Boolean) : undefined;
   };
 
-  const data = await listJobs({
-    q: searchParams.get("q") ?? undefined,
-    workplaceTypes: parseList("workplaceTypes"),
-    employmentTypes: parseList("employmentTypes"),
-    experienceLevels: parseList("experienceLevels"),
-    departments: parseList("departments"),
-    location: searchParams.get("location") ?? undefined,
-    states: parseList("states"),
-    country: searchParams.get("country") ?? undefined,
-    sort: (searchParams.get("sort") as "recent" | "oldest" | "fit" | "salary") || undefined,
-    source: searchParams.get("source") ?? undefined,
-    company: searchParams.get("company") ?? undefined,
-    recommendedOnly: searchParams.get("recommendedOnly") === "true",
-    page: Number(searchParams.get("page") ?? "1"),
-    limit: Math.min(Number(searchParams.get("limit") ?? "20"), 100),
-    since: searchParams.get("since") ?? undefined,
-  });
+  const sinceRaw = searchParams.get("since");
+  const since = sinceRaw && !isNaN(new Date(sinceRaw).getTime()) ? sinceRaw : undefined;
 
-  return NextResponse.json(data);
+  try {
+    const data = await listJobs({
+      q: searchParams.get("q") ?? undefined,
+      workplaceTypes: parseList("workplaceTypes"),
+      employmentTypes: parseList("employmentTypes"),
+      experienceLevels: parseList("experienceLevels"),
+      departments: parseList("departments"),
+      location: searchParams.get("location") ?? undefined,
+      states: parseList("states"),
+      country: searchParams.get("country") ?? undefined,
+      sort: (searchParams.get("sort") as "recent" | "oldest" | "fit" | "salary") || undefined,
+      source: searchParams.get("source") ?? undefined,
+      company: searchParams.get("company") ?? undefined,
+      recommendedOnly: searchParams.get("recommendedOnly") === "true",
+      page: Number(searchParams.get("page") ?? "1"),
+      limit: Math.min(Number(searchParams.get("limit") ?? "20"), 100),
+      since,
+    });
+    return NextResponse.json(data);
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch jobs." }, { status: 500 });
+  }
 }
 
 const isHttpUrl = (v: string) => /^https?:\/\//i.test(v);
@@ -48,7 +54,7 @@ const createSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getClientIp(request);
   const { allowed } = rateLimitWithRetry(`jobs-create:${ip}`, 20, 60 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });

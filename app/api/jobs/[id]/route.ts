@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getJobById, updateJob } from "@/lib/jobs";
 import { getCurrentUserFromRequest } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { rateLimitWithRetry } from "@/lib/rate-limit";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,6 +16,23 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!user) return NextResponse.json({ error: "Sign in to edit jobs." }, { status: 401 });
 
   const { id } = await params;
+
+  // Check job ownership before accepting edits
+  const jobMeta = await prisma.job.findUnique({ where: { id }, select: { source: true, externalId: true } });
+  if (!jobMeta) return NextResponse.json({ error: "Job not found." }, { status: 404 });
+
+  if (jobMeta.source === "manual") {
+    // Manual jobs are owned by the user whose ID is embedded in the externalId
+    if (!jobMeta.externalId.startsWith(`manual-${user.id}-`)) {
+      return NextResponse.json({ error: "You can only edit jobs you added manually." }, { status: 403 });
+    }
+  } else {
+    // External jobs: allow authenticated classification corrections but rate-limit to prevent bulk abuse
+    const rl = rateLimitWithRetry(`job-classify:${user.id}`, 30, 60 * 60 * 1000);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: "Too many job corrections. Try again later." }, { status: 429 });
+    }
+  }
 
   let body: unknown;
   try {

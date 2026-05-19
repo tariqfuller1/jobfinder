@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { createApplication, createManualApplication, listApplications } from "@/lib/tracker";
 import { getCurrentUserFromRequest } from "@/lib/auth";
-import { rateLimitWithRetry } from "@/lib/rate-limit";
+import { rateLimitWithRetry, getClientIp } from "@/lib/rate-limit";
 
 const jobIdSchema = z.object({ jobId: z.string().min(1) });
 
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getClientIp(request);
   const { allowed } = rateLimitWithRetry(`tracker-create:${ip}`, 60, 60 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
@@ -53,7 +53,12 @@ export async function POST(request: Request) {
     const data = manualSchema.parse(body);
     const application = await createManualApplication(user.id, data);
     return NextResponse.json(application, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    }
+    const message = error instanceof Error ? error.message : "Failed to save application.";
+    const isNotFound = message.toLowerCase().includes("not found");
+    return NextResponse.json({ error: message }, { status: isNotFound ? 404 : 500 });
   }
 }

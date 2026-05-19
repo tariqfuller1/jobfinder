@@ -39,6 +39,7 @@ Rewrite the ${label} incorporating the requested change. Keep the same general s
     });
 
     const draft = completion.choices[0]?.message?.content?.trim() ?? "";
+    if (!draft) return { ok: false, error: "AI returned an empty response. Try again." };
     return { ok: true, draft };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

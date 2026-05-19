@@ -4,6 +4,10 @@ import { useState } from "react";
 
 type Link = { label: string; url: string };
 
+function safeHref(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : "#";
+}
+
 function CopyBtn({ url }: { url: string }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -38,7 +42,7 @@ export function QuickLinks({ links }: { links: Link[] }) {
       {links.map((link, i) => (
         <div key={i} style={{ display: "flex", height: 40 }}>
           <a
-            href={link.url}
+            href={safeHref(link.url)}
             target="_blank"
             rel="noreferrer"
             className="button secondary"

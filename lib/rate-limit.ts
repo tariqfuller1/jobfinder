@@ -1,3 +1,16 @@
+/**
+ * Returns the real client IP from a request.
+ * Prefers CF-Connecting-IP (set by Cloudflare infrastructure, not spoofable by the client)
+ * over X-Forwarded-For (user-controlled if there is no trusted upstream proxy).
+ */
+export function getClientIp(request: Pick<Request, "headers">): string {
+  const cf = request.headers.get("cf-connecting-ip");
+  if (cf) return cf.split(",")[0].trim();
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  return "unknown";
+}
+
 // Simple in-memory rate limiter — resets on server restart.
 // Good enough for Railway's persistent single-instance Node.js server.
 const store = new Map<string, { count: number; resetAt: number }>();

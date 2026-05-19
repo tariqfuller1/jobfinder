@@ -37,8 +37,8 @@ export function inferExperienceLevel(input: string | null | undefined): Normaliz
   const value = `${input ?? ""}`.toLowerCase();
   if (value.includes("intern")) return "INTERN";
   if (value.includes("junior") || value.includes("entry") || value.includes("new grad")) return "ENTRY";
-  if (value.includes("senior") || value.includes("staff") || value.includes("principal")) return "SENIOR";
-  if (value.includes("lead") || value.includes("manager")) return "LEAD";
+  if (value.includes("senior") || value.includes("principal")) return "SENIOR";
+  if (value.includes("staff") || value.includes("lead") || value.includes("manager")) return "LEAD";
   if (value.includes("mid")) return "MID";
   return "UNKNOWN";
 }

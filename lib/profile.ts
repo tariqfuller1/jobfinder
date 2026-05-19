@@ -193,13 +193,20 @@ function parseWorkExperience(value?: string | null): WorkExperienceEntry[] {
   try {
     const parsed = JSON.parse(value);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item): item is WorkExperienceEntry =>
-        item && typeof item === "object" &&
-        typeof item.id === "string" &&
-        typeof item.company === "string" &&
-        typeof item.title === "string",
-    );
+    return parsed
+      .filter(
+        (item): item is WorkExperienceEntry =>
+          item && typeof item === "object" &&
+          typeof item.id === "string" &&
+          typeof item.company === "string" &&
+          typeof item.title === "string",
+      )
+      .map((item) => ({
+        ...item,
+        bullets: Array.isArray(item.bullets)
+          ? item.bullets.filter((b: unknown): b is string => typeof b === "string")
+          : [],
+      }));
   } catch {
     return [];
   }
@@ -210,12 +217,22 @@ function parseProjects(value?: string | null): ProjectEntry[] {
   try {
     const parsed = JSON.parse(value);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item): item is ProjectEntry =>
-        item && typeof item === "object" &&
-        typeof item.id === "string" &&
-        typeof item.name === "string",
-    );
+    return parsed
+      .filter(
+        (item): item is ProjectEntry =>
+          item && typeof item === "object" &&
+          typeof item.id === "string" &&
+          typeof item.name === "string",
+      )
+      .map((item) => ({
+        ...item,
+        technologies: Array.isArray(item.technologies)
+          ? item.technologies.filter((t: unknown): t is string => typeof t === "string")
+          : [],
+        bullets: Array.isArray(item.bullets)
+          ? item.bullets.filter((b: unknown): b is string => typeof b === "string")
+          : [],
+      }));
   } catch {
     return [];
   }

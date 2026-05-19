@@ -1,4 +1,4 @@
-import { inferEmploymentType, inferExperienceLevel, inferWorkplaceType, parseTags } from "@/lib/normalize";
+import { inferEmploymentType, inferExperienceLevel, inferWorkplaceType, parseTags, stripHtml } from "@/lib/normalize";
 import type { NormalizedJob } from "@/types/jobs";
 
 const BASE_URL = "https://boards-api.greenhouse.io/v1/boards";
@@ -7,6 +7,7 @@ type GreenhouseResponse = {
   jobs: Array<{
     id: number;
     title: string;
+    content?: string;
     location?: { name?: string };
     absolute_url: string;
     updated_at?: string;
@@ -46,8 +47,8 @@ export async function fetchGreenhouseJobs(companyToken: string): Promise<Normali
       workplaceType: workplace,
       employmentType: employment,
       experienceLevel: experience,
-      descriptionHtml: null,
-      descriptionText: null,
+      descriptionHtml: job.content ?? null,
+      descriptionText: job.content ? stripHtml(job.content) : null,
       postedAt: job.updated_at ? new Date(job.updated_at) : null,
       tags: parseTags(job.departments?.map((d) => d.name).join(", "), job.offices?.map((o) => o.name).join(", "), metadataText),
     } satisfies NormalizedJob;
