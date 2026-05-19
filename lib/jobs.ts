@@ -509,8 +509,15 @@ export async function getJobById(id: string, profile: UserProfile | null = null)
     tags,
   });
 
+  // If the DB has HTML in descriptionText (from older syncs before stripHtml was applied),
+  // promote it to descriptionHtml so the page renders it correctly.
+  const descriptionHtml =
+    job.descriptionHtml ??
+    (job.descriptionText && /[<>]/.test(job.descriptionText) ? job.descriptionText : null);
+
   return {
     ...job,
+    descriptionHtml,
     workplaceType,
     employmentType,
     experienceLevel,
