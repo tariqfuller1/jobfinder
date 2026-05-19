@@ -50,7 +50,7 @@ export async function fetchGreenhouseJobs(companyToken: string): Promise<Normali
       descriptionHtml: job.content ?? null,
       descriptionText: job.content ? stripHtml(job.content) : null,
       postedAt: job.updated_at ? new Date(job.updated_at) : null,
-      tags: parseTags(job.departments?.map((d) => d.name).join(", "), job.offices?.map((o) => o.name).join(", "), metadataText),
+      tags: parseTags(job.departments?.map((d) => d.name).join(", ")),
     } satisfies NormalizedJob;
   });
 }

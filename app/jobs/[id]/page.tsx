@@ -179,8 +179,8 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
 
           {/* Description card */}
           <div className="card" style={{ padding: "18px 22px" }}>
-            {job.descriptionHtml ? (
-              <div className="job-body" dangerouslySetInnerHTML={{ __html: sanitizeJobHtml(job.descriptionHtml) }} />
+            {(job.descriptionHtml || (job.descriptionText && /[<>]/.test(job.descriptionText))) ? (
+              <div className="job-body" dangerouslySetInnerHTML={{ __html: sanitizeJobHtml(job.descriptionHtml ?? job.descriptionText ?? "") }} />
             ) : job.descriptionText ? (
               <div className="job-body">
                 {job.descriptionText.split(/\n{2,}/).map((para, i) => (
