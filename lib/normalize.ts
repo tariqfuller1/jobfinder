@@ -3,13 +3,14 @@ import { type NormalizedEmploymentType, type NormalizedExperienceLevel, type Nor
 export function stripHtml(html: string | null | undefined): string | null {
   if (!html) return null;
   const text = html
-    .replace(/<[^>]+>/g, " ")
+    .replace(/<[^>]+>/g, " ")   // strip literal tags
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
+    .replace(/<[^>]+>/g, " ")   // strip tags revealed by entity-decoding
     .replace(/\s+/g, " ")
     .trim();
   return text || null;

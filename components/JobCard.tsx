@@ -2,6 +2,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { SaveToTracker } from "@/components/SaveToTracker";
 import { getRoleCategory } from "@/lib/classify";
+import { stripHtml } from "@/lib/normalize";
 
 export type JobCardData = {
   id: string;
@@ -163,12 +164,15 @@ export function JobCard({ job, userId, trackerStatus }: { job: JobCardData; user
       )}
 
       {/* ── Row 6: description snippet ── */}
-      {job.descriptionText && (
-        <p style={{ margin: 0, fontSize: 13, color: "#8b8b95", lineHeight: 1.55,
-          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" } as React.CSSProperties}>
-          {job.descriptionText.slice(0, 280)}
-        </p>
-      )}
+      {job.descriptionText && (() => {
+        const snippet = (stripHtml(job.descriptionText) ?? "").trim().slice(0, 280);
+        return snippet ? (
+          <p style={{ margin: 0, fontSize: 13, color: "#8b8b95", lineHeight: 1.55,
+            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" } as React.CSSProperties}>
+            {snippet}
+          </p>
+        ) : null;
+      })()}
 
       {/* ── Row 7: actions ── */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 2 }}>
