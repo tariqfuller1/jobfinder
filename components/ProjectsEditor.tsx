@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { saveProjects } from "@/app/actions/save-profile-structured";
 import { parseResumeToStructured } from "@/app/actions/parse-resume";
 import type { ProjectEntry } from "@/lib/profile";
@@ -24,11 +24,17 @@ function ProjectCard({
   onChange: (updated: ProjectEntry) => void;
   onRemove: () => void;
 }) {
-  const techText = project.technologies.join(", ");
+  const [techText, setTechText] = useState(() => project.technologies.join(", "));
   const bulletsText = project.bullets.join("\n");
+  const included = project.includedInResume !== false;
+
+  // Sync local text when technologies change externally (e.g. extract from resume)
+  useEffect(() => {
+    setTechText(project.technologies.join(", "));
+  }, [project.technologies]);
 
   return (
-    <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 10 }}>
+    <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 10, opacity: included ? 1 : 0.6, transition: "opacity 0.15s" }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={{ display: "grid", gap: 4, fontSize: 13 }}>
           Project name
@@ -38,12 +44,21 @@ function ProjectCard({
           URL (optional)
           <input value={project.url ?? ""} onChange={(e) => onChange({ ...project, url: e.target.value })} placeholder="https://github.com/..." />
         </label>
+        <label style={{ display: "grid", gap: 4, fontSize: 13 }}>
+          Start date
+          <input value={project.startDate ?? ""} onChange={(e) => onChange({ ...project, startDate: e.target.value })} placeholder="Jan 2023" />
+        </label>
+        <label style={{ display: "grid", gap: 4, fontSize: 13 }}>
+          End date
+          <input value={project.endDate ?? ""} onChange={(e) => onChange({ ...project, endDate: e.target.value })} placeholder="Present" />
+        </label>
       </div>
       <label style={{ display: "grid", gap: 4, fontSize: 13 }}>
         Technologies (comma-separated)
         <input
           value={techText}
-          onChange={(e) => onChange({ ...project, technologies: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })}
+          onChange={(e) => setTechText(e.target.value)}
+          onBlur={() => onChange({ ...project, technologies: techText.split(",").map((t) => t.trim()).filter(Boolean) })}
           placeholder="React, Node.js, PostgreSQL"
         />
       </label>
@@ -57,9 +72,31 @@ function ProjectCard({
           style={{ resize: "vertical", fontSize: 13 }}
         />
       </label>
-      <button type="button" className="button secondary" onClick={onRemove} style={{ fontSize: 12, color: "#f87171", borderColor: "rgba(248,113,113,0.3)" }}>
-        Remove project
-      </button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <button
+          type="button"
+          onClick={() => onChange({ ...project, includedInResume: !included })}
+          style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+        >
+          <span style={{
+            width: 34, height: 18, borderRadius: 999, flexShrink: 0,
+            background: included ? "#4ade80" : "#374151",
+            position: "relative", display: "inline-block", transition: "background 0.15s",
+          }}>
+            <span style={{
+              position: "absolute", top: 2, left: included ? 16 : 2,
+              width: 14, height: 14, borderRadius: "50%",
+              background: "#fff", transition: "left 0.15s",
+            }} />
+          </span>
+          <span style={{ fontSize: 12, color: included ? "#4ade80" : "#6b7280" }}>
+            {included ? "Include in resume" : "Excluded from resume"}
+          </span>
+        </button>
+        <button type="button" className="button secondary" onClick={onRemove} style={{ fontSize: 12, color: "#f87171", borderColor: "rgba(248,113,113,0.3)" }}>
+          Remove project
+        </button>
+      </div>
     </div>
   );
 }

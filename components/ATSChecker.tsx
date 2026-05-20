@@ -230,6 +230,9 @@ export function ATSChecker({
   stacks,
   educationEntries,
   name,
+  email,
+  phone,
+  location,
   safeFileName,
   profileLinks,
 }: {
@@ -243,6 +246,9 @@ export function ATSChecker({
   stacks: string[];
   educationEntries: string[];
   name: string;
+  email?: string;
+  phone?: string;
+  location?: string;
   safeFileName: string;
   profileLinks: ProfileLink[];
 }) {
@@ -272,7 +278,7 @@ export function ATSChecker({
     setError("");
     setImproveAttempts(0);
     startCheck(async () => {
-      const res = await runATSCheck(jobTitle, jobCompany, jobDescriptionText, workExperience, projects, skills, stacks, educationEntries, name, resumeText, resumeLinks);
+      const res = await runATSCheck(jobTitle, jobCompany, jobDescriptionText, workExperience, projects, skills, stacks, educationEntries, name, resumeText, resumeLinks, email, phone, location);
       if (!res.ok) { setError(res.error); return; }
 
       setResult(res);

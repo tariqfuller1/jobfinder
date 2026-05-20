@@ -123,7 +123,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
             summary={profile?.summary ?? ""}
             skills={profile?.skills ?? []}
             stacks={profile?.stacks ?? []}
-            workExperience={profile?.workExperience ?? []}
+            workExperience={(profile?.workExperience ?? []).filter((e) => e.includedInResume !== false)}
           />
         </div>
 

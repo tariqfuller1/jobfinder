@@ -83,7 +83,7 @@ export default async function JobOutreachPage({ params }: { params: Promise<{ jo
             summary={profile.summary ?? ""}
             skills={profile.skills ?? []}
             stacks={profile.stacks ?? []}
-            workExperience={profile.workExperience ?? []}
+            workExperience={(profile.workExperience ?? []).filter((e) => e.includedInResume !== false)}
           />
         </div>
 

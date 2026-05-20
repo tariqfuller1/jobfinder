@@ -29,7 +29,8 @@ function formatExperience(entries: WorkExperienceEntry[]): string {
 
 function formatProjects(entries: ProjectEntry[]): string {
   return entries.map((p) => {
-    const header = `${p.name}${p.technologies.length ? ` | ${p.technologies.join(", ")}` : ""}${p.url ? ` | ${p.url}` : ""}`;
+    const datePart = p.startDate ? ` | ${p.startDate}${p.endDate ? ` – ${p.endDate}` : ""}` : "";
+    const header = `${p.name}${p.technologies.length ? ` | ${p.technologies.join(", ")}` : ""}${datePart}${p.url ? ` | ${p.url}` : ""}`;
     const bullets = p.bullets.filter(Boolean).map((b) => `• ${b}`).join("\n");
     return `${header}\n${bullets}`;
   }).join("\n\n");
@@ -67,6 +68,9 @@ export async function runATSCheck(
   name: string,
   resumeText: string,
   profileLinks: { label: string; url: string }[],
+  email?: string,
+  phone?: string,
+  location?: string,
 ): Promise<ATSCheckResult> {
   if (!await getCurrentUser()) return { ok: false, error: "Sign in to use AI features." };
 
@@ -105,9 +109,12 @@ export async function runATSCheck(
       ? `\nRAW RESUME (use this to extract experience if structured sections are empty):\n${resumeText.slice(0, 2500)}`
       : "";
 
+    const contactParts = [email, phone, location].filter(Boolean);
+    const contactLine = contactParts.length > 0 ? contactParts.join(" | ") : "";
     const linksSection = profileLinks.length > 0
       ? `Links: ${profileLinks.map((l) => `${l.label}: ${l.url}`).join(" | ")}`
       : "";
+    const contactSection = [contactLine, linksSection].filter(Boolean).join(" | ");
 
     const prompt = `You are an expert ATS resume writer and career coach. Generate the best possible ATS-optimized resume for this specific job.
 
@@ -119,7 +126,7 @@ ${jobDescriptionText.slice(0, 2000)}
 
 <candidate_profile>
 Name: ${name || "Candidate"}
-${linksSection}
+${contactSection ? `Contact: ${contactSection}` : ""}
 ${skillsSection}
 
 ${experienceSection}
@@ -145,7 +152,7 @@ YOUR TASKS:
 
 --- RESUME FORMAT (plain text, NO tables, NO columns, NO special characters) ---
 [FULL NAME]
-[Email] | [Phone] | [Location]${profileLinks.length > 0 ? ` | ${profileLinks.map((l) => `${l.label}: ${l.url}`).join(" | ")}` : ""}
+${contactSection || "[contact info]"}
 
 PROFESSIONAL SUMMARY
 [2-3 sentences using job-relevant keywords, highlighting strongest match to this role]

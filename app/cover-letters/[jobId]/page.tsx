@@ -60,7 +60,7 @@ export default async function CoverLetterDetailPage({ params }: { params: Promis
             summary={profile.summary ?? ""}
             skills={profile.skills ?? []}
             stacks={profile.stacks ?? []}
-            workExperience={profile.workExperience ?? []}
+            workExperience={(profile.workExperience ?? []).filter((e) => e.includedInResume !== false)}
             educationEntries={profile.educationEntries ?? []}
             profileLinks={(profile.links ?? []).filter((l) => l.includeInResume !== false)}
           />

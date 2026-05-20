@@ -28,8 +28,10 @@ function EntryCard({
 }) {
   const bulletsText = (entry.bullets ?? []).join("\n");
 
+  const included = entry.includedInResume !== false;
+
   return (
-    <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 10 }}>
+    <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 10, opacity: included ? 1 : 0.6, transition: "opacity 0.15s" }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={{ display: "grid", gap: 4, fontSize: 13 }}>
           Company
@@ -62,9 +64,31 @@ function EntryCard({
           style={{ resize: "vertical", fontSize: 13 }}
         />
       </label>
-      <button type="button" className="button secondary" onClick={onRemove} style={{ fontSize: 12, color: "#f87171", borderColor: "rgba(248,113,113,0.3)" }}>
-        Remove entry
-      </button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <button
+          type="button"
+          onClick={() => onChange({ ...entry, includedInResume: !included })}
+          style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+        >
+          <span style={{
+            width: 34, height: 18, borderRadius: 999, flexShrink: 0,
+            background: included ? "#4ade80" : "#374151",
+            position: "relative", display: "inline-block", transition: "background 0.15s",
+          }}>
+            <span style={{
+              position: "absolute", top: 2, left: included ? 16 : 2,
+              width: 14, height: 14, borderRadius: "50%",
+              background: "#fff", transition: "left 0.15s",
+            }} />
+          </span>
+          <span style={{ fontSize: 12, color: included ? "#4ade80" : "#6b7280" }}>
+            {included ? "Include in resume" : "Excluded from resume"}
+          </span>
+        </button>
+        <button type="button" className="button secondary" onClick={onRemove} style={{ fontSize: 12, color: "#f87171", borderColor: "rgba(248,113,113,0.3)" }}>
+          Remove entry
+        </button>
+      </div>
     </div>
   );
 }

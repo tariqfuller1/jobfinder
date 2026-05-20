@@ -44,12 +44,15 @@ export default async function ATSCheckPage({ params }: { params: Promise<{ jobId
         jobCompany={job.company}
         jobDescriptionText={job.descriptionText ?? ""}
         resumeText={profile.resumeText ?? ""}
-        workExperience={profile.workExperience}
-        projects={profile.projects}
+        workExperience={profile.workExperience.filter((e) => e.includedInResume !== false)}
+        projects={profile.projects.filter((p) => p.includedInResume !== false)}
         skills={profile.skills}
         stacks={profile.stacks}
         educationEntries={profile.educationEntries}
         name={profile.name}
+        email={profile.email}
+        phone={profile.phone}
+        location={profile.location}
         safeFileName={`${safeCompany}-${safeTitle}-resume`}
         profileLinks={profile.links}
       />

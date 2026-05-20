@@ -18,6 +18,7 @@ export type WorkExperienceEntry = {
   startDate: string;
   endDate: string;
   bullets: string[];
+  includedInResume?: boolean;
 };
 
 export type ProjectEntry = {
@@ -26,6 +27,9 @@ export type ProjectEntry = {
   url?: string;
   technologies: string[];
   bullets: string[];
+  startDate?: string;
+  endDate?: string;
+  includedInResume?: boolean;
 };
 
 export type UserProfile = {
