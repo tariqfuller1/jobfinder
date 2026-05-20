@@ -41,6 +41,7 @@ Rewrite the resume to directly address this feedback and improve competitiveness
 
 Rules:
 - Use ONLY the candidate's real experience — never fabricate skills or jobs
+- Keep ALL sections present (PROJECTS, WORK EXPERIENCE, etc.) — never remove any section
 - Focus the rewrite on the specific weakness in the feedback
 - Strengthen the professional summary to better match the role
 - Make bullets more impactful and keyword-rich for this job

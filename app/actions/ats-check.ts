@@ -137,12 +137,14 @@ CORE SKILLS
 [comma-separated list of skills optimized for this job's ATS keywords — include matched AND relevant missing ones the candidate can honestly claim]
 
 WORK EXPERIENCE
+[Repeat for EVERY work experience entry provided — do not omit any]
 [Company] | [Title] | [Location] | [Start] – [End]
 • [Action verb + accomplishment + result/metric — work in relevant keywords naturally]
 • [Another bullet]
 
 PROJECTS
-[Project Name] | [Technologies]
+[Repeat for EVERY project provided — do not omit any]
+[Project Name] | [Technologies] | [Start – End if provided]
 • [What it does, impact, technologies used]
 
 EDUCATION
@@ -151,11 +153,13 @@ EDUCATION
 
 RULES:
 - Use ONLY the candidate's real experience — do not fabricate jobs, titles, or skills
+- Include ALL work experience entries and ALL projects from the candidate profile — never drop any
 - Naturally work in missing keywords where they genuinely fit the candidate's background
 - Use strong action verbs: Engineered, Built, Designed, Optimized, Led, Delivered, Implemented
 - Add metrics and numbers where the experience implies them (e.g. "team of N", "reduced by X%")
 - Keep bullets concise and impactful — one strong bullet beats three weak ones
 - If structured experience is empty, extract and restructure from the raw resume
+- Omit a section entirely only if no data was provided for it (e.g. no projects = no PROJECTS section)
 
 Return JSON:
 {
