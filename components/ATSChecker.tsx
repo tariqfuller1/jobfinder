@@ -263,8 +263,26 @@ export function ATSChecker({
   const [copied, setCopied] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("classic");
   const [showPreview, setShowPreview] = useState(false);
+  const [showSelection, setShowSelection] = useState(false);
   const [isChecking, startCheck] = useTransition();
   const [isRefining, startRefine] = useTransition();
+
+  const [selectedWorkIds, setSelectedWorkIds] = useState<Set<string>>(
+    () => new Set(workExperience.filter((e) => e.includedInResume !== false).map((e) => e.id)),
+  );
+  const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(
+    () => new Set(projects.filter((p) => p.includedInResume !== false).map((p) => p.id)),
+  );
+
+  const selectedWork = workExperience.filter((e) => selectedWorkIds.has(e.id));
+  const selectedProjects = projects.filter((p) => selectedProjectIds.has(p.id));
+
+  function toggleWork(id: string) {
+    setSelectedWorkIds((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  }
+  function toggleProject(id: string) {
+    setSelectedProjectIds((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  }
 
   const previewHtml = useMemo(
     () => editedResume ? buildResumeHTML(editedResume, jobTitle, jobCompany, selectedTemplate, false) : "",
@@ -278,7 +296,7 @@ export function ATSChecker({
     setError("");
     setImproveAttempts(0);
     startCheck(async () => {
-      const res = await runATSCheck(jobTitle, jobCompany, jobDescriptionText, workExperience, projects, skills, stacks, educationEntries, name, resumeText, resumeLinks, email, phone, location);
+      const res = await runATSCheck(jobTitle, jobCompany, jobDescriptionText, selectedWork, selectedProjects, skills, stacks, educationEntries, name, resumeText, resumeLinks, email, phone, location);
       if (!res.ok) { setError(res.error); return; }
 
       setResult(res);
@@ -339,16 +357,63 @@ export function ATSChecker({
   return (
     <div style={{ display: "grid", gap: 14 }}>
       {!result && (
-        <div className="card" style={{ padding: "20px", display: "grid", gap: 12, textAlign: "center" }}>
-          <div style={{ fontSize: 13, color: "#a1a1aa" }}>
+        <div className="card" style={{ padding: "20px", display: "grid", gap: 14 }}>
+          <p style={{ margin: 0, fontSize: 13, color: "#a1a1aa", textAlign: "center" }}>
             Groq AI scores your resume against the job description, rewrites it with missing keywords, and automatically improves it until it reaches Good or Excellent quality.
-          </div>
+          </p>
+
+          {/* Entry selection */}
+          {(workExperience.length > 0 || projects.length > 0) && (
+            <div style={{ display: "grid", gap: 10 }}>
+              {workExperience.length > 0 && (
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Work experience to include</div>
+                  {workExperience.map((e) => {
+                    const on = selectedWorkIds.has(e.id);
+                    return (
+                      <button key={e.id} type="button" onClick={() => toggleWork(e.id)}
+                        style={{ display: "flex", alignItems: "center", gap: 8, background: on ? "rgba(99,102,241,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${on ? "rgba(99,102,241,0.35)" : "rgba(255,255,255,0.08)"}`, borderRadius: 6, padding: "8px 12px", cursor: "pointer", textAlign: "left", transition: "all 0.12s" }}>
+                        <span style={{ width: 32, height: 17, borderRadius: 999, flexShrink: 0, background: on ? "#6366f1" : "#374151", position: "relative", display: "inline-block", transition: "background 0.12s" }}>
+                          <span style={{ position: "absolute", top: 2, left: on ? 15 : 2, width: 13, height: 13, borderRadius: "50%", background: "#fff", transition: "left 0.12s" }} />
+                        </span>
+                        <div style={{ display: "grid", gap: 1 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: on ? "#d4d4d8" : "#6b7280" }}>{e.title} at {e.company}</span>
+                          {(e.startDate || e.endDate) && <span style={{ fontSize: 11, color: "#6b7280" }}>{e.startDate}{e.endDate ? ` – ${e.endDate}` : ""}</span>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {projects.length > 0 && (
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Projects to include</div>
+                  {projects.map((p) => {
+                    const on = selectedProjectIds.has(p.id);
+                    return (
+                      <button key={p.id} type="button" onClick={() => toggleProject(p.id)}
+                        style={{ display: "flex", alignItems: "center", gap: 8, background: on ? "rgba(99,102,241,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${on ? "rgba(99,102,241,0.35)" : "rgba(255,255,255,0.08)"}`, borderRadius: 6, padding: "8px 12px", cursor: "pointer", textAlign: "left", transition: "all 0.12s" }}>
+                        <span style={{ width: 32, height: 17, borderRadius: 999, flexShrink: 0, background: on ? "#6366f1" : "#374151", position: "relative", display: "inline-block", transition: "background 0.12s" }}>
+                          <span style={{ position: "absolute", top: 2, left: on ? 15 : 2, width: 13, height: 13, borderRadius: "50%", background: "#fff", transition: "left 0.12s" }} />
+                        </span>
+                        <div style={{ display: "grid", gap: 1 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: on ? "#d4d4d8" : "#6b7280" }}>{p.name}</span>
+                          {p.technologies.length > 0 && <span style={{ fontSize: 11, color: "#6b7280" }}>{p.technologies.slice(0, 4).join(", ")}{p.technologies.length > 4 ? "…" : ""}</span>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {resumeLinks.length > 0 && (
-            <div style={{ fontSize: 12, color: "#6b7280" }}>
+            <div style={{ fontSize: 12, color: "#6b7280", textAlign: "center" }}>
               Links included: {resumeLinks.map((l) => l.label).join(", ")} — <a href="/profile" style={{ color: "#9ca3af", textDecoration: "underline" }}>manage in profile</a>
             </div>
           )}
-          {error && <p style={{ margin: 0, fontSize: 13, color: "#f87171" }}>{error}</p>}
+          {error && <p style={{ margin: 0, fontSize: 13, color: "#f87171", textAlign: "center" }}>{error}</p>}
           <button
             className="button"
             onClick={handleCheck}
@@ -382,14 +447,63 @@ export function ATSChecker({
                       {qualityFeedback}
                     </p>
                   )}
-                  <button
-                    className="button secondary"
-                    onClick={handleCheck}
-                    disabled={isChecking}
-                    style={{ fontSize: 12, marginTop: 2 }}
-                  >
-                    {isChecking ? "Re-analyzing…" : "Re-run check"}
-                  </button>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
+                    <button
+                      className="button secondary"
+                      onClick={handleCheck}
+                      disabled={isChecking}
+                      style={{ fontSize: 12 }}
+                    >
+                      {isChecking ? "Re-analyzing…" : "Re-run check"}
+                    </button>
+                    {(workExperience.length > 0 || projects.length > 0) && (
+                      <button
+                        className="button secondary"
+                        onClick={() => setShowSelection((v) => !v)}
+                        style={{ fontSize: 12 }}
+                      >
+                        {showSelection ? "Hide selection" : "Change selection"}
+                      </button>
+                    )}
+                  </div>
+                  {showSelection && (
+                    <div style={{ display: "grid", gap: 8, marginTop: 4 }}>
+                      {workExperience.length > 0 && (
+                        <div style={{ display: "grid", gap: 4 }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>Work experience</div>
+                          {workExperience.map((e) => {
+                            const on = selectedWorkIds.has(e.id);
+                            return (
+                              <button key={e.id} type="button" onClick={() => toggleWork(e.id)}
+                                style={{ display: "flex", alignItems: "center", gap: 7, background: on ? "rgba(99,102,241,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${on ? "rgba(99,102,241,0.35)" : "rgba(255,255,255,0.08)"}`, borderRadius: 5, padding: "6px 10px", cursor: "pointer", textAlign: "left" }}>
+                                <span style={{ width: 28, height: 15, borderRadius: 999, flexShrink: 0, background: on ? "#6366f1" : "#374151", position: "relative", display: "inline-block" }}>
+                                  <span style={{ position: "absolute", top: 2, left: on ? 13 : 2, width: 11, height: 11, borderRadius: "50%", background: "#fff", transition: "left 0.12s" }} />
+                                </span>
+                                <span style={{ fontSize: 12, color: on ? "#d4d4d8" : "#6b7280" }}>{e.title} at {e.company}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {projects.length > 0 && (
+                        <div style={{ display: "grid", gap: 4 }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>Projects</div>
+                          {projects.map((p) => {
+                            const on = selectedProjectIds.has(p.id);
+                            return (
+                              <button key={p.id} type="button" onClick={() => toggleProject(p.id)}
+                                style={{ display: "flex", alignItems: "center", gap: 7, background: on ? "rgba(99,102,241,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${on ? "rgba(99,102,241,0.35)" : "rgba(255,255,255,0.08)"}`, borderRadius: 5, padding: "6px 10px", cursor: "pointer", textAlign: "left" }}>
+                                <span style={{ width: 28, height: 15, borderRadius: 999, flexShrink: 0, background: on ? "#6366f1" : "#374151", position: "relative", display: "inline-block" }}>
+                                  <span style={{ position: "absolute", top: 2, left: on ? 13 : 2, width: 11, height: 11, borderRadius: "50%", background: "#fff", transition: "left 0.12s" }} />
+                                </span>
+                                <span style={{ fontSize: 12, color: on ? "#d4d4d8" : "#6b7280" }}>{p.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -36,25 +36,6 @@ function formatProjects(entries: ProjectEntry[]): string {
   }).join("\n\n");
 }
 
-// Build a keyword set from the job description (meaningful words only)
-function jobKeywords(text: string): Set<string> {
-  return new Set((text.toLowerCase().match(/\b[a-z]{3,}\b/g) ?? [])
-    .filter((w) => !["and","the","for","with","that","this","are","was","were","have","has","from","into","our","your","their","will","been","not","you","all","can","its"].includes(w)));
-}
-
-// Score an entry by counting keyword matches in its text
-function scoreEntry(text: string, keywords: Set<string>): number {
-  const words = text.toLowerCase().match(/\b[a-z]{3,}\b/g) ?? [];
-  return words.filter((w) => keywords.has(w)).length;
-}
-
-// Return up to `max` best-matching entries, preserving original order among winners
-function pickBest<T>(entries: T[], getText: (e: T) => string, keywords: Set<string>, max: number): T[] {
-  if (entries.length <= max) return entries;
-  const scored = entries.map((e, i) => ({ e, i, score: scoreEntry(getText(e), keywords) }));
-  const top = scored.sort((a, b) => b.score - a.score).slice(0, max);
-  return top.sort((a, b) => a.i - b.i).map(({ e }) => e);
-}
 
 export async function runATSCheck(
   jobTitle: string,
@@ -84,17 +65,12 @@ export async function runATSCheck(
   try {
     const groq = getGroqClient();
 
-    // Pick the 2 most relevant entries when the profile has more than 2
-    const keywords = jobKeywords(`${jobTitle} ${jobDescriptionText}`);
-    const selectedWork = pickBest(workExperience, (e) => `${e.title} ${e.company} ${e.bullets.join(" ")}`, keywords, 2);
-    const selectedProjects = pickBest(projects, (p) => `${p.name} ${p.technologies.join(" ")} ${p.bullets.join(" ")}`, keywords, 2);
-
-    const experienceSection = selectedWork.length > 0
-      ? `WORK EXPERIENCE\n${formatExperience(selectedWork)}`
+    const experienceSection = workExperience.length > 0
+      ? `WORK EXPERIENCE\n${formatExperience(workExperience)}`
       : "";
 
-    const projectsSection = selectedProjects.length > 0
-      ? `PROJECTS\n${formatProjects(selectedProjects)}`
+    const projectsSection = projects.length > 0
+      ? `PROJECTS\n${formatProjects(projects)}`
       : "";
 
     const skillsSection = [...skills, ...stacks].length > 0
