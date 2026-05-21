@@ -20,7 +20,7 @@ export function startDailySync() {
   }
 
   setTimeout(runSync, 2 * 60 * 1000);
-  setInterval(runSync, 24 * 60 * 60 * 1000);
+  setInterval(runSync, 2 * 60 * 60 * 1000);
 
   console.log("[scheduler] Daily job sync scheduled.");
 }

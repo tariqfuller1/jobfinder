@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
 import { saveProjects } from "@/app/actions/save-profile-structured";
 import { parseResumeToStructured } from "@/app/actions/parse-resume";
 import type { ProjectEntry } from "@/lib/profile";
@@ -65,7 +65,6 @@ function ProjectCard({
   const bulletsText = project.bullets.join("\n");
   const included = project.includedInResume !== false;
 
-  // Sync local text when technologies change externally (e.g. extract from resume)
   useEffect(() => {
     setTechText(project.technologies.join(", "));
   }, [project.technologies]);
@@ -116,16 +115,8 @@ function ProjectCard({
           onClick={() => onChange({ ...project, includedInResume: !included })}
           style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", cursor: "pointer", padding: 0 }}
         >
-          <span style={{
-            width: 34, height: 18, borderRadius: 999, flexShrink: 0,
-            background: included ? "#4ade80" : "#374151",
-            position: "relative", display: "inline-block", transition: "background 0.15s",
-          }}>
-            <span style={{
-              position: "absolute", top: 2, left: included ? 16 : 2,
-              width: 14, height: 14, borderRadius: "50%",
-              background: "#fff", transition: "left 0.15s",
-            }} />
+          <span style={{ width: 34, height: 18, borderRadius: 999, flexShrink: 0, background: included ? "#4ade80" : "#374151", position: "relative", display: "inline-block", transition: "background 0.15s" }}>
+            <span style={{ position: "absolute", top: 2, left: included ? 16 : 2, width: 14, height: 14, borderRadius: "50%", background: "#fff", transition: "left 0.15s" }} />
           </span>
           <span style={{ fontSize: 12, color: included ? "#4ade80" : "#6b7280" }}>
             {included ? "Include in resume" : "Excluded from resume"}
@@ -147,12 +138,30 @@ export function ProjectsEditor({
   resumeText?: string;
 }) {
   const [projects, setProjects] = useState<ProjectEntry[]>(initialProjects);
-  const [isSaving, startSave] = useTransition();
   const [isParsing, startParse] = useTransition();
   const [parseError, setParseError] = useState("");
-  const [saved, setSaved] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRender = useRef(true);
+
+  // Auto-save 1 second after the last change
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setSaveStatus("idle");
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      setSaveStatus("saving");
+      await saveProjects(projects);
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    }, 1000);
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
+  }, [projects]);
 
   function updateProject(id: string, updated: ProjectEntry) {
     setProjects((prev) => prev.map((p) => (p.id === id ? updated : p)));
@@ -176,15 +185,6 @@ export function ProjectsEditor({
     setDragOverIndex(null);
   }
 
-  function handleSave() {
-    setSaved(false);
-    startSave(async () => {
-      await saveProjects(projects);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    });
-  }
-
   function handleParse() {
     if (!resumeText?.trim()) return;
     setParseError("");
@@ -202,16 +202,22 @@ export function ProjectsEditor({
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        {resumeText?.trim() && (
-          <button type="button" className="button secondary" onClick={handleParse} disabled={isParsing} style={{ fontSize: 13 }}>
-            {isParsing ? "Parsing resume…" : "Extract from resume"}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          {resumeText?.trim() && (
+            <button type="button" className="button secondary" onClick={handleParse} disabled={isParsing} style={{ fontSize: 13 }}>
+              {isParsing ? "Parsing resume…" : "Extract from resume"}
+            </button>
+          )}
+          <button type="button" className="button secondary" onClick={() => setProjects((p) => [...p, newProject()])} style={{ fontSize: 13 }}>
+            + Add project
           </button>
-        )}
-        <button type="button" className="button secondary" onClick={() => setProjects((p) => [...p, newProject()])} style={{ fontSize: 13 }}>
-          + Add project
-        </button>
+        </div>
+        <span style={{ fontSize: 12, color: saveStatus === "saved" ? "#4ade80" : "#6b7280", transition: "color 0.2s" }}>
+          {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Saved" : projects.length > 0 ? "Auto-saves after changes" : ""}
+        </span>
       </div>
+
       {parseError && <p style={{ margin: 0, fontSize: 12, color: "#f87171" }}>{parseError}</p>}
 
       {projects.length === 0 && (
@@ -242,12 +248,6 @@ export function ProjectsEditor({
           />
         </div>
       ))}
-
-      {projects.length > 0 && (
-        <button type="button" className="button" onClick={handleSave} disabled={isSaving} style={{ justifyContent: "center" }}>
-          {isSaving ? "Saving…" : saved ? "Saved!" : "Save projects"}
-        </button>
-      )}
     </div>
   );
 }

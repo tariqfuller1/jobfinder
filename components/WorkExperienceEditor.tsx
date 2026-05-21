@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
 import { saveWorkExperience } from "@/app/actions/save-profile-structured";
 import { parseResumeToStructured } from "@/app/actions/parse-resume";
 import type { WorkExperienceEntry } from "@/lib/profile";
@@ -107,16 +107,8 @@ function EntryCard({
           onClick={() => onChange({ ...entry, includedInResume: !included })}
           style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", cursor: "pointer", padding: 0 }}
         >
-          <span style={{
-            width: 34, height: 18, borderRadius: 999, flexShrink: 0,
-            background: included ? "#4ade80" : "#374151",
-            position: "relative", display: "inline-block", transition: "background 0.15s",
-          }}>
-            <span style={{
-              position: "absolute", top: 2, left: included ? 16 : 2,
-              width: 14, height: 14, borderRadius: "50%",
-              background: "#fff", transition: "left 0.15s",
-            }} />
+          <span style={{ width: 34, height: 18, borderRadius: 999, flexShrink: 0, background: included ? "#4ade80" : "#374151", position: "relative", display: "inline-block", transition: "background 0.15s" }}>
+            <span style={{ position: "absolute", top: 2, left: included ? 16 : 2, width: 14, height: 14, borderRadius: "50%", background: "#fff", transition: "left 0.15s" }} />
           </span>
           <span style={{ fontSize: 12, color: included ? "#4ade80" : "#6b7280" }}>
             {included ? "Include in resume" : "Excluded from resume"}
@@ -138,12 +130,30 @@ export function WorkExperienceEditor({
   resumeText?: string;
 }) {
   const [entries, setEntries] = useState<WorkExperienceEntry[]>(initialEntries);
-  const [isSaving, startSave] = useTransition();
   const [isParsing, startParse] = useTransition();
   const [parseError, setParseError] = useState("");
-  const [saved, setSaved] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRender = useRef(true);
+
+  // Auto-save 1 second after the last change
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setSaveStatus("idle");
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      setSaveStatus("saving");
+      await saveWorkExperience(entries);
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    }, 1000);
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
+  }, [entries]);
 
   function updateEntry(id: string, updated: WorkExperienceEntry) {
     setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
@@ -167,15 +177,6 @@ export function WorkExperienceEditor({
     setDragOverIndex(null);
   }
 
-  function handleSave() {
-    setSaved(false);
-    startSave(async () => {
-      await saveWorkExperience(entries);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    });
-  }
-
   function handleParse() {
     if (!resumeText?.trim()) return;
     setParseError("");
@@ -193,16 +194,22 @@ export function WorkExperienceEditor({
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        {resumeText?.trim() && (
-          <button type="button" className="button secondary" onClick={handleParse} disabled={isParsing} style={{ fontSize: 13 }}>
-            {isParsing ? "Parsing resume…" : "Extract from resume"}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          {resumeText?.trim() && (
+            <button type="button" className="button secondary" onClick={handleParse} disabled={isParsing} style={{ fontSize: 13 }}>
+              {isParsing ? "Parsing resume…" : "Extract from resume"}
+            </button>
+          )}
+          <button type="button" className="button secondary" onClick={() => setEntries((p) => [...p, newEntry()])} style={{ fontSize: 13 }}>
+            + Add entry
           </button>
-        )}
-        <button type="button" className="button secondary" onClick={() => setEntries((p) => [...p, newEntry()])} style={{ fontSize: 13 }}>
-          + Add entry
-        </button>
+        </div>
+        <span style={{ fontSize: 12, color: saveStatus === "saved" ? "#4ade80" : "#6b7280", transition: "color 0.2s" }}>
+          {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Saved" : entries.length > 0 ? "Auto-saves after changes" : ""}
+        </span>
       </div>
+
       {parseError && <p style={{ margin: 0, fontSize: 12, color: "#f87171" }}>{parseError}</p>}
 
       {entries.length === 0 && (
@@ -233,12 +240,6 @@ export function WorkExperienceEditor({
           />
         </div>
       ))}
-
-      {entries.length > 0 && (
-        <button type="button" className="button" onClick={handleSave} disabled={isSaving} style={{ justifyContent: "center" }}>
-          {isSaving ? "Saving…" : saved ? "Saved!" : "Save work experience"}
-        </button>
-      )}
     </div>
   );
 }
