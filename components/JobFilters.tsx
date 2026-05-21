@@ -295,6 +295,9 @@ export function JobFilters() {
               <option value="arbeitnow">Arbeitnow</option>
               <option value="workwithindies">Work With Indies</option>
               <option value="himalayas">Himalayas</option>
+              <option value="remoteok">RemoteOK</option>
+              <option value="weworkremotely">We Work Remotely</option>
+              <option value="jobicy">Jobicy</option>
               <option value="usajobs">USA Jobs</option>
             </select>
           </label>
