@@ -96,11 +96,25 @@ export async function deleteApplication(userId: string, id: string) {
   return prisma.application.delete({ where: { id } });
 }
 
-export async function updateApplication(userId: string, id: string, data: Record<string, unknown>) {
+type ApplicationUpdate = {
+  status?: string;
+  userReachedOut?: boolean;
+  companyReachedOut?: boolean;
+  followUpDate?: Date | null;
+  notes?: string | null;
+};
+
+export async function updateApplication(userId: string, id: string, data: ApplicationUpdate) {
   const existing = await prisma.application.findFirst({ where: { id, userId } });
   if (!existing) throw new Error("Application not found for this account.");
-  const updateData: Record<string, unknown> = { ...data };
-  if (data.status === "APPLIED" && !existing.dateApplied) {
+  const { status, userReachedOut, companyReachedOut, followUpDate, notes } = data;
+  const updateData: Record<string, unknown> = {};
+  if (status !== undefined) updateData.status = status;
+  if (userReachedOut !== undefined) updateData.userReachedOut = userReachedOut;
+  if (companyReachedOut !== undefined) updateData.companyReachedOut = companyReachedOut;
+  if (followUpDate !== undefined) updateData.followUpDate = followUpDate;
+  if (notes !== undefined) updateData.notes = notes;
+  if (status === "APPLIED" && !existing.dateApplied) {
     updateData.dateApplied = new Date();
   }
   return prisma.application.update({ where: { id }, data: updateData });

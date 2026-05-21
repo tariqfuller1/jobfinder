@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listCompanies } from "@/lib/companies";
+import { rateLimitWithRetry, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const { allowed, retryAfterSec } = rateLimitWithRetry(`companies:${ip}`, 60, 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Try again later." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const data = await listCompanies({
     q: searchParams.get("q") ?? undefined,

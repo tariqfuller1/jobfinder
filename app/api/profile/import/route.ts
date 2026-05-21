@@ -85,7 +85,11 @@ export async function POST(request: Request) {
 
     // AI extraction runs in parallel — failures are non-fatal
     const aiResult = await parseResumeWithAI(extractedText).catch(() => null);
-    if (aiResult?.ok) {
+    if (
+      aiResult?.ok &&
+      Array.isArray(aiResult.data?.workExperience) &&
+      Array.isArray(aiResult.data?.projects)
+    ) {
       const { workExperience, projects } = aiResult.data;
       await prisma.candidateProfile.update({
         where: { userId: user.id },

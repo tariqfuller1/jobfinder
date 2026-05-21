@@ -9,6 +9,7 @@ const securityHeaders = [
   {
     key: "Content-Security-Policy",
     value: [
+      "upgrade-insecure-requests",
       "default-src 'self'",
       // Next.js requires unsafe-inline for hydration; unsafe-eval for webpack/turbopack dev chunks
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",

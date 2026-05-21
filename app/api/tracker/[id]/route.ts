@@ -31,6 +31,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (isNaN(d.getTime())) {
       return NextResponse.json({ error: "Invalid followUpDate." }, { status: 400 });
     }
+    const now = Date.now();
+    const fiveYears = 5 * 365 * 24 * 60 * 60 * 1000;
+    if (d.getTime() < now - fiveYears || d.getTime() > now + fiveYears) {
+      return NextResponse.json({ error: "followUpDate is out of range." }, { status: 400 });
+    }
     followUpDate = d;
   } else {
     followUpDate = body.followUpDate; // null or undefined — passes through as-is
