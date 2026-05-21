@@ -9,7 +9,6 @@ function esc(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// "Label: URL" → label word becomes the blue hyperlink; bare URL → URL is the link text
 function linkifyEsc(text: string): string {
   const combined = /([\w][\w\s.-]*?):\s*(https?:\/\/[^\s|<>]+)|(https?:\/\/[^\s|<>]+)/g;
   let result = "";
@@ -31,17 +30,72 @@ function linkifyEsc(text: string): string {
   return result;
 }
 
-function buildCoverLetterHTML(text: string, jobTitle: string, company: string): string {
+const COVER_LETTER_TEMPLATES = [
+  {
+    id: "classic",
+    name: "Classic",
+    description: "Clean Arial, standard business margins",
+    css: `
+      body { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; line-height: 1.65; color: #000; padding: 0.9in 1in; max-width: 8.5in; margin: 0 auto; }
+      p { margin-bottom: 14px; }
+      p.sig { margin-top: 28px; margin-bottom: 0; white-space: pre-line; }
+      @media print { html, body { padding: 0; margin: 0; } @page { size: letter; margin: 0.85in 1in; } }
+    `,
+  },
+  {
+    id: "modern",
+    name: "Modern",
+    description: "Calibri, navy greeting line, contemporary feel",
+    css: `
+      body { font-family: Calibri, Arial, sans-serif; font-size: 11.5pt; line-height: 1.7; color: #1a1a1a; padding: 0.9in 1in; max-width: 8.5in; margin: 0 auto; }
+      p { margin-bottom: 16px; }
+      p.greeting { color: #1e3a5f; font-weight: 600; margin-bottom: 18px; }
+      p.sig { margin-top: 32px; margin-bottom: 0; white-space: pre-line; color: #1e3a5f; }
+      @media print { html, body { padding: 0; margin: 0; } @page { size: letter; margin: 0.85in 1in; } }
+    `,
+  },
+  {
+    id: "formal",
+    name: "Formal",
+    description: "Georgia serif, justified body, traditional look",
+    css: `
+      body { font-family: Georgia, 'Times New Roman', serif; font-size: 11pt; line-height: 1.75; color: #000; padding: 1in 1.1in; max-width: 8.5in; margin: 0 auto; }
+      p { margin-bottom: 16px; text-align: justify; }
+      p.greeting { text-align: left; }
+      p.sig { margin-top: 32px; margin-bottom: 0; white-space: pre-line; text-align: left; }
+      @media print { html, body { padding: 0; margin: 0; } @page { size: letter; margin: 0.9in 1.1in; } }
+    `,
+  },
+  {
+    id: "minimal",
+    name: "Minimal",
+    description: "Helvetica, extra spacing, airy and modern",
+    css: `
+      body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 10.5pt; line-height: 1.85; color: #2d2d2d; padding: 1in 1.15in; max-width: 8.5in; margin: 0 auto; }
+      p { margin-bottom: 20px; }
+      p.greeting { letter-spacing: 0.01em; }
+      p.sig { margin-top: 40px; margin-bottom: 0; white-space: pre-line; }
+      @media print { html, body { padding: 0; margin: 0; } @page { size: letter; margin: 0.9in 1.1in; } }
+    `,
+  },
+] as const;
+
+type TemplateId = typeof COVER_LETTER_TEMPLATES[number]["id"];
+
+function buildCoverLetterHTML(text: string, jobTitle: string, company: string, templateId: TemplateId = "classic", forPrint = true): string {
+  const template = COVER_LETTER_TEMPLATES.find((t) => t.id === templateId) ?? COVER_LETTER_TEMPLATES[0];
   const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
 
-  const body = paragraphs.map((p) => {
-    // Signature block lines (Sincerely / name / contact)
-    if (paragraphs.indexOf(p) === paragraphs.length - 1) {
-      const lines = p.split("\n").map((l) => l.trim()).filter(Boolean);
+  const body = paragraphs.map((p, i) => {
+    const lines = p.split("\n").map((l) => l.trim()).filter(Boolean);
+    // Last paragraph = signature block
+    if (i === paragraphs.length - 1) {
       return `<p class="sig">${lines.map(linkifyEsc).join("<br>")}</p>`;
     }
-    // Single-line paragraphs that are the greeting or closing word
-    const lines = p.split("\n").map((l) => l.trim()).filter(Boolean);
+    // First paragraph = greeting line
+    if (i === 0) {
+      return `<p class="greeting">${linkifyEsc(lines.join(" "))}</p>`;
+    }
     if (lines.length === 1) {
       return `<p>${linkifyEsc(lines[0])}</p>`;
     }
@@ -55,32 +109,19 @@ function buildCoverLetterHTML(text: string, jobTitle: string, company: string): 
   <title>Cover Letter — ${esc(jobTitle)} at ${esc(company)}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 11pt;
-      line-height: 1.65;
-      color: #000;
-      padding: 0.9in 1in;
-      max-width: 8.5in;
-      margin: 0 auto;
-    }
-    p { margin-bottom: 14px; }
-    p.sig { margin-top: 24px; margin-bottom: 0; white-space: pre-line; }
-    @media print {
-      html, body { padding: 0; margin: 0; }
-      @page { size: letter; margin: 0.85in 1in; }
-    }
+    a { color: #1a56db; text-decoration: underline; }
+    ${template.css}
   </style>
 </head>
 <body>
 ${body}
-<script>window.onload = function() { setTimeout(function() { window.print(); }, 150); }<\/script>
+${forPrint ? `<script>window.onload = function() { setTimeout(function() { window.print(); }, 150); }<\/script>` : ""}
 </body>
 </html>`;
 }
 
-function downloadPDF(text: string, jobTitle: string, company: string) {
-  const html = buildCoverLetterHTML(text, jobTitle, company);
+function downloadPDF(text: string, jobTitle: string, company: string, templateId: TemplateId) {
+  const html = buildCoverLetterHTML(text, jobTitle, company, templateId, true);
   const win = window.open("", "_blank");
   if (win) {
     win.document.write(html);
@@ -125,12 +166,17 @@ export function CoverLetterEditor({
   const [copied, setCopied] = useState(false);
   const [suggestion, setSuggestion] = useState("");
   const [aiError, setAiError] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("classic");
+  const [showPreview, setShowPreview] = useState(false);
   const [isGenerating, startGenerate] = useTransition();
   const [isPending, startTransition] = useTransition();
 
-  const wordCount = useMemo(() => {
-    return value.trim() ? value.trim().split(/\s+/).length : 0;
-  }, [value]);
+  const wordCount = useMemo(() => value.trim() ? value.trim().split(/\s+/).length : 0, [value]);
+
+  const previewHtml = useMemo(
+    () => value ? buildCoverLetterHTML(value, jobTitle, jobCompany, selectedTemplate, false) : "",
+    [value, jobTitle, jobCompany, selectedTemplate],
+  );
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(value);
@@ -214,9 +260,37 @@ export function CoverLetterEditor({
         disabled={isGenerating || isPending}
       />
 
+      {/* Template picker */}
+      <div style={{ display: "grid", gap: 6 }}>
+        <div style={{ fontSize: 12, color: "#9ca3af", fontWeight: 600 }}>Letter format</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {COVER_LETTER_TEMPLATES.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setSelectedTemplate(t.id)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: selectedTemplate === t.id ? "1px solid #6366f1" : "1px solid rgba(255,255,255,0.1)",
+                background: selectedTemplate === t.id ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.04)",
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 600, color: selectedTemplate === t.id ? "#a5b4fc" : "#d4d4d8" }}>{t.name}</div>
+              <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{t.description}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="actions">
-        <button type="button" className="button" onClick={() => downloadPDF(value, jobTitle, jobCompany)}>
+        <button type="button" className="button" onClick={() => downloadPDF(value, jobTitle, jobCompany, selectedTemplate)}>
           Download PDF
+        </button>
+        <button type="button" className="button secondary" onClick={() => setShowPreview((v) => !v)}>
+          {showPreview ? "Hide preview" : "Preview"}
         </button>
         <button type="button" className="button secondary" onClick={copyToClipboard}>
           {copied ? "Copied" : "Copy"}
@@ -225,6 +299,22 @@ export function CoverLetterEditor({
           Reset
         </button>
       </div>
+
+      {showPreview && (
+        <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ fontSize: 12, color: "#9ca3af" }}>
+            Live preview — reflects the selected format and any edits above.
+          </div>
+          <div style={{ position: "relative", borderRadius: 6, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)", background: "#fff" }}>
+            <iframe
+              srcDoc={previewHtml}
+              title="Cover letter preview"
+              style={{ width: "100%", height: 900, border: "none", display: "block" }}
+              sandbox="allow-same-origin"
+            />
+          </div>
+        </div>
+      )}
 
       {/* AI refinement */}
       <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 8 }}>
