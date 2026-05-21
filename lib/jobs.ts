@@ -11,6 +11,10 @@ import { fetchArbeitnowJobs } from "@/lib/adapters/arbeitnow";
 import { fetchUsaJobs } from "@/lib/adapters/usajobs";
 import { fetchWorkWithIndiesJobs } from "@/lib/adapters/workWithIndies";
 import { fetchHimalayasJobs } from "@/lib/adapters/himalayas";
+import { fetchRemoteOKJobs } from "@/lib/adapters/remoteok";
+import { fetchWeWorkRemotelyJobs } from "@/lib/adapters/weworkremotely";
+import { fetchTheMuseJobs } from "@/lib/adapters/themuse";
+import { fetchJobicyJobs } from "@/lib/adapters/jobicy";
 import { filterSoftwareJobs, parseCsvEnv, TECH_JOB_TITLE_KEYWORDS } from "@/lib/filtering";
 import { classifyJobRole } from "@/lib/classify";
 import { inferJobFields } from "@/lib/infer";
@@ -752,6 +756,10 @@ export async function syncAllJobs(
   const useGamesWorkbook = (process.env.ENABLE_GAMES_WORKBOOK ?? "true").toLowerCase() === "true";
   const useWorkWithIndies = (process.env.ENABLE_WORK_WITH_INDIES ?? "true").toLowerCase() === "true";
   const useHimalayas = (process.env.ENABLE_HIMALAYAS ?? "true").toLowerCase() === "true";
+  const useRemoteOK = (process.env.ENABLE_REMOTEOK ?? "true").toLowerCase() === "true";
+  const useWeWorkRemotely = (process.env.ENABLE_WEWORKREMOTELY ?? "true").toLowerCase() === "true";
+  const useTheMuse = (process.env.ENABLE_THEMUSE ?? "true").toLowerCase() === "true";
+  const useJobicy = (process.env.ENABLE_JOBICY ?? "true").toLowerCase() === "true";
   const softwareOnly = (process.env.SOFTWARE_ONLY ?? "true").toLowerCase() === "true";
 
   const maybeFilter = async (fetcher: () => Promise<NormalizedJob[]>) => {
@@ -808,6 +816,18 @@ export async function syncAllJobs(
   }
   if (useHimalayas) {
     sourceDefs.push({ source: "himalayas", fetcher: () => maybeFilter(() => fetchHimalayasJobs()) });
+  }
+  if (useRemoteOK) {
+    sourceDefs.push({ source: "remoteok", fetcher: () => maybeFilter(() => fetchRemoteOKJobs()) });
+  }
+  if (useWeWorkRemotely) {
+    sourceDefs.push({ source: "weworkremotely", fetcher: () => maybeFilter(() => fetchWeWorkRemotelyJobs()) });
+  }
+  if (useTheMuse) {
+    sourceDefs.push({ source: "themuse", fetcher: () => maybeFilter(() => fetchTheMuseJobs()) });
+  }
+  if (useJobicy) {
+    sourceDefs.push({ source: "jobicy", fetcher: () => maybeFilter(() => fetchJobicyJobs()) });
   }
 
   if (!sourceDefs.length) return [];
