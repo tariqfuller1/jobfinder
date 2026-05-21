@@ -15,14 +15,51 @@ function newProject(): ProjectEntry {
   };
 }
 
+function DragHandle({ onDragStart, onDragEnd }: { onDragStart: () => void; onDragEnd: () => void }) {
+  return (
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      title="Drag to reorder"
+      style={{
+        cursor: "grab",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 3,
+        padding: "4px 0 8px",
+        marginBottom: 2,
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        userSelect: "none",
+      }}
+    >
+      <span style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        {[0, 1, 2].map((r) => (
+          <span key={r} style={{ display: "flex", gap: 3 }}>
+            <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#4b5563" }} />
+            <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#4b5563" }} />
+          </span>
+        ))}
+      </span>
+    </div>
+  );
+}
+
 function ProjectCard({
   project,
   onChange,
   onRemove,
+  onDragStart,
+  onDragEnd,
+  isDragging,
 }: {
   project: ProjectEntry;
   onChange: (updated: ProjectEntry) => void;
   onRemove: () => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  isDragging: boolean;
 }) {
   const [techText, setTechText] = useState(() => project.technologies.join(", "));
   const bulletsText = project.bullets.join("\n");
@@ -34,7 +71,8 @@ function ProjectCard({
   }, [project.technologies]);
 
   return (
-    <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 10, opacity: included ? 1 : 0.6, transition: "opacity 0.15s" }}>
+    <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 10, opacity: isDragging ? 0.4 : included ? 1 : 0.6, transition: "opacity 0.15s" }}>
+      <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={{ display: "grid", gap: 4, fontSize: 13 }}>
           Project name
@@ -113,6 +151,8 @@ export function ProjectsEditor({
   const [isParsing, startParse] = useTransition();
   const [parseError, setParseError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   function updateProject(id: string, updated: ProjectEntry) {
     setProjects((prev) => prev.map((p) => (p.id === id ? updated : p)));
@@ -120,6 +160,20 @@ export function ProjectsEditor({
 
   function removeProject(id: string) {
     setProjects((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  function handleDrop(toIndex: number) {
+    if (dragIndex === null || dragIndex === toIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    const next = [...projects];
+    const [item] = next.splice(dragIndex, 1);
+    next.splice(toIndex, 0, item);
+    setProjects(next);
+    setDragIndex(null);
+    setDragOverIndex(null);
   }
 
   function handleSave() {
@@ -166,13 +220,27 @@ export function ProjectsEditor({
         </p>
       )}
 
-      {projects.map((project) => (
-        <ProjectCard
+      {projects.map((project, index) => (
+        <div
           key={project.id}
-          project={project}
-          onChange={(updated) => updateProject(project.id, updated)}
-          onRemove={() => removeProject(project.id)}
-        />
+          onDragOver={(e) => { e.preventDefault(); if (dragOverIndex !== index) setDragOverIndex(index); }}
+          onDrop={(e) => { e.preventDefault(); handleDrop(index); }}
+          style={{
+            borderRadius: 8,
+            outline: dragOverIndex === index && dragIndex !== index ? "2px solid #6366f1" : "2px solid transparent",
+            outlineOffset: 2,
+            transition: "outline 0.1s",
+          }}
+        >
+          <ProjectCard
+            project={project}
+            onChange={(updated) => updateProject(project.id, updated)}
+            onRemove={() => removeProject(project.id)}
+            onDragStart={() => setDragIndex(index)}
+            onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+            isDragging={dragIndex === index}
+          />
+        </div>
       ))}
 
       {projects.length > 0 && (

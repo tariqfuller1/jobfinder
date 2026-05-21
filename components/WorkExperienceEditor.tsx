@@ -17,21 +17,58 @@ function newEntry(): WorkExperienceEntry {
   };
 }
 
+function DragHandle({ onDragStart, onDragEnd }: { onDragStart: () => void; onDragEnd: () => void }) {
+  return (
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      title="Drag to reorder"
+      style={{
+        cursor: "grab",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 3,
+        padding: "4px 0 8px",
+        marginBottom: 2,
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        userSelect: "none",
+      }}
+    >
+      <span style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        {[0, 1, 2].map((r) => (
+          <span key={r} style={{ display: "flex", gap: 3 }}>
+            <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#4b5563" }} />
+            <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#4b5563" }} />
+          </span>
+        ))}
+      </span>
+    </div>
+  );
+}
+
 function EntryCard({
   entry,
   onChange,
   onRemove,
+  onDragStart,
+  onDragEnd,
+  isDragging,
 }: {
   entry: WorkExperienceEntry;
   onChange: (updated: WorkExperienceEntry) => void;
   onRemove: () => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  isDragging: boolean;
 }) {
   const bulletsText = (entry.bullets ?? []).join("\n");
-
   const included = entry.includedInResume !== false;
 
   return (
-    <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 10, opacity: included ? 1 : 0.6, transition: "opacity 0.15s" }}>
+    <div className="inset-card" style={{ padding: "14px 16px", display: "grid", gap: 10, opacity: isDragging ? 0.4 : included ? 1 : 0.6, transition: "opacity 0.15s" }}>
+      <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={{ display: "grid", gap: 4, fontSize: 13 }}>
           Company
@@ -105,6 +142,8 @@ export function WorkExperienceEditor({
   const [isParsing, startParse] = useTransition();
   const [parseError, setParseError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   function updateEntry(id: string, updated: WorkExperienceEntry) {
     setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
@@ -112,6 +151,20 @@ export function WorkExperienceEditor({
 
   function removeEntry(id: string) {
     setEntries((prev) => prev.filter((e) => e.id !== id));
+  }
+
+  function handleDrop(toIndex: number) {
+    if (dragIndex === null || dragIndex === toIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    const next = [...entries];
+    const [item] = next.splice(dragIndex, 1);
+    next.splice(toIndex, 0, item);
+    setEntries(next);
+    setDragIndex(null);
+    setDragOverIndex(null);
   }
 
   function handleSave() {
@@ -158,13 +211,27 @@ export function WorkExperienceEditor({
         </p>
       )}
 
-      {entries.map((entry) => (
-        <EntryCard
+      {entries.map((entry, index) => (
+        <div
           key={entry.id}
-          entry={entry}
-          onChange={(updated) => updateEntry(entry.id, updated)}
-          onRemove={() => removeEntry(entry.id)}
-        />
+          onDragOver={(e) => { e.preventDefault(); if (dragOverIndex !== index) setDragOverIndex(index); }}
+          onDrop={(e) => { e.preventDefault(); handleDrop(index); }}
+          style={{
+            borderRadius: 8,
+            outline: dragOverIndex === index && dragIndex !== index ? "2px solid #6366f1" : "2px solid transparent",
+            outlineOffset: 2,
+            transition: "outline 0.1s",
+          }}
+        >
+          <EntryCard
+            entry={entry}
+            onChange={(updated) => updateEntry(entry.id, updated)}
+            onRemove={() => removeEntry(entry.id)}
+            onDragStart={() => setDragIndex(index)}
+            onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+            isDragging={dragIndex === index}
+          />
+        </div>
       ))}
 
       {entries.length > 0 && (
