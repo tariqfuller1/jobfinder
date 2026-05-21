@@ -21,7 +21,7 @@ type JobicyResponse = {
 };
 
 export async function fetchJobicyJobs(): Promise<NormalizedJob[]> {
-  const response = await fetch(`${BASE_URL}?count=50&industry=engineering`, {
+  const response = await fetch(`${BASE_URL}?count=100&industry=engineering`, {
     headers: { "User-Agent": "JobFinder/1.0", Accept: "application/json" },
     cache: "no-store",
   });

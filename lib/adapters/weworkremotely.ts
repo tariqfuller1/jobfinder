@@ -2,8 +2,7 @@ import { inferEmploymentType, inferExperienceLevel, parseTags, stripHtml } from 
 import type { NormalizedJob } from "@/types/jobs";
 
 const RSS_FEEDS = [
-  "https://weworkremotely.com/categories/remote-programming-jobs.rss",
-  "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss",
+  "https://weworkremotely.com/remote-jobs.rss",
 ];
 
 function decodeEntities(str: string): string {
