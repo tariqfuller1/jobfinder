@@ -304,45 +304,35 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
     ],
   };
 
-  // Fit/salary sorts and recommendedOnly score a pool in memory then re-sort.
-  // The pool WHERE clause is derived from the profile's scoring signals so that
-  // every job that could possibly score > 0 is included, while zero-score jobs
-  // (no skill/title/location/remote/level match) are excluded before fetching.
-  // This is mathematically equivalent to scoring all 70k jobs but avoids loading
-  // ~150MB of data that would all score 0 anyway.
-  const needsPool = filters.recommendedOnly || filters.sort === "fit" || filters.sort === "salary";
+  // Fit sort and recommendedOnly score a bounded pool in memory then re-sort.
+  // Salary sort uses a pre-computed DB column (salaryMid) — no in-memory work.
+  const needsPool = filters.recommendedOnly || filters.sort === "fit";
   const skip = needsPool ? 0 : (page - 1) * limit;
 
   // Build profile-aware WHERE for pool queries.
+  // Only strong signals (skill/title/location matches) narrow the pool.
+  // Remote/entry bonuses still apply during scoring but must not pull ALL
+  // remote or entry jobs into memory — that's what caused the scaling issue.
   let poolWhere = where;
-  if (needsPool && filters.sort !== "salary" && profile &&
+  if (needsPool && profile &&
     (profile.skills.length > 0 || profile.targetTitles.length > 0 || profile.preferredLocations.length > 0)) {
     const terms = [...profile.skills, ...profile.targetTitles];
+    const locationSignals = profile.preferredLocations.flatMap((l) => {
+      if (l === "Remote US") return [{ workplaceType: "REMOTE" as never }];
+      if (/^[A-Z]{2}$/.test(l)) return statePatterns(l);
+      return [{ location: { contains: l } }];
+    });
     const profilePreFilter: Prisma.JobWhereInput = {
       OR: [
-        // Skill / title hits in structured fields
         ...terms.map((t) => ({ tags: { contains: t } })),
         ...terms.map((t) => ({ title: { contains: t } })),
-        // Location bonus signal — use statePatterns for 2-letter abbreviations so
-        // "NC" doesn't match inside "Francisco", "Valencia", etc.
-        ...profile.preferredLocations.flatMap((l) => {
-          if (l === "Remote US") return [];
-          if (/^[A-Z]{2}$/.test(l)) return statePatterns(l);
-          return [{ location: { contains: l } }];
-        }),
-        // Workplace / level bonus signals
-        { workplaceType: "REMOTE" as never },
-        { workplaceType: "HYBRID" as never },
-        { experienceLevel: "ENTRY" as never },
-        { experienceLevel: "INTERN" as never },
+        ...locationSignals,
       ],
     };
     poolWhere = { ...where, AND: [...(where.AND as Prisma.JobWhereInput[]), profilePreFilter] };
   }
 
-  const take: number | undefined = needsPool
-    ? (filters.sort === "salary" ? 5000 : undefined)
-    : limit;
+  const take: number | undefined = needsPool ? undefined : limit;
 
   // For the recommended pool we skip descriptionText entirely — structured
   // fields (workplaceType, experienceLevel, tags) are stored during sync and
@@ -361,7 +351,9 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
       where: poolWhere,
       orderBy: filters.sort === "oldest"
         ? [{ postedAt: "asc" }, { updatedAt: "asc" }]
-        : [{ postedAt: "desc" }, { updatedAt: "desc" }],
+        : filters.sort === "salary"
+          ? [{ salaryMid: { sort: "desc", nulls: "last" } }, { postedAt: "desc" }]
+          : [{ postedAt: "desc" }, { updatedAt: "desc" }],
       skip,
       ...(take !== undefined ? { take } : {}),
       select: needsPool
@@ -411,20 +403,9 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
   // ── Phase 2: sort + filter + paginate ─────────────────────────────────────
   const sortedByFit = [...lightEnriched].sort((a, b) => b.fitScore - a.fitScore);
 
-  let sorted: typeof lightEnriched;
-  if (filters.sort === "fit") {
-    sorted = sortedByFit;
-  } else if (filters.sort === "salary") {
-    sorted = [...lightEnriched].sort((a, b) => {
-      const aSal = estimateSalary({ title: a.title, experienceLevel: a.experienceLevel, employmentType: a.employmentType, location: a.location, company: a.company, tags: a.tags });
-      const bSal = estimateSalary({ title: b.title, experienceLevel: b.experienceLevel, employmentType: b.employmentType, location: b.location, company: b.company, tags: b.tags });
-      const aVal = aSal ? (aSal.low + aSal.high) / 2 : 0;
-      const bVal = bSal ? (bSal.low + bSal.high) / 2 : 0;
-      return bVal - aVal;
-    });
-  } else {
-    sorted = lightEnriched;
-  }
+  // Salary sort is handled at the DB level (ORDER BY salaryMid DESC NULLS LAST).
+  // The only in-memory sort remaining is fit score.
+  const sorted: typeof lightEnriched = filters.sort === "fit" ? sortedByFit : lightEnriched;
 
   // Threshold of 35: a remote (15) + entry-level (18) job clears it with 33,
   // and any single title hit (15) + remote (15) = 30 — pad catches the rest.
@@ -600,6 +581,16 @@ async function runSingleSource(source: string, fetcher: () => Promise<Normalized
       const experienceLevel =
         job.experienceLevel !== "UNKNOWN" ? job.experienceLevel : inferred.experienceLevel;
 
+      const salaryEst = estimateSalary({
+        title: job.title,
+        experienceLevel,
+        employmentType,
+        location: job.location,
+        company: job.company,
+        tags: job.tags,
+      });
+      const salaryMid = Math.round((salaryEst.low + salaryEst.high) / 2);
+
       await prisma.job.upsert({
         where: {
           source_externalId: {
@@ -613,6 +604,7 @@ async function runSingleSource(source: string, fetcher: () => Promise<Normalized
           employmentType,
           experienceLevel,
           tags: JSON.stringify(job.tags),
+          salaryMid,
           lastSeenAt: new Date(),
           isActive: true,
         },
@@ -625,6 +617,7 @@ async function runSingleSource(source: string, fetcher: () => Promise<Normalized
           descriptionHtml: job.descriptionHtml,
           descriptionText: job.descriptionText,
           tags: JSON.stringify(job.tags),
+          salaryMid,
           lastSeenAt: new Date(),
           isActive: true,
           // Only update structured fields if source gave a real value;

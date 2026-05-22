@@ -73,6 +73,7 @@ model Job {
   descriptionText  String?
   postedAt         DateTime?
   tags             String           @default("[]")
+  salaryMid        Int?
   isActive         Boolean          @default(true)
   lastSeenAt       DateTime         @default(now())
   createdAt        DateTime         @default(now())
@@ -81,6 +82,7 @@ model Job {
 
   @@unique([source, externalId])
   @@index([isActive, postedAt])  // composite — covers the primary sort+filter in one pass
+  @@index([isActive, salaryMid]) // salary sort
   @@index([isActive, workplaceType])
   @@index([isActive, employmentType])
   @@index([isActive, experienceLevel])
