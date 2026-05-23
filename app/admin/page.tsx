@@ -15,7 +15,6 @@ async function getAdminStats() {
     usersToday,
     usersThisWeek,
     usersThisMonth,
-    recentUsers,
     totalJobs,
     activeJobs,
     jobsToday,
@@ -28,11 +27,6 @@ async function getAdminStats() {
     prisma.user.count({ where: { createdAt: { gte: day } } }),
     prisma.user.count({ where: { createdAt: { gte: week } } }),
     prisma.user.count({ where: { createdAt: { gte: month } } }),
-    prisma.user.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      select: { id: true, email: true, displayName: true, createdAt: true },
-    }),
     prisma.job.count(),
     prisma.job.count({ where: { isActive: true } }),
     prisma.job.count({ where: { createdAt: { gte: day } } }),
@@ -47,7 +41,7 @@ async function getAdminStats() {
   ]);
 
   return {
-    users: { total: totalUsers, today: usersToday, week: usersThisWeek, month: usersThisMonth, recent: recentUsers },
+    users: { total: totalUsers, today: usersToday, week: usersThisWeek, month: usersThisMonth },
     jobs: { total: totalJobs, active: activeJobs, today: jobsToday, bySource: jobsBySource },
     syncs: recentSyncs,
     applications: { total: totalApplications, week: applicationsThisWeek },
@@ -91,29 +85,6 @@ export default async function AdminPage() {
           <StatCard label="This month" value={stats.users.month} />
         </div>
 
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--border)", fontSize: 13, fontWeight: 600, color: "#d4d4d8" }}>
-            Recent signups
-          </div>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: "rgba(255,255,255,0.03)" }}>
-                <th style={{ padding: "10px 20px", textAlign: "left", color: "#6b7280", fontWeight: 500 }}>Email</th>
-                <th style={{ padding: "10px 20px", textAlign: "left", color: "#6b7280", fontWeight: 500 }}>Name</th>
-                <th style={{ padding: "10px 20px", textAlign: "right", color: "#6b7280", fontWeight: 500 }}>Joined</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.users.recent.map((u, i) => (
-                <tr key={u.id} style={{ borderTop: i === 0 ? "none" : "1px solid var(--border)" }}>
-                  <td style={{ padding: "10px 20px", color: "#d4d4d8" }}>{u.email}</td>
-                  <td style={{ padding: "10px 20px", color: "#9ca3af" }}>{u.displayName ?? "—"}</td>
-                  <td style={{ padding: "10px 20px", textAlign: "right", color: "#6b7280" }}>{fmt(u.createdAt)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </section>
 
       {/* Jobs */}
