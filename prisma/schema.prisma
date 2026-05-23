@@ -251,6 +251,17 @@ model Session {
   @@index([expiresAt])
 }
 
+model SupportMessage {
+  id        String   @id @default(cuid())
+  email     String
+  category  String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([read, createdAt])
+}
+
 model SyncRun {
   id           String   @id @default(cuid())
   source       String

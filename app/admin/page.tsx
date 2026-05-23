@@ -22,6 +22,8 @@ async function getAdminStats() {
     recentSyncs,
     totalApplications,
     applicationsThisWeek,
+    supportMessages,
+    unreadCount,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { createdAt: { gte: day } } }),
@@ -38,6 +40,12 @@ async function getAdminStats() {
     }),
     prisma.application.count(),
     prisma.application.count({ where: { createdAt: { gte: week } } }),
+    prisma.supportMessage.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: { id: true, email: true, category: true, message: true, read: true, createdAt: true },
+    }),
+    prisma.supportMessage.count({ where: { read: false } }),
   ]);
 
   return {
@@ -45,6 +53,7 @@ async function getAdminStats() {
     jobs: { total: totalJobs, active: activeJobs, today: jobsToday, bySource: jobsBySource },
     syncs: recentSyncs,
     applications: { total: totalApplications, week: applicationsThisWeek },
+    support: { messages: supportMessages, unread: unreadCount },
   };
 }
 
@@ -61,6 +70,13 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 function fmt(d: Date) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(d));
 }
+
+const CATEGORY_COLORS: Record<string, string> = {
+  "Bug report": "#f87171",
+  "Feature request": "#a5b4fc",
+  "General question": "#4ade80",
+  "Other": "#9ca3af",
+};
 
 export default async function AdminPage() {
   const user = await getCurrentUser();
@@ -84,7 +100,6 @@ export default async function AdminPage() {
           <StatCard label="This week" value={stats.users.week} />
           <StatCard label="This month" value={stats.users.month} />
         </div>
-
       </section>
 
       {/* Jobs */}
@@ -118,6 +133,46 @@ export default async function AdminPage() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      {/* Support messages */}
+      <section className="stack">
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: "#d4d4d8", margin: 0 }}>Support messages</h2>
+          {stats.support.unread > 0 && (
+            <span style={{ background: "#f87171", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 8px" }}>
+              {stats.support.unread} unread
+            </span>
+          )}
+        </div>
+
+        {stats.support.messages.length === 0 ? (
+          <p className="muted" style={{ margin: 0, fontSize: 13 }}>No messages yet.</p>
+        ) : (
+          <div className="stack" style={{ gap: 10 }}>
+            {stats.support.messages.map((msg) => (
+              <div key={msg.id} className="card" style={{ padding: "16px 20px", opacity: msg.read ? 0.6 : 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, borderRadius: 6, padding: "3px 9px",
+                      background: `${CATEGORY_COLORS[msg.category] ?? "#9ca3af"}22`,
+                      color: CATEGORY_COLORS[msg.category] ?? "#9ca3af",
+                    }}>
+                      {msg.category}
+                    </span>
+                    {!msg.read && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: "#facc15", letterSpacing: "0.05em" }}>NEW</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 12, color: "#6b7280" }}>{fmt(msg.createdAt)}</span>
+                </div>
+                <p style={{ margin: "0 0 8px", fontSize: 13, color: "#d4d4d8", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{msg.message}</p>
+                <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>From: {msg.email}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Sync history */}
