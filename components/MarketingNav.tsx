@@ -13,6 +13,7 @@ export function MarketingNav() {
       <nav className="marketing-nav desktop-nav">
         <Link href="/jobs">Jobs</Link>
         <Link href="/companies">Companies</Link>
+        <Link href="/support">Support</Link>
         <Link href="/login">Sign in</Link>
         <Link href="/register" className="button">Create account</Link>
       </nav>
@@ -34,6 +35,7 @@ export function MarketingNav() {
             <div className="mobile-menu-brand">Hyrd</div>
             <Link href="/jobs" className="mobile-menu-link" onClick={close}>⌘ Jobs</Link>
             <Link href="/companies" className="mobile-menu-link" onClick={close}>▣ Companies</Link>
+            <Link href="/support" className="mobile-menu-link" onClick={close}>? Support</Link>
             <div className="mobile-menu-divider" />
             <Link href="/login" className="mobile-menu-link" onClick={close}>Sign in</Link>
             <Link href="/register" className="button" style={{ width: "100%", justifyContent: "center" }} onClick={close}>

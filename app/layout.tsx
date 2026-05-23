@@ -110,6 +110,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 One profile. Tailored cover letters, tips, and rewrites for every role.
               </p>
             </div>
+
+            <div className="rail-section">
+              <nav className="rail-nav">
+                <RailLink href="/support" label="Support" icon="?" />
+              </nav>
+            </div>
           </aside>
 
           <div className="app-stage">
