@@ -83,6 +83,7 @@ export default async function AppQuestionsJobPage({ params }: { params: Promise<
   if (!job) notFound();
 
   const workExperience = (profile.workExperience ?? []).filter((e) => e.includedInResume !== false);
+  const projects = (profile.projects ?? []).filter((p) => p.includedInResume !== false);
   const matchedSkills = getMatchedSkills(
     profile.skills ?? [],
     profile.stacks ?? [],
@@ -127,10 +128,13 @@ export default async function AppQuestionsJobPage({ params }: { params: Promise<
             jobCompany={job.company}
             jobDescriptionText={job.descriptionText ?? ""}
             name={profile.name ?? ""}
+            headline={profile.headline ?? ""}
             summary={profile.summary ?? ""}
             skills={profile.skills ?? []}
             stacks={profile.stacks ?? []}
             workExperience={workExperience}
+            projects={projects}
+            educationEntries={profile.educationEntries ?? []}
             suggestedQuestions={suggestedQuestions}
           />
         </section>
@@ -162,6 +166,11 @@ export default async function AppQuestionsJobPage({ params }: { params: Promise<
                 {workExperience.slice(0, 2).map((e, i) => (
                   <div key={i} className="inset-card" style={{ padding: "7px 10px", fontSize: 12, color: "#9ca3af" }}>
                     {e.title} · {e.company}
+                  </div>
+                ))}
+                {projects.slice(0, 2).map((p, i) => (
+                  <div key={i} className="inset-card" style={{ padding: "7px 10px", fontSize: 12, color: "#9ca3af" }}>
+                    Project: {p.name}{p.technologies?.length ? ` · ${p.technologies.slice(0, 3).join(", ")}` : ""}
                   </div>
                 ))}
               </div>

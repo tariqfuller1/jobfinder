@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from "@/lib/auth";
 import { getGroqClient } from "@/lib/groq";
-import type { WorkExperienceEntry } from "@/lib/profile";
+import type { WorkExperienceEntry, ProjectEntry } from "@/lib/profile";
 
 function groqError(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
@@ -21,10 +21,13 @@ export async function generateAppAnswer(
   jobCompany: string,
   jobDescriptionText: string,
   name: string,
+  headline: string,
   summary: string,
   skills: string[],
   stacks: string[],
   workExperience: WorkExperienceEntry[],
+  projects: ProjectEntry[],
+  educationEntries: string[],
 ): Promise<{ ok: true; answer: string } | { ok: false; error: string }> {
   if (!await getCurrentUser()) return { ok: false, error: "Sign in to use AI features." };
 
@@ -35,8 +38,18 @@ export async function generateAppAnswer(
     const groq = getGroqClient();
 
     const expSummary = workExperience
-      .slice(0, 3)
-      .map((e) => `${e.title} at ${e.company} (${e.startDate}–${e.endDate}): ${(e.bullets ?? []).slice(0, 2).join("; ")}`)
+      .slice(0, 4)
+      .map((e) => `${e.title} at ${e.company} (${e.startDate}–${e.endDate}): ${(e.bullets ?? []).slice(0, 3).join("; ")}`)
+      .join("\n");
+
+    const projectSummary = projects
+      .slice(0, 4)
+      .map((p) => {
+        const techs = p.technologies?.length ? `[${p.technologies.join(", ")}]` : "";
+        const bullets = (p.bullets ?? []).slice(0, 2).join("; ");
+        const url = p.url ? ` (${p.url})` : "";
+        return `Project: ${p.name}${url} ${techs}${bullets ? ` — ${bullets}` : ""}`;
+      })
       .join("\n");
 
     const prompt = `You are helping a job candidate write a compelling, honest answer to an application question.
@@ -48,14 +61,17 @@ ${jobDescriptionText.slice(0, 1500)}
 
 <candidate>
 Name: ${name || "Candidate"}
+${headline ? `Headline: ${headline}` : ""}
 ${summary ? `Summary: ${summary}` : ""}
-Skills: ${[...skills, ...stacks].slice(0, 15).join(", ")}
-${expSummary ? `Recent experience:\n${expSummary}` : ""}
+Skills: ${[...skills, ...stacks].slice(0, 20).join(", ")}
+${expSummary ? `Work experience:\n${expSummary}` : ""}
+${projectSummary ? `Projects:\n${projectSummary}` : ""}
+${educationEntries.length ? `Education: ${educationEntries.slice(0, 2).join("; ")}` : ""}
 </candidate>
 
 APPLICATION QUESTION: "${question}"
 
-Write a concise, specific, and authentic answer (2-4 paragraphs max). Use the candidate's real background. Connect their experience directly to this company and role. Do not fabricate facts. Sound human, not generic or robotic. Return only the answer text with no preamble or labels.`;
+Write a concise, specific, and authentic answer (2-4 paragraphs max). Reference real projects, roles, or technologies from the candidate's background — including personal and side projects — when they are relevant to the question. Connect their experience directly to this company and role. Do not fabricate facts. Sound human, not generic or robotic. Return only the answer text with no preamble or labels.`;
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",

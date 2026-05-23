@@ -2,27 +2,33 @@
 
 import { useState, useTransition } from "react";
 import { generateAppAnswer, refineAppAnswer } from "@/app/actions/app-question";
-import type { WorkExperienceEntry } from "@/lib/profile";
+import type { WorkExperienceEntry, ProjectEntry } from "@/lib/profile";
 
 export function AppQuestionEditor({
   jobTitle,
   jobCompany,
   jobDescriptionText,
   name,
+  headline,
   summary,
   skills,
   stacks,
   workExperience,
+  projects,
+  educationEntries,
   suggestedQuestions = [],
 }: {
   jobTitle: string;
   jobCompany: string;
   jobDescriptionText: string;
   name: string;
+  headline: string;
   summary: string;
   skills: string[];
   stacks: string[];
   workExperience: WorkExperienceEntry[];
+  projects: ProjectEntry[];
+  educationEntries: string[];
   suggestedQuestions?: string[];
 }) {
   const [question, setQuestion] = useState("");
@@ -46,10 +52,13 @@ export function AppQuestionEditor({
         jobCompany,
         jobDescriptionText,
         name,
+        headline,
         summary,
         skills,
         stacks,
         workExperience,
+        projects,
+        educationEntries,
       );
       if (result.ok) {
         setAnswer(result.answer);
