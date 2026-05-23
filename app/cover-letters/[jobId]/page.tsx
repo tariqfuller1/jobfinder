@@ -34,6 +34,7 @@ export default async function CoverLetterDetailPage({ params }: { params: Promis
           <div className="actions">
             <Link className="button secondary" href={`/jobs/${job.id}`}>Back to job</Link>
             <Link className="button secondary" href={`/ats-check/${job.id}`}>ATS score</Link>
+            <Link className="button secondary" href={`/app-questions/${job.id}`}>App questions</Link>
             {job.primaryApplyUrl ? (
               <a className="button secondary" href={job.primaryApplyUrl} target="_blank" rel="noreferrer">{job.primaryApplyLabel}</a>
             ) : null}

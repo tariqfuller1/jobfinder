@@ -29,6 +29,7 @@ export default async function ATSCheckPage({ params }: { params: Promise<{ jobId
           <div className="actions">
             <Link className="button secondary" href={`/jobs/${job.id}`}>Back to job</Link>
             <Link className="button secondary" href={`/cover-letters/${job.id}`}>Cover letter</Link>
+            <Link className="button secondary" href={`/app-questions/${job.id}`}>App questions</Link>
             {job.primaryApplyUrl ? (
               <a className="button secondary" href={job.primaryApplyUrl} target="_blank" rel="noreferrer">{job.primaryApplyLabel}</a>
             ) : null}

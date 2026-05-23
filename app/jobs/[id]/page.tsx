@@ -274,6 +274,13 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
               </Link>
               <Link
                 className="button secondary"
+                href={user ? `/app-questions/${job.id}` : `/login?next=/app-questions/${job.id}`}
+                style={{ justifyContent: "flex-start", fontSize: 13, gap: 10 }}
+              >
+                <span style={{ opacity: 0.7 }}>✦</span> Application questions
+              </Link>
+              <Link
+                className="button secondary"
                 href={user ? `/outreach/${job.id}` : `/login?next=/outreach/${job.id}`}
                 style={{ justifyContent: "flex-start", fontSize: 13, gap: 10 }}
               >
