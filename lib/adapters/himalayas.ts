@@ -46,6 +46,10 @@ export async function fetchHimalayasJobs(): Promise<NormalizedJob[]> {
     if (!jobs.length) break;
 
     for (const job of jobs) {
+      const applyUrl = job.applicationLink?.trim();
+      // Skip jobs that have no apply link or just point at the generic jobs listing
+      if (!applyUrl || applyUrl === "https://himalayas.app/jobs" || applyUrl === "https://himalayas.app") continue;
+
       const locationRestrictions = job.locationRestrictions ?? [];
       const location =
         locationRestrictions.length === 0 || locationRestrictions.length > 3
@@ -53,12 +57,13 @@ export async function fetchHimalayasJobs(): Promise<NormalizedJob[]> {
           : locationRestrictions.join(", ");
 
       const seniorityStr = (job.seniority ?? []).join(" ");
+      const sourceUrl = `https://himalayas.app/jobs/${job.guid}`;
 
       allJobs.push({
         externalId: job.guid,
         source: "himalayas",
-        sourceUrl: job.guid,
-        applyUrl: job.applicationLink,
+        sourceUrl,
+        applyUrl,
         title: job.title,
         company: job.companyName,
         location,
