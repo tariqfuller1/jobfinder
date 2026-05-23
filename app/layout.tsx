@@ -100,6 +100,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 {companyNav.map((item) => (
                   <RailLink key={item.href} {...item} />
                 ))}
+                <RailLink href="/support" label="Support" icon="?" />
               </nav>
             </div>
 
@@ -111,11 +112,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </p>
             </div>
 
-            <div className="rail-section">
-              <nav className="rail-nav">
-                <RailLink href="/support" label="Support" icon="?" />
-              </nav>
-            </div>
           </aside>
 
           <div className="app-stage">
