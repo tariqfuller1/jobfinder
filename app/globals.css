@@ -768,6 +768,12 @@ select optgroup {
   gap: 18px;
 }
 
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
 .feature-card {
   min-height: 200px;
 }
@@ -1346,7 +1352,7 @@ select optgroup {
   .metric-card { min-height: 100px; }
   .metric-value { font-size: 1.5rem; }
 
-  .grid-3 { grid-template-columns: 1fr; gap: 12px; }
+  .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 12px; }
 
   .badge { font-size: 11px; padding: 4px 10px; min-height: 28px; }
 
