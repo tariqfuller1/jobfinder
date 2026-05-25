@@ -564,7 +564,6 @@ export async function updateJob(id: string, data: {
 }
 
 async function runSingleSource(source: string, fetcher: () => Promise<NormalizedJob[]>) {
-  console.log(`[sync] Starting source: ${source}`);
   const syncRun = await prisma.syncRun.create({
     data: {
       source,
@@ -575,7 +574,6 @@ async function runSingleSource(source: string, fetcher: () => Promise<Normalized
 
   try {
     const jobs = await fetcher();
-    console.log(`[sync] ${source} — fetched ${jobs.length} jobs`);
 
     // SQLite is single-writer — upserts must run sequentially to avoid
     // write-lock contention and P1008 socket timeouts.
@@ -662,8 +660,8 @@ async function runSingleSource(source: string, fetcher: () => Promise<Normalized
     for (const job of uniqueJobs) {
       try {
         await ensureCompanyExistsFromJob(job);
-      } catch (err) {
-        console.warn(`[sync] company upsert failed for "${job.company}":`, err instanceof Error ? err.message : err);
+      } catch {
+        // company upsert failures are non-fatal and not logged
       }
     }
 
@@ -676,7 +674,6 @@ async function runSingleSource(source: string, fetcher: () => Promise<Normalized
       },
     });
 
-    console.log(`[sync] ${source} — done (${jobsUpserted} upserted)`);
     return { source, jobsFetched: jobs.length, jobsUpserted, ok: true as const };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -784,13 +781,11 @@ export async function syncAllJobs(
     sourceDefs.push({ source: `ashby:${token}`, fetcher: withProperName("ASHBY", token, () => maybeFilter(() => fetchAshbyJobs(token))) });
   });
   if (workableAccounts.length === 0) {
-    console.log("[sync] workable — skipped (no WORKABLE_COMPANY_TOKENS configured)");
   }
   workableAccounts.forEach((account) => {
     sourceDefs.push({ source: `workable:${account}`, fetcher: withProperName("WORKABLE", account, () => maybeFilter(() => fetchWorkableJobs(account))) });
   });
   if (recruiteeCompanies.length === 0) {
-    console.log("[sync] recruitee — skipped (no RECRUITEE_COMPANY_TOKENS configured)");
   }
   recruiteeCompanies.forEach((company) => {
     sourceDefs.push({ source: `recruitee:${company}`, fetcher: withProperName("RECRUITEE", company, () => maybeFilter(() => fetchRecruiteeJobs(company))) });
@@ -805,12 +800,10 @@ export async function syncAllJobs(
     const hasApiKey = !!process.env.USAJOBS_API_KEY?.trim();
     const hasEmail = !!process.env.USAJOBS_USER_AGENT_EMAIL?.trim();
     if (!hasApiKey || !hasEmail) {
-      console.log(`[sync] usajobs — skipped (missing: ${[!hasApiKey && "USAJOBS_API_KEY", !hasEmail && "USAJOBS_USER_AGENT_EMAIL"].filter(Boolean).join(", ")})`);
+      // skipped silently
     } else {
       sourceDefs.push({ source: "usajobs", fetcher: () => maybeFilter(() => fetchUsaJobs()) });
     }
-  } else {
-    console.log("[sync] usajobs — skipped (ENABLE_USAJOBS is not true)");
   }
   if (useGamesWorkbook) {
     sourceDefs.push({ source: "games-workbook", fetcher: () => maybeFilter(() => fetchGamesWorkbookJobs()) });

@@ -23,16 +23,18 @@ else
   npx tsx scripts/bootstrap.ts &
 fi
 
-# ── Scheduled sync: twice a day, every 12 hours ──────────────────────────────
-# Runs independently of deploys. The loop starts after Next.js is up so the
-# first sync fires 12 hours after startup, then every 12 hours after that.
+# ── Continuous sync: restart immediately after each run ───────────────────────
+# Runs independently of the in-process scheduler. Fires the first sync 5 minutes
+# after startup, then loops without a fixed interval — next run starts as soon
+# as the previous one finishes (60s pause between to avoid tight failure loops).
 (
+  sleep 300  # wait for Next.js to come up
   while true; do
-    sleep 43200  # 12 hours
-    echo "[scheduler] $(date -u '+%Y-%m-%d %H:%M UTC') — running scheduled sync..."
+    echo "[scheduler] $(date -u '+%Y-%m-%d %H:%M UTC') — running sync..."
     npx tsx scripts/sync.ts >> /tmp/sync.log 2>&1 \
       && echo "[scheduler] Sync complete." \
       || echo "[scheduler] Sync failed — check /tmp/sync.log"
+    sleep 60  # brief pause between runs
   done
 ) &
 
