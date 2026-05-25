@@ -129,6 +129,7 @@ export function JobFilters() {
   const [source, setSource] = useState(sp.get("source") ?? "");
   const [country, setCountry] = useState(sp.get("country") ?? "");
   const [recommendedOnly, setRecommendedOnly] = useState(sp.get("recommendedOnly") ?? "");
+  const [postedWithin, setPostedWithin] = useState(sp.get("postedWithin") ?? "");
 
   const [workplaceTypes, setWorkplaceTypes] = useState(() => parseSet(sp.get("workplaceTypes")));
   const [experienceLevels, setExperienceLevels] = useState(() => parseSet(sp.get("experienceLevels")));
@@ -140,7 +141,7 @@ export function JobFilters() {
   const isUS = country === "United States";
 
   const activeCount =
-    [sort, source, country, recommendedOnly].filter(Boolean).length +
+    [sort, source, country, recommendedOnly, postedWithin].filter(Boolean).length +
     [workplaceTypes, experienceLevels, employmentTypes, departments, selectedStates].filter((s) => s.size > 0).length;
 
   function apply() {
@@ -149,6 +150,7 @@ export function JobFilters() {
     if (source) params.set("source", source); else params.delete("source");
     if (country) params.set("country", country); else params.delete("country");
     if (recommendedOnly) params.set("recommendedOnly", recommendedOnly); else params.delete("recommendedOnly");
+    if (postedWithin) params.set("postedWithin", postedWithin); else params.delete("postedWithin");
     if (workplaceTypes.size) params.set("workplaceTypes", [...workplaceTypes].join(",")); else params.delete("workplaceTypes");
     if (experienceLevels.size) params.set("experienceLevels", [...experienceLevels].join(",")); else params.delete("experienceLevels");
     if (employmentTypes.size) params.set("employmentTypes", [...employmentTypes].join(",")); else params.delete("employmentTypes");
@@ -160,12 +162,12 @@ export function JobFilters() {
   }
 
   function clear() {
-    setSort(""); setSource(""); setCountry(""); setRecommendedOnly("");
+    setSort(""); setSource(""); setCountry(""); setRecommendedOnly(""); setPostedWithin("");
     setWorkplaceTypes(new Set()); setExperienceLevels(new Set());
     setEmploymentTypes(new Set()); setDepartments(new Set());
     setSelectedStates(new Set()); setShowAllStates(false);
     const params = new URLSearchParams(sp.toString());
-    ["sort","source","country","recommendedOnly","workplaceTypes","experienceLevels","employmentTypes","departments","states","page"].forEach((k) => params.delete(k));
+    ["sort","source","country","recommendedOnly","postedWithin","workplaceTypes","experienceLevels","employmentTypes","departments","states","page"].forEach((k) => params.delete(k));
     router.push(`${pathname}?${params.toString()}`);
     setOpen(false);
   }
@@ -199,6 +201,35 @@ export function JobFilters() {
           maxHeight: "calc(100vh - 180px)",
           overflowY: "auto",
         }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: postedWithin ? "#f87171" : "#d4d4d8", marginBottom: 8 }}>
+              Posted within{postedWithin ? " ·" : ""}
+              {postedWithin === "1h" ? " past hour" : postedWithin === "24h" ? " past 24h" : postedWithin === "7d" ? " past week" : ""}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {(["1h", "24h", "7d"] as const).map((v) => {
+                const label = v === "1h" ? "Past hour" : v === "24h" ? "Past 24 hours" : "Past week";
+                const active = postedWithin === v;
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setPostedWithin(active ? "" : v)}
+                    style={{
+                      fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 6,
+                      border: active ? "1px solid rgba(225,29,72,0.55)" : "1px solid rgba(255,255,255,0.1)",
+                      background: active ? "rgba(225,29,72,0.18)" : "rgba(255,255,255,0.04)",
+                      color: active ? "#f87171" : "#9ca3af",
+                      cursor: "pointer", transition: "all 0.1s",
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div>
             <div style={{ fontSize: 13, fontWeight: 500, color: departments.size ? "#f87171" : "#d4d4d8", marginBottom: 8 }}>
               Department{departments.size > 0 ? ` (${departments.size})` : ""}

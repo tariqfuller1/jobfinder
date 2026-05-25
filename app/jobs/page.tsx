@@ -22,6 +22,9 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
 
   const parseList = (v: unknown) => typeof v === "string" ? v.split(",").filter(Boolean) : undefined;
 
+  const postedWithinParam = typeof params.postedWithin === "string" ? params.postedWithin : undefined;
+  const postedWithin = (["1h", "24h", "7d"].includes(postedWithinParam ?? "") ? postedWithinParam : undefined) as "1h" | "24h" | "7d" | undefined;
+
   const data = await listJobs({
       q: typeof params.q === "string" ? params.q : undefined,
       departments: parseList(params.departments),
@@ -35,6 +38,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
       source: typeof params.source === "string" ? params.source : undefined,
       company: typeof params.company === "string" ? params.company : undefined,
       recommendedOnly: typeof params.recommendedOnly === "string" ? params.recommendedOnly === "true" : false,
+      postedWithin,
       page,
       limit: 25,
     }, profile);
@@ -52,6 +56,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
     source: typeof params.source === "string" ? params.source : undefined,
     company: typeof params.company === "string" ? params.company : undefined,
     recommendedOnly: typeof params.recommendedOnly === "string" ? params.recommendedOnly : undefined,
+    postedWithin: postedWithin ?? undefined,
   };
 
   const reliableApplyCount = data.jobs.filter((job) => job.hasReliableApplyLink).length;

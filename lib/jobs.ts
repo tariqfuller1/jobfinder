@@ -74,6 +74,7 @@ export type JobFilters = {
   since?: string;
   states?: string[];
   country?: string;
+  postedWithin?: "1h" | "24h" | "7d";
 };
 
 // Keywords matched against job title to define each department bucket for filtering.
@@ -260,6 +261,18 @@ export async function listJobs(filters: JobFilters, profile: UserProfile | null 
       filters.source ? { source: { contains: filters.source } } : {},
       filters.company ? { company: { contains: filters.company } } : {},
       filters.since ? { createdAt: { gt: new Date(filters.since) } } : {},
+      filters.postedWithin ? (() => {
+        const ms = filters.postedWithin === "1h" ? 60 * 60 * 1000
+          : filters.postedWithin === "24h" ? 24 * 60 * 60 * 1000
+          : 7 * 24 * 60 * 60 * 1000;
+        const cutoff = new Date(Date.now() - ms);
+        return {
+          OR: [
+            { postedAt: { gte: cutoff } },
+            { AND: [{ postedAt: null }, { createdAt: { gte: cutoff } }] },
+          ],
+        };
+      })() : {},
       // Country / state filter
       // US: require a US location pattern AND explicitly exclude locations that
       // name a foreign country — catches ambiguous codes like IN (Indiana/India)
