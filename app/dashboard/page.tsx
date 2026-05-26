@@ -88,6 +88,50 @@ export default async function DashboardPage() {
         </section>
       )}
 
+      {process.env.NEXT_PUBLIC_DONATION_URL && (
+        <section>
+          <a
+            href={process.env.NEXT_PUBLIC_DONATION_URL}
+            target="_blank"
+            rel="noreferrer"
+            style={{ textDecoration: "none", display: "block" }}
+          >
+            <div className="card" style={{
+              padding: "20px 24px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 16,
+              background: "linear-gradient(135deg, rgba(20,14,10,0.98), rgba(12,8,5,1))",
+              borderColor: "rgba(251,191,36,0.2)",
+              cursor: "pointer",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <span style={{ fontSize: 28, lineHeight: 1 }}>☕</span>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f5f5", marginBottom: 3 }}>
+                    Enjoying Hyrd?
+                  </div>
+                  <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+                    If it's helped with your job search, consider buying me a coffee. It keeps the site running.
+                  </p>
+                </div>
+              </div>
+              <div className="button" style={{
+                background: "linear-gradient(135deg, rgba(251,191,36,0.18), rgba(245,158,11,0.12))",
+                border: "1px solid rgba(251,191,36,0.35)",
+                color: "#fbbf24",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}>
+                Support Hyrd ↗
+              </div>
+            </div>
+          </a>
+        </section>
+      )}
+
       <section className="grid-2">
         <article className="card hero-card stack">
           <div className="space-between section-heading-row">
