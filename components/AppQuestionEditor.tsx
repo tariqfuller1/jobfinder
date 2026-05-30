@@ -79,6 +79,14 @@ export function AppQuestionEditor({
         jobTitle,
         jobCompany,
         jobDescriptionText,
+        name,
+        headline,
+        summary,
+        skills,
+        stacks,
+        workExperience,
+        projects,
+        educationEntries,
       );
       if (result.ok) {
         setAnswer(result.answer);

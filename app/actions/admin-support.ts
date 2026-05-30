@@ -4,8 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { notFound } from "next/navigation";
-
-const ADMIN_EMAIL = "tariqfuller@gmail.com";
+import { ADMIN_EMAIL } from "@/lib/admin";
 
 async function verifyAdmin() {
   const user = await getCurrentUser();

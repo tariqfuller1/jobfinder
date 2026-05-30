@@ -2,11 +2,14 @@ import { syncAllJobs } from "@/lib/jobs";
 
 let started = false;
 
-export function startDailySync() {
+export function startContinuousSync() {
   if (started) return;
   started = true;
 
-  async function loop() {
+  (async () => {
+    // Wait for Next.js to finish starting up before the first sync
+    await new Promise((res) => setTimeout(res, 2 * 60 * 1000));
+
     while (true) {
       try {
         console.log("[scheduler] Starting job sync...");
@@ -26,10 +29,7 @@ export function startDailySync() {
       // job objects from the completed sync before the next one allocates
       await new Promise((res) => setTimeout(res, 3 * 60_000));
     }
-  }
-
-  // Short initial delay so the server finishes starting up before the first sync
-  setTimeout(loop, 2 * 60 * 1000);
+  })();
 
   console.log("[scheduler] Continuous job sync started.");
 }

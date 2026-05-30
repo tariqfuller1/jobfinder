@@ -808,7 +808,7 @@ export async function syncAllJobs(
     sourceDefs.push({ source: "jobicy", fetcher: () => maybeFilter(() => fetchJobicyJobs()) });
   }
 
-  if (!sourceDefs.length) return [];
+  if (!sourceDefs.length) return { results: [], pruned: { deactivated: 0, deleted: 0 } };
 
   const total = sourceDefs.length;
   let completed = 0;
@@ -837,27 +837,28 @@ export async function syncAllJobs(
 async function pruneStaleJobs(): Promise<{ deactivated: number; deleted: number }> {
   const now = Date.now();
 
-  // Mark inactive: jobs not seen in any sync for 21 days — they've been
-  // removed from the source feed. Never touch manually-added jobs.
-  const { count: deactivated } = await prisma.job.updateMany({
-    where: {
-      isActive: true,
-      lastSeenAt: { lt: new Date(now - 21 * 24 * 60 * 60 * 1000) },
-      source: { not: "manual" },
-    },
-    data: { isActive: false },
-  });
-
-  // Hard delete: inactive jobs with no tracker entries and not seen in 60 days.
-  // Jobs saved to a tracker are left alone — just hidden from listings.
-  const { count: deleted } = await prisma.job.deleteMany({
-    where: {
-      isActive: false,
-      lastSeenAt: { lt: new Date(now - 60 * 24 * 60 * 60 * 1000) },
-      source: { not: "manual" },
-      applications: { none: {} },
-    },
-  });
+  // Both writes target non-overlapping rows (isActive:true vs isActive:false)
+  // so they can run in parallel safely.
+  const [{ count: deactivated }, { count: deleted }] = await Promise.all([
+    // Mark inactive: jobs not seen in any sync for 21 days — removed from source feed.
+    prisma.job.updateMany({
+      where: {
+        isActive: true,
+        lastSeenAt: { lt: new Date(now - 21 * 24 * 60 * 60 * 1000) },
+        source: { not: "manual" },
+      },
+      data: { isActive: false },
+    }),
+    // Hard delete: inactive jobs with no tracker entries and not seen in 60 days.
+    prisma.job.deleteMany({
+      where: {
+        isActive: false,
+        lastSeenAt: { lt: new Date(now - 60 * 24 * 60 * 60 * 1000) },
+        source: { not: "manual" },
+        applications: { none: {} },
+      },
+    }),
+  ]);
 
   return { deactivated, deleted };
 }

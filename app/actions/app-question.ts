@@ -1,18 +1,53 @@
 "use server";
 
 import { getCurrentUser } from "@/lib/auth";
-import { getGroqClient } from "@/lib/groq";
+import { getGroqClient, formatGroqError } from "@/lib/groq";
 import type { WorkExperienceEntry, ProjectEntry } from "@/lib/profile";
 
-function groqError(err: unknown): string {
-  const message = err instanceof Error ? err.message : String(err);
-  if (message.includes("429") || message.toLowerCase().includes("rate limit")) {
-    return "AI is rate-limited. Wait a moment and try again.";
-  }
-  if (message.includes("API key") || message.includes("auth")) {
-    return "Groq API key is missing or invalid.";
-  }
-  return "Something went wrong. Try again.";
+async function guardAI(): Promise<{ ok: false; error: string } | null> {
+  if (!await getCurrentUser()) return { ok: false, error: "Sign in to use AI features." };
+  if (!process.env.GROQ_API_KEY?.trim()) return { ok: false, error: "GROQ_API_KEY is not configured." };
+  return null;
+}
+
+function buildCandidateBlock(
+  name: string,
+  headline: string,
+  summary: string,
+  skills: string[],
+  stacks: string[],
+  workExperience: WorkExperienceEntry[],
+  projects: ProjectEntry[],
+  educationEntries: string[],
+): string {
+  const expSummary = workExperience
+    .slice(0, 4)
+    .map((e) => `${e.title} at ${e.company} (${e.startDate}–${e.endDate}): ${(e.bullets ?? []).slice(0, 3).join("; ")}`)
+    .join("\n");
+
+  const projectSummary = projects
+    .slice(0, 4)
+    .map((p) => {
+      const techs = p.technologies?.length ? `[${p.technologies.join(", ")}]` : "";
+      const bullets = (p.bullets ?? []).slice(0, 2).join("; ");
+      const url = p.url ? ` (${p.url})` : "";
+      return `Project: ${p.name}${url} ${techs}${bullets ? ` — ${bullets}` : ""}`;
+    })
+    .join("\n");
+
+  const skillList = skills.length >= 20
+    ? skills.slice(0, 20)
+    : [...skills, ...stacks.slice(0, 20 - skills.length)];
+
+  return [
+    `Name: ${name || "Candidate"}`,
+    headline ? `Headline: ${headline}` : "",
+    summary ? `Summary: ${summary}` : "",
+    `Skills: ${skillList.join(", ")}`,
+    expSummary ? `Work experience:\n${expSummary}` : "",
+    projectSummary ? `Projects:\n${projectSummary}` : "",
+    educationEntries.length ? `Education: ${educationEntries.slice(0, 2).join("; ")}` : "",
+  ].filter(Boolean).join("\n");
 }
 
 export async function generateAppAnswer(
@@ -29,28 +64,12 @@ export async function generateAppAnswer(
   projects: ProjectEntry[],
   educationEntries: string[],
 ): Promise<{ ok: true; answer: string } | { ok: false; error: string }> {
-  if (!await getCurrentUser()) return { ok: false, error: "Sign in to use AI features." };
-
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey?.trim()) return { ok: false, error: "GROQ_API_KEY is not configured." };
+  const guard = await guardAI();
+  if (guard) return guard;
 
   try {
     const groq = getGroqClient();
-
-    const expSummary = workExperience
-      .slice(0, 4)
-      .map((e) => `${e.title} at ${e.company} (${e.startDate}–${e.endDate}): ${(e.bullets ?? []).slice(0, 3).join("; ")}`)
-      .join("\n");
-
-    const projectSummary = projects
-      .slice(0, 4)
-      .map((p) => {
-        const techs = p.technologies?.length ? `[${p.technologies.join(", ")}]` : "";
-        const bullets = (p.bullets ?? []).slice(0, 2).join("; ");
-        const url = p.url ? ` (${p.url})` : "";
-        return `Project: ${p.name}${url} ${techs}${bullets ? ` — ${bullets}` : ""}`;
-      })
-      .join("\n");
+    const candidate = buildCandidateBlock(name, headline, summary, skills, stacks, workExperience, projects, educationEntries);
 
     const prompt = `You are helping a job candidate write a compelling, honest answer to an application question.
 
@@ -60,13 +79,7 @@ ${jobDescriptionText.slice(0, 1500)}
 </job_description>
 
 <candidate>
-Name: ${name || "Candidate"}
-${headline ? `Headline: ${headline}` : ""}
-${summary ? `Summary: ${summary}` : ""}
-Skills: ${[...skills, ...stacks].slice(0, 20).join(", ")}
-${expSummary ? `Work experience:\n${expSummary}` : ""}
-${projectSummary ? `Projects:\n${projectSummary}` : ""}
-${educationEntries.length ? `Education: ${educationEntries.slice(0, 2).join("; ")}` : ""}
+${candidate}
 </candidate>
 
 APPLICATION QUESTION: "${question}"
@@ -87,7 +100,7 @@ Write a concise, specific, and authentic answer (2-4 paragraphs max). Reference 
     if (!answer) return { ok: false, error: "AI returned an empty response. Try again." };
     return { ok: true, answer };
   } catch (err) {
-    return { ok: false, error: groqError(err) };
+    return { ok: false, error: formatGroqError(err) };
   }
 }
 
@@ -98,19 +111,30 @@ export async function refineAppAnswer(
   jobTitle: string,
   jobCompany: string,
   jobDescriptionText: string,
+  name: string,
+  headline: string,
+  summary: string,
+  skills: string[],
+  stacks: string[],
+  workExperience: WorkExperienceEntry[],
+  projects: ProjectEntry[],
+  educationEntries: string[],
 ): Promise<{ ok: true; answer: string } | { ok: false; error: string }> {
-  if (!await getCurrentUser()) return { ok: false, error: "Sign in to use AI features." };
-
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey?.trim()) return { ok: false, error: "GROQ_API_KEY is not configured." };
+  const guard = await guardAI();
+  if (guard) return guard;
 
   try {
     const groq = getGroqClient();
+    const candidate = buildCandidateBlock(name, headline, summary, skills, stacks, workExperience, projects, educationEntries);
 
     const prompt = `You are editing a job application answer.
 
 Job: ${jobTitle} at ${jobCompany}
 ${jobDescriptionText ? `<job_description>\n${jobDescriptionText.slice(0, 800)}\n</job_description>` : ""}
+
+<candidate>
+${candidate}
+</candidate>
 
 Application question: "${question}"
 
@@ -122,7 +146,7 @@ ${currentAnswer}
 ${refinementNote}
 </requested_change>
 
-Rewrite the answer incorporating the requested change. Keep it concise and authentic. Return only the answer text with no preamble or labels.`;
+Rewrite the answer incorporating the requested change. Draw on the candidate's real background when relevant. Keep it concise and authentic. Return only the answer text with no preamble or labels.`;
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
@@ -138,6 +162,6 @@ Rewrite the answer incorporating the requested change. Keep it concise and authe
     if (!answer) return { ok: false, error: "AI returned an empty response. Try again." };
     return { ok: true, answer };
   } catch (err) {
-    return { ok: false, error: groqError(err) };
+    return { ok: false, error: formatGroqError(err) };
   }
 }

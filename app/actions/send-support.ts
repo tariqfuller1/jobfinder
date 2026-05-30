@@ -5,10 +5,11 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { headers } from "next/headers";
 import { rateLimitWithRetry } from "@/lib/rate-limit";
+import { SUPPORT_CATEGORIES } from "@/lib/support";
 
 const schema = z.object({
   email: z.string().trim().email("Please enter a valid email address."),
-  category: z.enum(["Bug report", "Feature request", "General question", "Other"]),
+  category: z.enum(SUPPORT_CATEGORIES),
   message: z.string().trim().min(10, "Message must be at least 10 characters.").max(5000),
 });
 

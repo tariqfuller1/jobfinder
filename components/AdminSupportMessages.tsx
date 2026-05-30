@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { markSupportMessageRead, deleteSupportMessage } from "@/app/actions/admin-support";
+import { SUPPORT_CATEGORIES } from "@/lib/support";
 
 type Message = {
   id: string;
@@ -20,8 +21,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Other": "#9ca3af",
 };
 
-const CATEGORIES = ["Bug report", "Feature request", "General question", "Other"];
-
 type SortKey = "newest" | "oldest" | "category";
 type ReadFilter = "all" | "unread" | "read";
 
@@ -33,14 +32,14 @@ function fmt(d: Date | string) {
 
 export function AdminSupportMessages({ messages }: { messages: Message[] }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isMarking, startMark] = useTransition();
+  const [isDeleting, startDelete] = useTransition();
   const [sort, setSort] = useState<SortKey>("newest");
   const [readFilter, setReadFilter] = useState<ReadFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  const unreadCount = messages.filter((m) => !m.read).length;
-
-  const filtered = useMemo(() => {
+  const { filtered, unreadCount } = useMemo(() => {
+    const unreadCount = messages.filter((m) => !m.read).length;
     let list = [...messages];
     if (readFilter === "unread") list = list.filter((m) => !m.read);
     else if (readFilter === "read") list = list.filter((m) => m.read);
@@ -48,18 +47,18 @@ export function AdminSupportMessages({ messages }: { messages: Message[] }) {
     if (sort === "newest") list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     else if (sort === "oldest") list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     else if (sort === "category") list.sort((a, b) => a.category.localeCompare(b.category));
-    return list;
+    return { filtered: list, unreadCount };
   }, [messages, sort, readFilter, categoryFilter]);
 
   function handleMarkRead(id: string, read: boolean) {
-    startTransition(async () => {
+    startMark(async () => {
       await markSupportMessageRead(id, read);
       router.refresh();
     });
   }
 
   function handleDelete(id: string) {
-    startTransition(async () => {
+    startDelete(async () => {
       await deleteSupportMessage(id);
       router.refresh();
     });
@@ -97,7 +96,7 @@ export function AdminSupportMessages({ messages }: { messages: Message[] }) {
               style={{ fontSize: 12, padding: "5px 8px" }}
             >
               <option value="all">All categories</option>
-              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              {SUPPORT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
             <select
               value={sort}
@@ -138,7 +137,7 @@ export function AdminSupportMessages({ messages }: { messages: Message[] }) {
                       <span style={{ fontSize: 12, color: "#6b7280" }}>{fmt(msg.createdAt)}</span>
                       <button
                         onClick={() => handleMarkRead(msg.id, !msg.read)}
-                        disabled={isPending}
+                        disabled={isMarking}
                         style={{
                           fontSize: 11, padding: "3px 9px", cursor: "pointer",
                           borderRadius: 6, border: "1px solid var(--border)",
@@ -149,7 +148,7 @@ export function AdminSupportMessages({ messages }: { messages: Message[] }) {
                       </button>
                       <button
                         onClick={() => handleDelete(msg.id)}
-                        disabled={isPending}
+                        disabled={isDeleting}
                         style={{
                           fontSize: 11, padding: "3px 9px", cursor: "pointer",
                           borderRadius: 6, border: "1px solid rgba(248,113,113,0.3)",

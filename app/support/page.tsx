@@ -2,8 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { sendSupport } from "@/app/actions/send-support";
-
-const CATEGORIES = ["Bug report", "Feature request", "General question", "Other"] as const;
+import { SUPPORT_CATEGORIES } from "@/lib/support";
 
 export default function SupportPage() {
   const [isPending, startTransition] = useTransition();
@@ -59,7 +58,7 @@ export default function SupportPage() {
         <label style={{ display: "grid", gap: 6, fontSize: 13 }}>
           Category
           <select name="category" required>
-            {CATEGORIES.map((c) => (
+            {SUPPORT_CATEGORIES.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>

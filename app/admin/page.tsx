@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminSupportMessages } from "@/components/AdminSupportMessages";
-
-const ADMIN_EMAIL = "tariqfuller@gmail.com";
+import { ADMIN_EMAIL } from "@/lib/admin";
 
 async function getAdminStats() {
   const now = new Date();
