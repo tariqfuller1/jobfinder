@@ -121,7 +121,7 @@ async function main() {
   console.log("  Pulling from Remotive, Games Workbook, Arbeitnow, and configured ATS tokens …\n");
   const s4 = Date.now();
 
-  const liveSyncSummary = await syncAllJobs();
+  const { results: liveSyncSummary } = await syncAllJobs();
 
   let liveTotal = 0;
   let liveFailures = 0;

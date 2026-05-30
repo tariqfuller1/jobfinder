@@ -10,16 +10,21 @@ export function startDailySync() {
     while (true) {
       try {
         console.log("[scheduler] Starting job sync...");
-        const results = await syncAllJobs();
+        const { results, pruned } = await syncAllJobs();
         const fetched = results.reduce((s, r) => s + r.jobsFetched, 0);
         const upserted = results.reduce((s, r) => s + r.jobsUpserted, 0);
         const failed = results.filter((r) => !r.ok).length;
-        console.log(`[scheduler] Sync complete — ${results.length} sources, ${fetched} fetched, ${upserted} upserted${failed ? `, ${failed} failed` : ""}. Restarting immediately.`);
+        console.log(
+          `[scheduler] Sync complete — ${results.length} sources, ${fetched} fetched, ${upserted} upserted` +
+          (failed ? `, ${failed} failed` : "") +
+          `, ${pruned.deactivated} deactivated, ${pruned.deleted} deleted.`
+        );
       } catch (err) {
         console.error("[scheduler] Sync failed:", err);
       }
-      // 60s pause between runs to avoid hammering sources on repeated failures
-      await new Promise((res) => setTimeout(res, 60_000));
+      // 3 min pause between runs — gives Node idle time for GC to collect
+      // job objects from the completed sync before the next one allocates
+      await new Promise((res) => setTimeout(res, 3 * 60_000));
     }
   }
 

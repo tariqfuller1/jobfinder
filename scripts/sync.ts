@@ -8,8 +8,8 @@ async function main() {
   console.log(`Removed ${cleanup.removedJobs} bundled starter jobs before live sync.`);
   const discovery = await discoverSourcesForAllCompanies();
   console.log(`Auto-discovered ${discovery.filter((row) => row.discovered).length} company sources before sync.`);
-  const results = await syncAllJobs();
-  console.log(JSON.stringify(results, null, 2));
+  const { results, pruned } = await syncAllJobs();
+  console.log(JSON.stringify({ results, pruned }, null, 2));
 }
 
 main()

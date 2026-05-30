@@ -563,127 +563,111 @@ export async function updateJob(id: string, data: {
   });
 }
 
+// Process jobs in chunks of this size so the full array isn't held in memory
+// while we upsert sequentially. splice() drains the array as we go, letting
+// GC collect processed objects rather than keeping everything until the end.
+const UPSERT_CHUNK = 25;
+
 async function runSingleSource(source: string, fetcher: () => Promise<NormalizedJob[]>) {
   const syncRun = await prisma.syncRun.create({
-    data: {
-      source,
-      jobsFetched: 0,
-      jobsUpserted: 0,
-    },
+    data: { source, jobsFetched: 0, jobsUpserted: 0 },
   });
 
   try {
     const jobs = await fetcher();
-
-    // SQLite is single-writer — upserts must run sequentially to avoid
-    // write-lock contention and P1008 socket timeouts.
+    const totalFetched = jobs.length;
     let jobsUpserted = 0;
 
-    for (const job of jobs) {
-      // Fill UNKNOWN fields from inference before writing to DB.
-      // create: always infer so new jobs are stored with real values.
-      // update: only overwrite the three structured fields when the source
-      //         provides a real value — preserves manual edits made via the UI.
-      const inferred = inferJobFields(job.title, job.descriptionText);
-      const workplaceType =
-        job.workplaceType !== "UNKNOWN" ? job.workplaceType : inferred.workplaceType;
-      const employmentType =
-        job.employmentType !== "UNKNOWN" ? job.employmentType : inferred.employmentType;
-      const experienceLevel =
-        job.experienceLevel !== "UNKNOWN" ? job.experienceLevel : inferred.experienceLevel;
-
-      const salaryEst = estimateSalary({
-        title: job.title,
-        experienceLevel,
-        employmentType,
-        location: job.location,
-        company: job.company,
-        tags: job.tags,
-      });
-      const salaryMid = Math.round((salaryEst.low + salaryEst.high) / 2);
-
-      await prisma.job.upsert({
-        where: {
-          source_externalId: {
-            source: job.source,
-            externalId: job.externalId,
-          },
-        },
-        create: {
-          ...job,
-          workplaceType,
-          employmentType,
-          experienceLevel,
-          tags: JSON.stringify(job.tags),
-          salaryMid,
-          lastSeenAt: new Date(),
-          isActive: true,
-        },
-        update: {
-          title: job.title,
-          company: job.company,
-          location: job.location,
-          sourceUrl: job.sourceUrl,
-          applyUrl: job.applyUrl,
-          descriptionHtml: job.descriptionHtml,
-          descriptionText: job.descriptionText,
-          tags: JSON.stringify(job.tags),
-          salaryMid,
-          lastSeenAt: new Date(),
-          isActive: true,
-          // Only update structured fields if source gave a real value;
-          // otherwise leave whatever is in the DB (manual edit or prior inference).
-          ...(job.workplaceType !== "UNKNOWN" ? { workplaceType: job.workplaceType } : {}),
-          ...(job.employmentType !== "UNKNOWN" ? { employmentType: job.employmentType } : {}),
-          ...(job.experienceLevel !== "UNKNOWN" ? { experienceLevel: job.experienceLevel } : {}),
-        },
-      });
-      jobsUpserted++;
-    }
-
-    // Deduplicate companies by slug before upserting
+    // Track seen company slugs in the same pass as job upserts — avoids
+    // keeping a second uniqueJobs array in memory.
     const seenSlugs = new Set<string>();
-    const uniqueJobs = jobs.filter((job) => {
-      const slug = job.company
-        .toLowerCase()
-        .replace(/&/g, " and ")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "")
-        .slice(0, 80);
-      if (!slug || seenSlugs.has(slug)) return false;
-      seenSlugs.add(slug);
-      return true;
-    });
 
-    // Company upserts also sequential — same single-writer constraint.
-    // Each is wrapped so a single bad upsert doesn't abort the whole sync.
-    for (const job of uniqueJobs) {
-      try {
-        await ensureCompanyExistsFromJob(job);
-      } catch {
-        // company upsert failures are non-fatal and not logged
+    // Drain the array chunk by chunk. Each spliced chunk goes out of scope
+    // after the inner loop, so GC can collect those job objects immediately.
+    while (jobs.length > 0) {
+      const chunk = jobs.splice(0, UPSERT_CHUNK);
+
+      for (const job of chunk) {
+        const inferred = inferJobFields(job.title, job.descriptionText);
+        const workplaceType =
+          job.workplaceType !== "UNKNOWN" ? job.workplaceType : inferred.workplaceType;
+        const employmentType =
+          job.employmentType !== "UNKNOWN" ? job.employmentType : inferred.employmentType;
+        const experienceLevel =
+          job.experienceLevel !== "UNKNOWN" ? job.experienceLevel : inferred.experienceLevel;
+
+        const salaryEst = estimateSalary({
+          title: job.title,
+          experienceLevel,
+          employmentType,
+          location: job.location,
+          company: job.company,
+          tags: job.tags,
+        });
+        const salaryMid = Math.round((salaryEst.low + salaryEst.high) / 2);
+
+        await prisma.job.upsert({
+          where: { source_externalId: { source: job.source, externalId: job.externalId } },
+          create: {
+            ...job,
+            workplaceType,
+            employmentType,
+            experienceLevel,
+            tags: JSON.stringify(job.tags),
+            salaryMid,
+            lastSeenAt: new Date(),
+            isActive: true,
+          },
+          update: {
+            title: job.title,
+            company: job.company,
+            location: job.location,
+            sourceUrl: job.sourceUrl,
+            applyUrl: job.applyUrl,
+            descriptionHtml: job.descriptionHtml,
+            descriptionText: job.descriptionText,
+            tags: JSON.stringify(job.tags),
+            salaryMid,
+            lastSeenAt: new Date(),
+            isActive: true,
+            ...(job.workplaceType !== "UNKNOWN" ? { workplaceType: job.workplaceType } : {}),
+            ...(job.employmentType !== "UNKNOWN" ? { employmentType: job.employmentType } : {}),
+            ...(job.experienceLevel !== "UNKNOWN" ? { experienceLevel: job.experienceLevel } : {}),
+          },
+        });
+        jobsUpserted++;
+
+        // Company upsert in the same pass — no second array needed
+        const slug = job.company
+          .toLowerCase()
+          .replace(/&/g, " and ")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "")
+          .slice(0, 80);
+        if (slug && !seenSlugs.has(slug)) {
+          seenSlugs.add(slug);
+          try {
+            await ensureCompanyExistsFromJob(job);
+          } catch {
+            // non-fatal, not logged
+          }
+        }
       }
+      // chunk goes out of scope here — GC can collect
     }
 
     await prisma.syncRun.update({
       where: { id: syncRun.id },
-      data: {
-        jobsFetched: jobs.length,
-        jobsUpserted,
-        finishedAt: new Date(),
-      },
+      data: { jobsFetched: totalFetched, jobsUpserted, finishedAt: new Date() },
     });
 
-    return { source, jobsFetched: jobs.length, jobsUpserted, ok: true as const };
+    return { source, jobsFetched: totalFetched, jobsUpserted, ok: true as const };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error(`[sync] ${source} — FAILED: ${message}`);
     await prisma.syncRun.update({
       where: { id: syncRun.id },
-      data: {
-        finishedAt: new Date(),
-        error: message,
-      },
+      data: { finishedAt: new Date(), error: message },
     });
     return { source, jobsFetched: 0, jobsUpserted: 0, ok: false as const, error: message };
   }
@@ -833,6 +817,8 @@ export async function syncAllJobs(
   const results: SyncSourceResult[] = [];
 
   // SQLite is single-writer — sources run one at a time.
+  // A short pause between sources gives GC a chance to collect the previous
+  // source's job objects before the next fetch allocates new ones.
   for (const { source, fetcher } of sourceDefs) {
     onStart?.(source, completed, total);
     const result = await runSingleSource(source, fetcher);
@@ -841,7 +827,37 @@ export async function syncAllJobs(
     runningUpserted += result.jobsUpserted;
     onProgress?.(result, completed, total, runningFetched, runningUpserted);
     results.push(result);
+    await new Promise((res) => setTimeout(res, 500));
   }
 
-  return results;
+  const pruned = await pruneStaleJobs();
+  return { results, pruned };
+}
+
+async function pruneStaleJobs(): Promise<{ deactivated: number; deleted: number }> {
+  const now = Date.now();
+
+  // Mark inactive: jobs not seen in any sync for 21 days — they've been
+  // removed from the source feed. Never touch manually-added jobs.
+  const { count: deactivated } = await prisma.job.updateMany({
+    where: {
+      isActive: true,
+      lastSeenAt: { lt: new Date(now - 21 * 24 * 60 * 60 * 1000) },
+      source: { not: "manual" },
+    },
+    data: { isActive: false },
+  });
+
+  // Hard delete: inactive jobs with no tracker entries and not seen in 60 days.
+  // Jobs saved to a tracker are left alone — just hidden from listings.
+  const { count: deleted } = await prisma.job.deleteMany({
+    where: {
+      isActive: false,
+      lastSeenAt: { lt: new Date(now - 60 * 24 * 60 * 60 * 1000) },
+      source: { not: "manual" },
+      applications: { none: {} },
+    },
+  });
+
+  return { deactivated, deleted };
 }

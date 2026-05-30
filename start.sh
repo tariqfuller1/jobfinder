@@ -34,7 +34,7 @@ fi
     npx tsx scripts/sync.ts >> /tmp/sync.log 2>&1 \
       && echo "[scheduler] Sync complete." \
       || echo "[scheduler] Sync failed — check /tmp/sync.log"
-    sleep 60  # brief pause between runs
+    sleep 180  # 3 min pause — lets GC collect before next sync
   done
 ) &
 

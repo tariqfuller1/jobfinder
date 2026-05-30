@@ -26,7 +26,7 @@ type HimalayasResponse = {
 };
 
 export async function fetchHimalayasJobs(): Promise<NormalizedJob[]> {
-  const maxPages = parseInt(process.env.HIMALAYAS_MAX_PAGES ?? "50", 10);
+  const maxPages = parseInt(process.env.HIMALAYAS_MAX_PAGES ?? "5", 10);
   const allJobs: NormalizedJob[] = [];
 
   for (let page = 0; page < maxPages; page++) {
