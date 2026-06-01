@@ -80,12 +80,20 @@ function isSectionHead(line: string) {
   return /^[A-Z][A-Z\s&/,()-]{2,}$/.test(line) && !line.includes("|");
 }
 
-function renderBodyLine(line: string): string {
-  if (line.startsWith("•") || line.startsWith("·")) {
-    const text = line.replace(/^[•·]\s*/, "");
-    return `<p class="bullet">&#8226; ${linkifyEsc(text)}</p>`;
+function renderBodyLine(line: string, splitEntryDate = false): string {
+  if (line.startsWith("•") || line.startsWith("·") || line.startsWith("▪")) {
+    const text = line.replace(/^[•·▪]\s*/, "");
+    return `<p class="bullet">&#9642; ${linkifyEsc(text)}</p>`;
   }
   if (line.includes(" | ")) {
+    if (splitEntryDate) {
+      const lastPipe = line.lastIndexOf(" | ");
+      const main = line.slice(0, lastPipe);
+      const date = line.slice(lastPipe + 3);
+      if (/\d{4}|[Pp]resent/.test(date)) {
+        return `<p class="entry"><span>${esc(main)}</span><span class="entry-date">${esc(date)}</span></p>`;
+      }
+    }
     return `<p class="entry">${linkifyEsc(line)}</p>`;
   }
   return `<p class="body-text">${linkifyEsc(line)}</p>`;
@@ -96,6 +104,7 @@ const RESUME_TEMPLATES = [
     id: "classic",
     name: "Classic",
     description: "Centered name, all-caps sections, clean Arial",
+    splitEntryDate: false,
     css: `
       body { font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.5; color: #000; padding: 0.7in 0.85in; max-width: 8.5in; margin: 0 auto; }
       .name { font-size: 20pt; font-weight: 700; text-align: center; margin-bottom: 4px; }
@@ -112,6 +121,7 @@ const RESUME_TEMPLATES = [
     id: "modern",
     name: "Modern",
     description: "Left-aligned, navy blue accents, Calibri",
+    splitEntryDate: false,
     css: `
       body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #1a1a1a; padding: 0.7in 0.9in; max-width: 8.5in; margin: 0 auto; }
       .name { font-size: 22pt; font-weight: 700; text-align: left; color: #1e3a5f; margin-bottom: 3px; }
@@ -128,6 +138,7 @@ const RESUME_TEMPLATES = [
     id: "compact",
     name: "Compact",
     description: "Tighter spacing — fits more on one page",
+    splitEntryDate: false,
     css: `
       body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.35; color: #000; padding: 0.5in 0.7in; max-width: 8.5in; margin: 0 auto; }
       .name { font-size: 16pt; font-weight: 700; text-align: center; margin-bottom: 2px; }
@@ -144,6 +155,7 @@ const RESUME_TEMPLATES = [
     id: "executive",
     name: "Executive",
     description: "Serif font, letter-spaced name, formal look",
+    splitEntryDate: false,
     css: `
       body { font-family: Georgia, 'Times New Roman', serif; font-size: 11pt; line-height: 1.55; color: #000; padding: 0.8in 1in; max-width: 8.5in; margin: 0 auto; }
       .name { font-size: 22pt; font-weight: 400; text-align: center; letter-spacing: 0.08em; margin-bottom: 4px; }
@@ -156,12 +168,31 @@ const RESUME_TEMPLATES = [
       @media print { html, body { padding: 0; margin: 0; } @page { size: letter; margin: 0.75in 1in; } }
     `,
   },
+  {
+    id: "create",
+    name: "Academic",
+    description: "Times New Roman, bold sections, right-aligned dates",
+    splitEntryDate: true,
+    css: `
+      body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.5; color: #000; padding: 0.7in 1in; max-width: 8.5in; margin: 0 auto; }
+      .name { font-size: 18pt; font-weight: 700; text-align: center; margin-bottom: 3px; }
+      .contact { font-size: 10pt; text-align: center; margin-bottom: 5px; }
+      .name-rule { display: none; }
+      .section-head { font-size: 11pt; font-weight: 700; text-transform: uppercase; border-bottom: 1.5px solid #000; padding-bottom: 1px; margin: 12px 0 4px; }
+      .entry { font-weight: 700; font-size: 11pt; margin: 7px 0 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+      .entry-date { font-weight: 400; white-space: nowrap; flex-shrink: 0; }
+      .bullet { font-size: 10.5pt; margin: 1px 0; padding-left: 1.4em; text-indent: -1.4em; }
+      .body-text { font-size: 11pt; font-style: italic; margin: 0 0 2px; }
+      @media print { html, body { padding: 0; margin: 0; } @page { size: letter; margin: 0.65in 1in; } }
+    `,
+  },
 ] as const;
 
 type TemplateId = typeof RESUME_TEMPLATES[number]["id"];
 
 function buildResumeHTML(text: string, jobTitle: string, company: string, templateId: TemplateId = "classic", forPrint = true): string {
   const template = RESUME_TEMPLATES.find((t) => t.id === templateId) ?? RESUME_TEMPLATES[0];
+  const splitEntryDate = (template as { splitEntryDate?: boolean }).splitEntryDate ?? false;
   const lines = text.split("\n").map((l) => l.trimEnd());
   let body = "";
   let i = 0;
@@ -188,7 +219,7 @@ function buildResumeHTML(text: string, jobTitle: string, company: string, templa
     if (isSectionHead(line)) {
       body += `<p class="section-head">${esc(line)}</p>`;
     } else {
-      body += renderBodyLine(line);
+      body += renderBodyLine(line, splitEntryDate);
     }
   }
 
