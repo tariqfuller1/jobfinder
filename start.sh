@@ -23,19 +23,9 @@ else
   npx tsx scripts/bootstrap.ts &
 fi
 
-# ── Continuous sync: restart immediately after each run ───────────────────────
-# Runs independently of the in-process scheduler. Fires the first sync 5 minutes
-# after startup, then loops without a fixed interval — next run starts as soon
-# as the previous one finishes (60s pause between to avoid tight failure loops).
-(
-  sleep 300  # wait for Next.js to come up
-  while true; do
-    echo "[scheduler] $(date -u '+%Y-%m-%d %H:%M UTC') — running sync..."
-    npx tsx scripts/sync.ts >> /tmp/sync.log 2>&1 \
-      && echo "[scheduler] Sync complete." \
-      || echo "[scheduler] Sync failed — check /tmp/sync.log"
-    sleep 180  # 3 min pause — lets GC collect before next sync
-  done
-) &
+# Recurring sync is handled in-process by lib/scheduler.ts (started via
+# instrumentation.ts once Next.js boots) — do not also loop scripts/sync.ts
+# here, since that spawned a second full Node/tsx process running the same
+# work concurrently and was the source of Railway OOM crashes.
 
 exec next start -H 0.0.0.0 -p ${PORT:-8080}

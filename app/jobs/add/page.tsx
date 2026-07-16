@@ -45,10 +45,44 @@ export default function AddJobPage() {
   const [form, setForm] = useState(BLANK);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [screenshotPending, setScreenshotPending] = useState(false);
+  const [screenshotError, setScreenshotError] = useState("");
 
   function field(key: keyof typeof BLANK) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
+  }
+
+  async function handleScreenshot(file: File | null | undefined) {
+    if (!file) return;
+    setScreenshotPending(true);
+    setScreenshotError("");
+    try {
+      const body = new FormData();
+      body.append("image", file);
+      const res = await fetch("/api/jobs/parse-screenshot", { method: "POST", body });
+      const json = await res.json();
+      if (!res.ok) {
+        setScreenshotError(json.error ?? "Couldn't read that screenshot.");
+        return;
+      }
+      const data = json.data as Partial<typeof BLANK>;
+      setForm((f) => ({
+        ...f,
+        ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== "")),
+      }));
+    } catch {
+      setScreenshotError("Network error — try again.");
+    } finally {
+      setScreenshotPending(false);
+    }
+  }
+
+  function handlePaste(e: React.ClipboardEvent) {
+    const item = Array.from(e.clipboardData.items).find((i) => i.type.startsWith("image/"));
+    if (!item) return;
+    e.preventDefault();
+    handleScreenshot(item.getAsFile());
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -87,6 +121,35 @@ export default function AddJobPage() {
         <p className="muted" style={{ margin: "6px 0 0", fontSize: 13 }}>
           Found a role elsewhere? Add it here so you can run the ATS check, generate a cover letter, and track your application.
         </p>
+      </div>
+
+      <div
+        className="card"
+        onPaste={handlePaste}
+        tabIndex={0}
+        style={{ padding: "20px 22px", display: "grid", gap: 10 }}
+      >
+        <div className="eyebrow">Autofill from a screenshot</div>
+        <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+          Upload a screenshot of the job posting (from your phone or laptop) — or click here and paste one (Ctrl/Cmd+V) — and we'll fill in the fields below.
+        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <label className="button secondary" style={{ fontSize: 13, cursor: "pointer" }}>
+            {screenshotPending ? "Reading screenshot…" : "Choose screenshot"}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => {
+                handleScreenshot(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+              disabled={screenshotPending}
+              style={{ display: "none" }}
+            />
+          </label>
+          {screenshotPending && <span className="muted" style={{ fontSize: 13 }}>Analyzing image…</span>}
+        </div>
+        {screenshotError && <p style={{ margin: 0, fontSize: 13, color: "#f87171" }}>{screenshotError}</p>}
       </div>
 
       <form onSubmit={handleSubmit} className="card" style={{ padding: "20px 22px", display: "grid", gap: 16 }}>
