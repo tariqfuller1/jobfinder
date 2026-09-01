@@ -80,7 +80,8 @@ ${resumeText.slice(0, 4000)}
 Respond NOW with only the JSON object starting with { and ending with }:`;
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
+      include_reasoning: false,
       messages: [
         { role: "system", content: "You are a JSON API that parses resumes. You ONLY output raw JSON. Never output text, explanation, or markdown. Your entire response must be a single valid JSON object starting with { and ending with }." },
         { role: "user", content: prompt },

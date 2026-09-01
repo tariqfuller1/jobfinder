@@ -172,7 +172,8 @@ Return JSON:
 }`;
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
+      include_reasoning: false,
       messages: [
         { role: "system", content: "You are an expert ATS resume writer. Output only the raw JSON object — no markdown, no code fences, no explanation." },
         { role: "user", content: prompt },

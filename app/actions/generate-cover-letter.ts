@@ -72,7 +72,8 @@ Respond with only a JSON object:
 {"letter": "<complete cover letter as plain text with real newlines>"}`;
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
+      include_reasoning: false,
       messages: [
         { role: "system", content: "You are a cover letter writer API. Output only a raw JSON object with a single 'letter' key. No markdown, no explanation." },
         { role: "user", content: prompt },

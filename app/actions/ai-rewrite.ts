@@ -35,7 +35,8 @@ ${suggestion}
 Rewrite the ${label} incorporating the requested change. Keep the same general structure and tone unless asked to change it. Return only the ${label} text with no extra commentary or markdown formatting.`;
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
+      include_reasoning: false,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
       max_tokens: 1500,

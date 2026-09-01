@@ -86,7 +86,8 @@ ${expLine ? `Experience: ${expLine}` : ""}
 Respond with only a JSON object: {"message": "<the message as plain text with real newlines>"}`;
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
+      include_reasoning: false,
       messages: [
         { role: "system", content: "You are an outreach message writer. Output only a raw JSON object with a single 'message' key. No markdown, no explanation." },
         { role: "user", content: prompt },
@@ -139,7 +140,8 @@ Rewrite the message applying the requested change. Keep the same message type an
 Respond with only a JSON object: {"message": "<rewritten message as plain text with real newlines>"}`;
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
+      include_reasoning: false,
       messages: [
         { role: "system", content: "You are an outreach message editor. Output only a raw JSON object with a single 'message' key." },
         { role: "user", content: prompt },

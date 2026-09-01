@@ -87,7 +87,8 @@ APPLICATION QUESTION: "${question}"
 Write a concise, specific, and authentic answer (2-4 paragraphs max). Reference real projects, roles, or technologies from the candidate's background — including personal and side projects — when they are relevant to the question. Connect their experience directly to this company and role. Do not fabricate facts. Sound human, not generic or robotic. Return only the answer text with no preamble or labels.`;
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
+      include_reasoning: false,
       messages: [
         { role: "system", content: "You write application question answers. Return only the answer text, no commentary." },
         { role: "user", content: prompt },
@@ -149,7 +150,8 @@ ${refinementNote}
 Rewrite the answer incorporating the requested change. Draw on the candidate's real background when relevant. Keep it concise and authentic. Return only the answer text with no preamble or labels.`;
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
+      include_reasoning: false,
       messages: [
         { role: "system", content: "You edit application answers. Return only the revised answer text." },
         { role: "user", content: prompt },
