@@ -1,4 +1,4 @@
-import { getGroqClient } from "@/lib/groq";
+import { getGroqClient, formatGroqError } from "@/lib/groq";
 import { parseJsonSafe } from "@/lib/safe-json";
 
 export type ParsedJobScreenshot = {
@@ -110,10 +110,6 @@ Respond NOW with only the JSON object starting with { and ending with }:`;
 
     return { ok: true, data };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("429") || message.toLowerCase().includes("rate limit")) {
-      return { ok: false, error: "AI is rate-limited. Wait a moment and try again." };
-    }
-    return { ok: false, error: `Parse failed: ${message}` };
+    return { ok: false, error: formatGroqError(err) };
   }
 }

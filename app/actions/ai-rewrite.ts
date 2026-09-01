@@ -1,7 +1,7 @@
 "use server";
 
 import { getCurrentUser } from "@/lib/auth";
-import { getGroqClient } from "@/lib/groq";
+import { getGroqClient, formatGroqError } from "@/lib/groq";
 
 type RewriteType = "cover-letter" | "resume";
 
@@ -25,7 +25,7 @@ export async function regenerateWithSuggestion(
 Job: ${jobTitle} at ${jobCompany}${descSnippet ? `\n<job_description>\n${descSnippet}\n</job_description>` : ""}
 
 <current_draft>
-${currentDraft}
+${currentDraft.slice(0, 4000)}
 </current_draft>
 
 <requested_change>
@@ -46,13 +46,6 @@ Rewrite the ${label} incorporating the requested change. Keep the same general s
     if (!draft) return { ok: false, error: "AI returned an empty response. Try again." };
     return { ok: true, draft };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("429") || message.toLowerCase().includes("quota") || message.toLowerCase().includes("rate limit")) {
-      return { ok: false, error: "The AI is temporarily rate-limited. Wait a moment and try again." };
-    }
-    if (message.includes("API key") || message.includes("auth")) {
-      return { ok: false, error: "Groq API key is missing or invalid. Add GROQ_API_KEY to your environment variables." };
-    }
-    return { ok: false, error: "Something went wrong generating the draft. Try again." };
+    return { ok: false, error: formatGroqError(err) };
   }
 }

@@ -20,18 +20,23 @@ type HimalayasJob = {
 
 type HimalayasResponse = {
   jobs: HimalayasJob[];
-  totalCount: number;
-  limit: number;
-  offset: number;
+  nextCursor?: string;
 };
 
 export async function fetchHimalayasJobs(): Promise<NormalizedJob[]> {
   const maxPages = parseInt(process.env.HIMALAYAS_MAX_PAGES ?? "5", 10);
   const allJobs: NormalizedJob[] = [];
+  // Himalayas deprecated offset-based paging in favor of cursor-based paging
+  // (per the API's own response notice) — cursor is faster and never repeats
+  // a job across pages.
+  let cursor: string | undefined;
 
   for (let page = 0; page < maxPages; page++) {
-    const url = `${BASE_URL}?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}`;
-    const response = await fetch(url, {
+    const url = new URL(BASE_URL);
+    url.searchParams.set("limit", String(PAGE_SIZE));
+    if (cursor) url.searchParams.set("cursor", cursor);
+
+    const response = await fetch(url.toString(), {
       headers: { "User-Agent": "JobFinder/1.0" },
       cache: "no-store",
     });
@@ -77,7 +82,8 @@ export async function fetchHimalayasJobs(): Promise<NormalizedJob[]> {
       } satisfies NormalizedJob);
     }
 
-    if ((page + 1) * PAGE_SIZE >= data.totalCount) break;
+    if (!data.nextCursor || jobs.length < PAGE_SIZE) break;
+    cursor = data.nextCursor;
   }
 
   return allJobs;

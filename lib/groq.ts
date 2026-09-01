@@ -13,8 +13,18 @@ export function getGroqClient(): Groq {
 
 export function formatGroqError(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
-  if (message.includes("429") || message.toLowerCase().includes("rate limit")) {
-    return "AI is rate-limited. Wait a moment and try again.";
+  const lower = message.toLowerCase();
+  // Covers both classic 429s and Groq's "413 + rate_limit_exceeded" response for
+  // requests whose prompt + max_tokens exceeds the per-minute token budget.
+  if (
+    message.includes("429") ||
+    message.includes("413") ||
+    lower.includes("rate limit") ||
+    lower.includes("rate_limit") ||
+    lower.includes("too large") ||
+    lower.includes("tokens per minute")
+  ) {
+    return "AI is temporarily rate-limited. Wait a moment and try again.";
   }
   if (message.includes("API key") || message.includes("auth")) {
     return "Groq API key is missing or invalid.";

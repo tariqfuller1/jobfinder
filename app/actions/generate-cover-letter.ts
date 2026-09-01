@@ -1,7 +1,7 @@
 "use server";
 
 import { getCurrentUser } from "@/lib/auth";
-import { getGroqClient } from "@/lib/groq";
+import { getGroqClient, formatGroqError } from "@/lib/groq";
 import { parseJsonSafe } from "@/lib/safe-json";
 import type { WorkExperienceEntry } from "@/lib/profile";
 
@@ -95,10 +95,6 @@ Respond with only a JSON object:
 
     return { ok: true, letter };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("429") || message.toLowerCase().includes("rate limit")) {
-      return { ok: false, error: "AI is rate-limited. Wait a moment and try again." };
-    }
-    return { ok: false, error: `Generation failed: ${message}` };
+    return { ok: false, error: formatGroqError(err) };
   }
 }

@@ -1,7 +1,7 @@
 "use server";
 
 import { getCurrentUser } from "@/lib/auth";
-import { getGroqClient } from "@/lib/groq";
+import { getGroqClient, formatGroqError } from "@/lib/groq";
 import { parseJsonSafe } from "@/lib/safe-json";
 import type { WorkExperienceEntry, ProjectEntry } from "@/lib/profile";
 
@@ -65,12 +65,15 @@ export async function runATSCheck(
   try {
     const groq = getGroqClient();
 
+    // Capped defensively — Groq's free-tier TPM budget for this model is 8,000
+    // tokens/minute total (prompt + max_tokens), so unbounded profile text here
+    // could push a single request over the limit on its own.
     const experienceSection = workExperience.length > 0
-      ? `WORK EXPERIENCE\n${formatExperience(workExperience)}`
+      ? `WORK EXPERIENCE\n${formatExperience(workExperience).slice(0, 3000)}`
       : "";
 
     const projectsSection = projects.length > 0
-      ? `PROJECTS\n${formatProjects(projects)}`
+      ? `PROJECTS\n${formatProjects(projects).slice(0, 1500)}`
       : "";
 
     const skillsSection = [...skills, ...stacks].length > 0
@@ -179,7 +182,10 @@ Return JSON:
         { role: "user", content: prompt },
       ],
       temperature: 0.4,
-      max_tokens: 6000,
+      // Groq's free-tier TPM budget for this model is 8,000 tokens/minute total,
+      // and that figure covers prompt + max_tokens together — keep this well
+      // under the ceiling so a normal-sized profile doesn't get rejected outright.
+      max_tokens: 3200,
     });
 
     const raw = completion.choices[0]?.message?.content ?? "";
@@ -206,13 +212,6 @@ Return JSON:
       optimizedResume: typeof parsed.optimizedResume === "string" ? parsed.optimizedResume.trim() : "",
     };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("429") || message.toLowerCase().includes("rate limit") || message.toLowerCase().includes("quota")) {
-      return { ok: false, error: "AI is temporarily rate-limited. Wait a moment and try again." };
-    }
-    if (message.includes("API key") || message.includes("auth")) {
-      return { ok: false, error: "Groq API key is missing or invalid. Add GROQ_API_KEY to your environment variables." };
-    }
-    return { ok: false, error: `Resume generation failed: ${message}` };
+    return { ok: false, error: formatGroqError(err) };
   }
 }

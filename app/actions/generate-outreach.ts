@@ -1,7 +1,7 @@
 "use server";
 
 import { getCurrentUser } from "@/lib/auth";
-import { getGroqClient } from "@/lib/groq";
+import { getGroqClient, formatGroqError } from "@/lib/groq";
 import { parseJsonSafe } from "@/lib/safe-json";
 import type { WorkExperienceEntry } from "@/lib/profile";
 
@@ -73,7 +73,7 @@ export async function generateOutreachMessage(
 
 COMPANY: ${companyName}
 ${roleContext}
-${companyNotes ? `Company notes: ${companyNotes}` : ""}
+${companyNotes ? `Company notes: ${companyNotes.slice(0, 800)}` : ""}
 Company focus areas: ${focusLine}
 ${recipientContext}
 
@@ -107,11 +107,7 @@ Respond with only a JSON object: {"message": "<the message as plain text with re
 
     return { ok: true, message };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("429") || msg.toLowerCase().includes("rate limit")) {
-      return { ok: false, error: "AI is rate-limited. Wait a moment and try again." };
-    }
-    return { ok: false, error: `Generation failed: ${msg}` };
+    return { ok: false, error: formatGroqError(err) };
   }
 }
 
@@ -129,7 +125,7 @@ export async function refineOutreachMessage(
     const prompt = `You are editing an outreach message for ${companyName}. The message type is: ${messageType}.
 
 <current_message>
-${currentMessage}
+${currentMessage.slice(0, 2000)}
 </current_message>
 
 <requested_change>
@@ -161,10 +157,6 @@ Respond with only a JSON object: {"message": "<rewritten message as plain text w
 
     return { ok: true, message };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("429") || msg.toLowerCase().includes("rate limit")) {
-      return { ok: false, error: "AI is rate-limited. Wait a moment and try again." };
-    }
-    return { ok: false, error: `Refinement failed: ${msg}` };
+    return { ok: false, error: formatGroqError(err) };
   }
 }

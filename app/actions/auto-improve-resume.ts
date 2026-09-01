@@ -1,7 +1,7 @@
 "use server";
 
 import { getCurrentUser } from "@/lib/auth";
-import { getGroqClient } from "@/lib/groq";
+import { getGroqClient, formatGroqError } from "@/lib/groq";
 import { parseJsonSafe } from "@/lib/safe-json";
 import type { QualityRating } from "./ats-check";
 
@@ -52,7 +52,7 @@ ${jobDescriptionText.slice(0, 1500)}
 </job_description>
 
 <current_resume>
-${currentResume}
+${currentResume.slice(0, 4000)}
 </current_resume>
 
 Respond NOW with only this JSON starting with {:
@@ -73,7 +73,10 @@ Respond NOW with only this JSON starting with {:
       { role: "user", content: prompt },
     ],
     temperature: 0.3,
-    max_tokens: 4000,
+    // Groq's free-tier TPM budget for this model is 8,000 tokens/minute total
+    // (prompt + max_tokens together), and this loop can fire up to MAX_ATTEMPTS
+    // calls back to back — keep each call well under the ceiling.
+    max_tokens: 2500,
   });
 
   const raw = (completion.choices[0]?.message?.content ?? "").trim();
@@ -105,28 +108,33 @@ export async function autoImproveResume(
 ): Promise<AutoImproveResult> {
   if (!await getCurrentUser()) return { ok: false, error: "Sign in to use AI features." };
 
+  let groq: ReturnType<typeof getGroqClient>;
   try {
-    const groq = getGroqClient();
-    let resume = currentResume;
-    let rating = currentRating;
-    let feedback = currentFeedback;
-    let attempts = 0;
+    groq = getGroqClient();
+  } catch (err) {
+    return { ok: false, error: formatGroqError(err) };
+  }
 
-    while (attempts < MAX_ATTEMPTS && (rating === "Fair" || rating === "Poor")) {
-      attempts++;
+  let resume = currentResume;
+  let rating = currentRating;
+  let feedback = currentFeedback;
+  let attempts = 0;
+
+  while (attempts < MAX_ATTEMPTS && (rating === "Fair" || rating === "Poor")) {
+    attempts++;
+    try {
       const result = await improveOnce(groq, resume, rating, feedback, jobTitle, jobCompany, jobDescriptionText, profileLinks);
       if (!result) break;
       resume = result.resume;
       rating = result.rating;
       feedback = result.feedback;
+    } catch {
+      // Keep whatever was improved in prior attempts rather than discarding it —
+      // a later attempt failing (e.g. hitting Groq's per-minute token budget)
+      // shouldn't throw away progress already made.
+      break;
     }
-
-    return { ok: true, optimizedResume: resume, qualityRating: rating, qualityFeedback: feedback, attempts };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("429") || message.toLowerCase().includes("rate limit")) {
-      return { ok: false, error: "AI is rate-limited. Wait a moment and try again." };
-    }
-    return { ok: false, error: "Auto-improve failed. Try using the manual refinement box." };
   }
+
+  return { ok: true, optimizedResume: resume, qualityRating: rating, qualityFeedback: feedback, attempts };
 }
