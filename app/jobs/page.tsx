@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { listJobs } from "@/lib/jobs";
 import { getProfileForUserOrDefault } from "@/lib/profile";
 import { getTrackedJobStatuses } from "@/lib/tracker";
+import { getAutoApplyStatuses } from "@/lib/auto-apply/service";
 
 export default async function JobsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
@@ -60,6 +61,9 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   };
 
   const reliableApplyCount = data.jobs.filter((job) => job.hasReliableApplyLink).length;
+  const autoApplies = user
+    ? await getAutoApplyStatuses(user.id, data.jobs.map((job) => job.id))
+    : new Map<string, { id: string; status: string }>();
 
   return (
     <div className="stack page-stack-lg" style={{ padding: "28px 0 44px" }}>
@@ -152,7 +156,13 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
           ) : null}
 
           {data.jobs.map((job) => (
-            <JobCard key={job.id} job={job} userId={user?.id} trackerStatus={trackedStatuses.get(job.id)} />
+            <JobCard
+              key={job.id}
+              job={job}
+              userId={user?.id}
+              trackerStatus={trackedStatuses.get(job.id)}
+              autoApply={autoApplies.get(job.id) ?? null}
+            />
           ))}
 
           <Pagination page={data.page} totalPages={data.totalPages} pathname="/jobs" searchParams={serializableParams} />

@@ -38,6 +38,11 @@ const yesNo = z.enum(["", "yes", "no"]).default("");
 // Answers people otherwise type into every application. Profile data (name,
 // email, phone, links, work history) is pulled from CandidateProfile instead.
 export const savedAnswersSchema = z.object({
+  // review: always stop on the review page before sending.
+  // auto_no_ai: send right away unless an AI-written answer needs checking.
+  // auto: send right away whenever every required question is answered.
+  submitMode: z.enum(["review", "auto_no_ai", "auto"]).default("review"),
+
   phone: z.string().max(40).default(""),
   city: z.string().max(100).default(""),
   state: z.string().max(100).default(""),

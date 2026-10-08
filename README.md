@@ -92,7 +92,12 @@ npm run dev
    - Ashby: through the public GraphQL endpoint its hosted form uses.
 
    Answers are filled from the profile and the user's saved answers (`lib/auto-apply/answers.ts`). Required open-ended questions go to Groq (`lib/auto-apply/ai.ts`). Legal and self-ID questions (work authorization, sponsorship, EEO) and personal facts (salary, notice period) are never sent to AI. They come from saved answers or the user.
-2. **Review**. The user checks and edits every answer at `/auto-apply/[id]`, then clicks Submit. That marks the application `QUEUED`. A per-user daily cap (`AUTO_APPLY_DAILY_LIMIT`) applies.
+2. **Review or one click**. Each user picks a submit mode on `/auto-apply`:
+   - **Apply in one click**: if every required question has an answer, the application is marked `QUEUED` immediately. The button on the job page or job card switches to Applying…, then Applied ✓.
+   - **One click unless AI wrote something**: same, but any AI-written answer sends it to review first.
+   - **Always review**: the user checks every answer at `/auto-apply/[id]` and clicks Submit.
+
+   In every mode, a question only the user can answer opens the review page. A per-user daily cap (`AUTO_APPLY_DAILY_LIMIT`) applies.
 3. **Submit** (in `worker/`, a separate service). The worker polls `/api/internal/auto-apply/claim`, fills the real form in headless Chromium, clicks Submit, and reports the result. A success adds the job to the tracker as Applied. If the form shows a CAPTCHA challenge or rejects the submission, the application goes back to the user as "Finish manually", with their answers ready to copy. The worker never tries to solve CAPTCHAs.
 
 ### Deploying the worker on Railway

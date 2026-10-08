@@ -65,6 +65,18 @@ function greenhouse(token: string, id: string): AtsTarget {
 }
 
 /**
+ * Cheap check for job lists — no database lookup. Greenhouse jobs on a
+ * company's own domain are assumed supported; detectAtsTarget confirms on click.
+ */
+export function looksAutoApplyable(job: Partial<JobLike>) {
+  if (job.source === "greenhouse") return true;
+  return [job.applyUrl ?? null, job.sourceUrl ?? null].some((candidate) => {
+    const url = parse(candidate);
+    return Boolean(url && fromUrl(url));
+  });
+}
+
+/**
  * Works out which ATS hosts a job's application form. Returns null for
  * anything other than Greenhouse, Lever, or Ashby — those are the only forms
  * auto-apply knows how to read and fill.

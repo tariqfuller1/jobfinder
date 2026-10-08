@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { SaveToTracker } from "@/components/SaveToTracker";
+import { AutoApplyButton } from "@/components/AutoApplyButton";
+import { looksAutoApplyable } from "@/lib/auto-apply/detect";
 import { getRoleCategory } from "@/lib/classify";
 import { stripHtml } from "@/lib/normalize";
 
@@ -22,6 +24,9 @@ export type JobCardData = {
   descriptionText?: string | null;
   postedAt?: string | Date | null;
   hasReliableApplyLink?: boolean;
+  source?: string;
+  applyUrl?: string | null;
+  sourceUrl?: string | null;
 };
 
 function fmtWorkplace(v: string) {
@@ -57,7 +62,17 @@ const TRACKER_LABELS: Record<string, { label: string; color: string; bg: string;
   GHOSTED:       { label: "Ghosted",      color: "#6b7280", bg: "rgba(107,114,128,0.08)", border: "rgba(107,114,128,0.18)" },
 };
 
-export function JobCard({ job, userId, trackerStatus }: { job: JobCardData; userId?: string | null; trackerStatus?: string }) {
+export function JobCard({
+  job,
+  userId,
+  trackerStatus,
+  autoApply = null,
+}: {
+  job: JobCardData;
+  userId?: string | null;
+  trackerStatus?: string;
+  autoApply?: { id: string; status: string } | null;
+}) {
   const postedDate = job.postedAt ? new Date(job.postedAt) : null;
   const postedLabel = postedDate && !isNaN(postedDate.getTime())
     ? formatDistanceToNow(postedDate, { addSuffix: true })
@@ -71,6 +86,7 @@ export function JobCard({ job, userId, trackerStatus }: { job: JobCardData; user
   const fitBg    = fitHigh ? "rgba(74,222,128,0.12)" : fitMid ? "rgba(251,191,36,0.10)" : "rgba(255,255,255,0.04)";
   const fitBorder= fitHigh ? "rgba(74,222,128,0.28)" : fitMid ? "rgba(251,191,36,0.22)" : "rgba(255,255,255,0.08)";
 
+  const canAutoApply = looksAutoApplyable(job);
   const workplace  = fmtWorkplace(job.workplaceType);
   const employment = fmtEmployment(job.employmentType);
   const experience = fmtExperience(job.experienceLevel);
@@ -175,8 +191,11 @@ export function JobCard({ job, userId, trackerStatus }: { job: JobCardData; user
       })()}
 
       {/* ── Row 7: actions ── */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 2 }}>
-        <Link className="button" href={`/jobs/${job.id}`} style={{ fontSize: 13, minHeight: 36, padding: "8px 14px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 2, alignItems: "flex-start" }}>
+        {canAutoApply && (
+          <AutoApplyButton jobId={job.id} requireLogin={!userId} initial={autoApply} compact />
+        )}
+        <Link className={canAutoApply ? "button secondary" : "button"} href={`/jobs/${job.id}`} style={{ fontSize: 13, minHeight: 36, padding: "8px 14px" }}>
           Open job
         </Link>
         <Link className="button secondary" href={userId ? `/cover-letters/${job.id}` : `/login?next=/cover-letters/${job.id}`}

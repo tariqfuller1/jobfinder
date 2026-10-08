@@ -6,6 +6,7 @@ import { rateLimitWithRetry } from "@/lib/rate-limit";
 import {
   approveAutoApply,
   cancelAutoApply,
+  getAutoApplyStatusForUser,
   prepareAutoApply,
   saveSavedAnswers,
   updateAutoApplyFields,
@@ -13,7 +14,15 @@ import {
 
 type Values = Record<string, string | string[]>;
 
-export async function startAutoApply(jobId: string): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+export async function getAutoApplyStatus(id: string) {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return getAutoApplyStatusForUser(user.id, id);
+}
+
+export async function startAutoApply(
+  jobId: string,
+): Promise<{ ok: true; id: string; status: string } | { ok: false; error: string }> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "Sign in to use auto-apply." };
 

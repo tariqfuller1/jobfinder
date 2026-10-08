@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getUserProfileByUserId } from "@/lib/profile";
 import { detectAtsTarget } from "@/lib/auto-apply/detect";
 import { fetchApplicationForm } from "@/lib/auto-apply/forms";
-import { applyKnownAnswers, missingRequired } from "@/lib/auto-apply/answers";
+import { applyKnownAnswers, isAnswered, missingRequired } from "@/lib/auto-apply/answers";
 import { draftAiAnswers } from "@/lib/auto-apply/ai";
 import { parseFields, parseSavedAnswers, savedAnswersSchema, type AutoApplyField, type SavedAnswers } from "@/lib/auto-apply/types";
 
@@ -55,14 +55,41 @@ export async function saveResumeFile(userId: string, file: { data: Buffer; fileN
 
 // ── Prepare → review → approve ──────────────────────────────────────────────
 
-export async function prepareAutoApply(userId: string, jobId: string): Promise<Result<{ id: string }>> {
+/** Approved applications only go anywhere once the submit worker is deployed. */
+export function submissionsEnabled() {
+  return Boolean(process.env.AUTO_APPLY_WORKER_SECRET?.trim());
+}
+
+async function dailyLimitReached(userId: string) {
+  const recent = await prisma.autoApply.count({
+    where: {
+      userId,
+      status: { in: ["QUEUED", "SUBMITTING", "SUBMITTED"] },
+      updatedAt: { gt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    },
+  });
+  return recent >= DAILY_LIMIT;
+}
+
+/** One-click mode: whether a freshly prepared application can skip the review page. */
+function canSendWithoutReview(fields: AutoApplyField[], mode: SavedAnswers["submitMode"]) {
+  if (mode === "review") return false;
+  if (missingRequired(fields).length) return false;
+  if (mode === "auto_no_ai" && fields.some((f) => f.source === "ai" && isAnswered(f))) return false;
+  return true;
+}
+
+export async function prepareAutoApply(
+  userId: string,
+  jobId: string,
+): Promise<Result<{ id: string; status: AutoApplyStatus }>> {
   const existing = await prisma.autoApply.findUnique({
     where: { userId_jobId: { userId, jobId } },
     select: { id: true, status: true },
   });
   // Anything still in flight (or already sent) is reused rather than re-drafted.
   if (existing && !(["FAILED", "CANCELLED", "NEEDS_MANUAL"] as AutoApplyStatus[]).includes(existing.status)) {
-    return { ok: true, id: existing.id };
+    return { ok: true, id: existing.id, status: existing.status };
   }
 
   const job = await prisma.job.findUnique({ where: { id: jobId } });
@@ -92,12 +119,18 @@ export async function prepareAutoApply(userId: string, jobId: string): Promise<R
   });
   fields = await draftAiAnswers(fields, job, profile);
 
+  const sendNow =
+    submissionsEnabled() &&
+    canSendWithoutReview(fields, settings.answers.submitMode) &&
+    !(await dailyLimitReached(userId));
+  const status = sendNow ? AutoApplyStatus.QUEUED : AutoApplyStatus.NEEDS_REVIEW;
+
   const data = {
     ats: target.ats,
     boardToken: target.boardToken,
     postingId: target.postingId,
     formUrl: target.formUrl,
-    status: AutoApplyStatus.NEEDS_REVIEW,
+    status,
     fields: JSON.stringify(fields),
     error: null,
     screenshot: null,
@@ -109,7 +142,7 @@ export async function prepareAutoApply(userId: string, jobId: string): Promise<R
     update: data,
     select: { id: true },
   });
-  return { ok: true, id: row.id };
+  return { ok: true, id: row.id, status };
 }
 
 /** Applies the user's edits from the review page. Unknown keys and invalid options are ignored. */
@@ -170,14 +203,13 @@ export async function approveAutoApply(userId: string, id: string, values: Recor
     return { ok: false, error: `Fill in the required questions first: ${missing.map((f) => f.label).slice(0, 3).join(", ")}${missing.length > 3 ? "…" : ""}` };
   }
 
-  const recent = await prisma.autoApply.count({
-    where: {
-      userId,
-      status: { in: ["QUEUED", "SUBMITTING", "SUBMITTED"] },
-      updatedAt: { gt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-    },
-  });
-  if (recent >= DAILY_LIMIT) {
+  if (!submissionsEnabled()) {
+    return {
+      ok: false,
+      error: "Automatic submission isn't switched on for this site yet. Open the original form and copy your answers in.",
+    };
+  }
+  if (await dailyLimitReached(userId)) {
     return { ok: false, error: `You've reached today's limit of ${DAILY_LIMIT} auto-applications. Try again tomorrow.` };
   }
 
@@ -208,6 +240,21 @@ export async function getAutoApplyForUser(userId: string, id: string) {
     },
   });
   return row ? { ...row, fields: parseFields(row.fields) } : null;
+}
+
+/** Lightweight status read for the one-click button to poll. */
+export async function getAutoApplyStatusForUser(userId: string, id: string) {
+  return prisma.autoApply.findFirst({ where: { id, userId }, select: { id: true, status: true, error: true } });
+}
+
+/** jobId → latest auto-apply for each job on a page, so job cards can show their state. */
+export async function getAutoApplyStatuses(userId: string, jobIds: string[]) {
+  if (!jobIds.length) return new Map<string, { id: string; status: AutoApplyStatus }>();
+  const rows = await prisma.autoApply.findMany({
+    where: { userId, jobId: { in: jobIds }, status: { not: "CANCELLED" } },
+    select: { id: true, jobId: true, status: true },
+  });
+  return new Map(rows.map((r) => [r.jobId, { id: r.id, status: r.status }]));
 }
 
 export async function listAutoAppliesForUser(userId: string) {

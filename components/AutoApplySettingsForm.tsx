@@ -12,6 +12,24 @@ const YES_NO = [
   { value: "no", label: "No" },
 ];
 
+const SUBMIT_MODES: Array<{ value: SavedAnswers["submitMode"]; label: string; note: string }> = [
+  {
+    value: "auto",
+    label: "Apply in one click",
+    note: "Sends the application right away whenever every required question has an answer — including AI-written ones.",
+  },
+  {
+    value: "auto_no_ai",
+    label: "One click, but show me AI-written answers first",
+    note: "Sends right away when the form only needs your profile and saved answers. Stops for review if AI wrote anything.",
+  },
+  {
+    value: "review",
+    label: "Always let me review first",
+    note: "Fills everything in, then waits for you to check it and hit Submit.",
+  },
+];
+
 const EEO_OPTIONS: Partial<Record<keyof SavedAnswers, Array<{ value: string; label: string }>>> = {
   gender: [
     { value: "decline", label: "Decline to answer" },
@@ -103,6 +121,36 @@ export function AutoApplySettingsForm({
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
+      <div style={{ display: "grid", gap: 8 }}>
+        <div className="eyebrow">When you click Auto-apply</div>
+        {SUBMIT_MODES.map((mode) => (
+          <label
+            key={mode.value}
+            className="inset-card"
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "flex-start",
+              padding: "10px 12px",
+              cursor: "pointer",
+              borderColor: answers.submitMode === mode.value ? "rgba(255,46,99,0.45)" : undefined,
+            }}
+          >
+            <input
+              type="radio"
+              name="submitMode"
+              style={{ width: "auto", marginTop: 3 }}
+              checked={answers.submitMode === mode.value}
+              onChange={() => set("submitMode", mode.value)}
+            />
+            <span style={{ display: "grid", gap: 2 }}>
+              <strong style={{ fontSize: 13 }}>{mode.label}</strong>
+              <span className="muted" style={{ fontSize: 12 }}>{mode.note}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+
       {group(
         "Work eligibility",
         "Hyrd never guesses these. If one is blank, you'll be asked on every application that needs it.",

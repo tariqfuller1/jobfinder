@@ -48,6 +48,22 @@ function answer(field: AutoApplyField, value: string | undefined | null, source:
   return option ? select(field, option, source) : ASK;
 }
 
+const COUNTRY_ALIASES = [
+  ["united states", "united states of america", "usa", "u s a", "us", "u s"],
+  ["united kingdom", "great britain", "uk", "england"],
+];
+
+/** Country dropdowns spell the same place many ways ("USA", "United States of America"). */
+function countryAnswer(field: AutoApplyField, country: string): Resolution {
+  const wanted = normalize(country);
+  const names = COUNTRY_ALIASES.find((list) => list.includes(wanted)) ?? [wanted];
+  for (const name of names) {
+    const resolved = answer(field, name, "saved");
+    if (resolved !== ASK) return resolved;
+  }
+  return ASK;
+}
+
 function yesNo(field: AutoApplyField, choice: "yes" | "no" | "" | boolean, source: AnswerSource): Resolution {
   if (choice === "") return ASK;
   const yes = choice === true || choice === "yes";
@@ -130,7 +146,7 @@ function resolveKnown(field: AutoApplyField, ctx: AnswerContext): Resolution {
     const location = [saved.city, saved.state].filter(Boolean).join(", ") || profile.location;
     return answer(field, location, "saved");
   }
-  if (/what country|which country|country (of residence|are you|do you)/.test(label)) return answer(field, saved.country, "saved");
+  if (/what country|which country|country (of residence|are you|do you)/.test(label)) return countryAnswer(field, saved.country);
 
   // ── Links ──
   if (/linkedin/.test(`${key} ${label}`)) return answer(field, saved.linkedinUrl || findLink(profile, /linkedin/i), "saved");

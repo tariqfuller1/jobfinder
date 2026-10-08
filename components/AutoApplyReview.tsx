@@ -156,8 +156,9 @@ export function AutoApplyReview({
     setMessage(null);
     startTransition(async () => {
       const result = await startAutoApply(jobId);
-      if (result.ok) router.push(`/auto-apply/${result.id}`);
-      else setMessage({ kind: "error", text: result.error });
+      if (!result.ok) setMessage({ kind: "error", text: result.error });
+      else if (result.id === id) router.refresh();
+      else router.push(`/auto-apply/${result.id}`);
     });
   }
 

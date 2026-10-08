@@ -2,7 +2,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { requireCurrentUser } from "@/lib/auth";
 import { getProfileForUserOrDefault } from "@/lib/profile";
-import { getAutoApplySettings, listAutoAppliesForUser } from "@/lib/auto-apply/service";
+import { getAutoApplySettings, listAutoAppliesForUser, submissionsEnabled } from "@/lib/auto-apply/service";
 import { AutoApplySettingsForm } from "@/components/AutoApplySettingsForm";
 import { AutoApplyStatusBadge } from "@/components/AutoApplyStatusBadge";
 import { ResumeFileUpload } from "@/components/ResumeFileUpload";
@@ -36,8 +36,14 @@ export default async function AutoApplyPage() {
         <h1 className="section-title">Auto-apply</h1>
         <p className="muted" style={{ margin: 0, fontSize: 14 }}>
           Hit <strong>Auto-apply</strong> on any Greenhouse, Lever, or Ashby job. Hyrd reads the real application form, fills it in
-          from your profile and the answers below, drafts the written questions with AI, and shows you everything before it's sent.
+          from your profile and the answers below, writes the open-ended questions with AI, and submits it — or stops for you
+          to check first, depending on the setting below. Anything only you can answer always comes back to you.
         </p>
+        {!submissionsEnabled() && (
+          <p style={{ margin: 0, fontSize: 13, color: "#fbbf24" }}>
+            Automatic submission isn't switched on for this site yet — Hyrd will fill applications in for you to copy into the form.
+          </p>
+        )}
         {needsSetup && (
           <p style={{ margin: 0, fontSize: 13, color: "#fbbf24" }}>
             Finish setup first: {[
