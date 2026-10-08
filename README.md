@@ -82,6 +82,39 @@ npm run dev
 - `/resume-rewrite` full resume rewrite drafts
 - `/login` and `/register` account access
 
+## Auto-apply
+
+`/auto-apply` lets users apply to Greenhouse, Lever, and Ashby jobs from the job page.
+
+1. **Prepare** (in the web app). The application form is read without a browser:
+   - Greenhouse: through the public board API.
+   - Lever: from its server-rendered apply page.
+   - Ashby: through the public GraphQL endpoint its hosted form uses.
+
+   Answers are filled from the profile and the user's saved answers (`lib/auto-apply/answers.ts`). Required open-ended questions go to Groq (`lib/auto-apply/ai.ts`). Legal and self-ID questions (work authorization, sponsorship, EEO) and personal facts (salary, notice period) are never sent to AI. They come from saved answers or the user.
+2. **Review**. The user checks and edits every answer at `/auto-apply/[id]`, then clicks Submit. That marks the application `QUEUED`. A per-user daily cap (`AUTO_APPLY_DAILY_LIMIT`) applies.
+3. **Submit** (in `worker/`, a separate service). The worker polls `/api/internal/auto-apply/claim`, fills the real form in headless Chromium, clicks Submit, and reports the result. A success adds the job to the tracker as Applied. If the form shows a CAPTCHA challenge or rejects the submission, the application goes back to the user as "Finish manually", with their answers ready to copy. The worker never tries to solve CAPTCHAs.
+
+### Deploying the worker on Railway
+
+The worker needs its own service because Chromium is too heavy to share the web app's memory, and SQLite on the volume can only be reached through the app's API.
+
+1. Generate a long random secret and set `AUTO_APPLY_WORKER_SECRET` to it on the web service.
+2. Add a new service from the same repo and set its **Root Directory** to `worker`. Railway builds `worker/Dockerfile`.
+3. Set these variables on the worker:
+   - `HYRD_API_URL`: the site's URL, for example `https://hyrdjobfinder.com`.
+   - `AUTO_APPLY_WORKER_SECRET`: the same value as on the web service.
+4. Optionally set `DRY_RUN=true` on the worker for a first deploy. It fills forms but never clicks Submit, and every application comes back as "Finish manually" with a screenshot.
+
+Without `AUTO_APPLY_WORKER_SECRET`, users can still prepare and review applications, but approved ones stay queued.
+
+To check the selectors after an ATS changes its form (fills the live form, saves a screenshot, never submits):
+
+```bash
+cd worker && npm install && npx playwright install chromium
+npm run dry-run -- claim.json resume.pdf --headed
+```
+
 ## Notes
 
 - Bundled CSV files are only used for company directory data. The app removes bundled example jobs and populates the jobs board from synced live sources only.

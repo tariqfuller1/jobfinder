@@ -5,6 +5,7 @@ import { getCurrentUserFromRequest } from "@/lib/auth";
 import { parseResumeWithAI } from "@/lib/parse-resume-ai";
 import { prisma } from "@/lib/db";
 import { rateLimitWithRetry } from "@/lib/rate-limit";
+import { saveResumeFile } from "@/lib/auto-apply/service";
 
 export const runtime = "nodejs";
 
@@ -74,6 +75,15 @@ export async function POST(request: Request) {
       }
       extractedText = await extractResumeText(file);
       fileName = file.name;
+
+      // Keep the original file so auto-apply can attach it to applications.
+      if (ext === ".pdf" || ext === ".docx") {
+        await saveResumeFile(user.id, {
+          data: Buffer.from(await file.arrayBuffer()),
+          fileName: file.name.slice(0, 200),
+          type: ext === ".pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        }).catch((err) => console.error("[profile import] saving resume file failed:", err));
+      }
     }
 
     if (!extractedText) {

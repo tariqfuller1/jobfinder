@@ -23,6 +23,7 @@ const primaryNav = [
   { href: "/recommended", label: "Best fit", icon: "◎" },
   { href: "/profile", label: "Profile", icon: "◫" },
   { href: "/tracker", label: "Tracker", icon: "◌" },
+  { href: "/auto-apply", label: "Auto-apply", icon: "➤" },
 ];
 
 const creatorNav = [

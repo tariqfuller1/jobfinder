@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ApplyButton } from "@/components/ApplyButton";
+import { AutoApplyButton } from "@/components/AutoApplyButton";
+import { detectAtsTarget } from "@/lib/auto-apply/detect";
 import { JobDetailEditor } from "@/components/JobDetailEditor";
 import { SuggestedSearches } from "@/components/SuggestedSearches";
 import { getCurrentUser } from "@/lib/auth";
@@ -60,6 +62,7 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
   const source = fmtSource(job.source);
   const isGaming = job.companyCategory === "GAMING" || job.companyCategory === "BOTH";
   const rolecat = getRoleCategory(job.roleCategory ?? "software");
+  const autoApplySupported = Boolean(await detectAtsTarget(job));
 
   const fitHigh = job.fitScore >= 60;
   const fitMid = job.fitScore >= 30;
@@ -208,6 +211,11 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
             borderColor: "rgba(255,46,99,0.22)",
           }}>
             <div className="eyebrow" style={{ marginBottom: 12 }}>Apply for this role</div>
+            {autoApplySupported && (
+              <div style={{ marginBottom: 10 }}>
+                <AutoApplyButton jobId={job.id} requireLogin={!user} />
+              </div>
+            )}
             <ApplyButton
               applyUrl={job.primaryApplyUrl ?? job.applyUrl ?? job.sourceUrl}
               jobId={job.id}

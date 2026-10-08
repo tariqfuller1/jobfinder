@@ -57,6 +57,16 @@ enum CompanyCategory {
   BOTH
 }
 
+enum AutoApplyStatus {
+  NEEDS_REVIEW // form fetched and answers drafted — waiting on the user
+  QUEUED       // user approved — waiting for the submit worker
+  SUBMITTING
+  SUBMITTED
+  NEEDS_MANUAL // worker hit a CAPTCHA or an unexpected form — user finishes by hand
+  FAILED
+  CANCELLED
+}
+
 model Job {
   id               String           @id @default(cuid())
   source           String
@@ -79,6 +89,7 @@ model Job {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   applications     Application[]
+  autoApplies      AutoApply[]
 
   @@unique([source, externalId])
   @@index([isActive, postedAt])  // composite — covers the primary sort+filter in one pass
@@ -224,6 +235,46 @@ model User {
   sessions       Session[]
   applications   Application[]
   resetTokens    PasswordResetToken[]
+  autoApplies    AutoApply[]
+  autoApplySettings AutoApplySettings?
+}
+
+// Kept out of CandidateProfile so the resume bytes are never loaded by the
+// many pages that read the profile.
+model AutoApplySettings {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  answers         String    @default("{}") // JSON SavedAnswers — work auth, EEO, salary, etc.
+  resumeFile      Bytes?
+  resumeFileName  String?
+  resumeFileType  String?
+  resumeUpdatedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AutoApply {
+  id          String          @id @default(cuid())
+  userId      String
+  jobId       String
+  ats         String          // greenhouse | lever | ashby
+  boardToken  String
+  postingId   String
+  formUrl     String
+  status      AutoApplyStatus @default(NEEDS_REVIEW)
+  fields      String          @default("[]") // JSON AutoApplyField[]
+  error       String?
+  screenshot  Bytes?
+  attempts    Int             @default(0)
+  submittedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job         Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+  @@index([status, updatedAt])
 }
 
 model PasswordResetToken {
